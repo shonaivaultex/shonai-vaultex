@@ -1,65 +1,62 @@
-import Image from "next/image";
+import { Dumbbell, Mail, MapPin, Phone, Trophy, Users } from "lucide-react";
+import Hero from "./components/Hero";
+import { ProgramCard } from "./components/ProgramCard";
+import { programs } from "./components/program-data";
+import { ContactLine } from "./components/ui/ContactLine";
+import { CtaLink } from "./components/ui/CtaLink";
+import { SectionLabel } from "./components/ui/SectionLabel";
+import { Stat } from "./components/ui/Stat";
 
-export default function Home() {
+const features = [
+  { icon: Trophy, title: "WINNING MINDSET", text: "挑戦を楽しみ、最後までやり抜く力を。競技を通じて、自分の可能性を広げます。" },
+  { icon: Users, title: "TEAM & COMMUNITY", text: "仲間と高め合う日々が、自信になる。地域に根ざした、あたたかく強いチームです。" },
+  { icon: Dumbbell, title: "ATHLETE DEVELOPMENT", text: "基礎から専門的なトレーニングまで。一人ひとりの成長に合わせた指導を行います。" },
+] as const;
+
+const news = [
+  { date: "2025.03.21", tag: "EVENT", title: "春の体験会を開催します" },
+  { date: "2025.03.08", tag: "RESULT", title: "県ジュニア陸上競技大会 結果報告" },
+  { date: "2025.02.20", tag: "NEWS", title: "2025年度 新規メンバー募集のお知らせ" },
+] as const;
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="overflow-x-hidden bg-[#090a0c] text-white">
+      <Hero />
+
+      <section id="about" className="border-t border-white/10 py-24 sm:py-32">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-12 lg:gap-8 lg:px-10">
+          <div className="lg:col-span-4"><SectionLabel index="01">ABOUT US</SectionLabel></div>
+          <div className="lg:col-span-8">
+            <h2 className="max-w-3xl text-3xl font-black leading-tight tracking-[-0.045em] sm:text-5xl">すべての一歩が、<br /><span className="text-orange-500">未来を変える。</span></h2>
+            <div className="mt-9 grid max-w-3xl gap-6 text-sm leading-8 text-white/65 sm:grid-cols-2">
+              <p>SHONAI VAULTEXは、山形県庄内地域を拠点とする陸上クラブです。スポーツを通じ、子どもたちが自分らしく挑戦できる場所をつくります。</p>
+              <p>大切にしているのは、勝敗だけではありません。一人ひとりが成長を実感し、仲間と支え合う。その経験が、人生を進む力になると信じています。</p>
+            </div>
+            <div className="mt-12 grid max-w-3xl grid-cols-3 border-y border-white/10 py-6"><Stat value="2026" label="FOUNDED" /><Stat value="10+" label="MEMBERS" /><Stat value="4" label="PROGRAMS" /></div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <section id="feature" className="bg-[#101216] py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <SectionLabel index="02">OUR FEATURE</SectionLabel>
+          <div className="mt-7 flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><h2 className="text-3xl font-black tracking-[-0.045em] sm:text-5xl">強くなる、その先へ。</h2><p className="max-w-sm text-sm leading-7 text-white/60">競技力と人間力。どちらも大切に育てる、VAULTEXの3つの約束。</p></div>
+          <div className="mt-14 grid gap-px bg-white/10 md:grid-cols-3">{features.map(({ icon: Icon, title, text }, index) => <article key={title} className="group bg-[#101216] p-7 sm:p-9"><div className="flex items-start justify-between"><Icon aria-hidden="true" size={30} strokeWidth={1.5} className="text-orange-500" /><span className="text-xs font-bold text-white/35">0{index + 1}</span></div><h3 className="mt-16 text-lg font-black tracking-wide">{title}</h3><p className="mt-4 text-sm leading-7 text-white/60">{text}</p><div className="mt-8 h-px w-10 bg-orange-500 transition-all duration-300 group-hover:w-full" /></article>)}</div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section id="program" className="py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <SectionLabel index="03">PROGRAM</SectionLabel>
+          <div className="mt-7 grid gap-10 lg:grid-cols-12"><h2 className="text-3xl font-black tracking-[-0.045em] sm:text-5xl lg:col-span-5">自分のペースで、<br />頂点を目指す。</h2><p className="max-w-md self-end text-sm leading-7 text-white/60 lg:col-span-5 lg:col-start-8">年齢と経験に合わせたプログラムで、運動の楽しさから本格的な競技力まで、一歩ずつサポートします。</p></div>
+          <div className="mt-14 border-t border-white/15">{programs.map((program) => <ProgramCard key={program.slug} program={program} />)}</div>
+        </div>
+      </section>
+
+      <section id="news" className="bg-[#101216] py-24 sm:py-32"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><SectionLabel index="04">NEWS</SectionLabel><div className="mt-10 border-t border-white/15">{news.map((item) => <article key={item.date} className="grid gap-3 border-b border-white/15 py-5 sm:grid-cols-12 sm:items-center sm:px-3"><time className="text-xs font-medium text-white/45 sm:col-span-2">{item.date}</time><span className="text-[10px] font-black tracking-[0.14em] text-orange-500 sm:col-span-2">{item.tag}</span><h3 className="text-sm font-bold sm:col-span-8">{item.title}</h3></article>)}</div></div></section>
+
+      <section id="contact" className="relative overflow-hidden bg-orange-500 py-24 text-[#090a0c] sm:py-32"><div className="pointer-events-none absolute -right-8 -top-28 select-none text-[13rem] font-black leading-none tracking-[-0.1em] text-black/10 sm:text-[22rem]">GO</div><div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><p className="flex items-center gap-3 text-xs font-black tracking-[0.22em]"><span className="text-black/50">05</span><span className="h-px w-8 bg-[#090a0c]" />CONTACT</p><div className="mt-8 grid gap-12 lg:grid-cols-12"><div className="lg:col-span-8"><h2 className="text-4xl font-black leading-[0.95] tracking-[-0.065em] sm:text-7xl">YOUR NEXT<br />MOVE STARTS<br />HERE.</h2><p className="mt-7 max-w-md text-sm font-medium leading-7 text-black/70">体験・見学はいつでも歓迎です。まずは気軽に、SHONAI VAULTEXの空気を感じに来てください。</p><CtaLink href="mailto:info@shonai-vaultex.jp" className="mt-9">お問い合わせ</CtaLink></div><div className="space-y-6 self-end text-sm font-semibold lg:col-span-4"><ContactLine icon={MapPin}>山形県庄内地域（活動場所はお問い合わせください）</ContactLine><ContactLine icon={Mail}>info@shonai-vaultex.jp</ContactLine><ContactLine icon={Phone}>000-0000-0000</ContactLine></div></div></div></section>
+    </main>
   );
 }
