@@ -10,6 +10,9 @@ export type Program = {
   highlights: { title: string; description: string }[];
   flow: { time: string; title: string; description: string }[];
   faq: { question: string; answer: string }[];
+  
+  tags: string[];
+  image: string;
 };
 export const programs: Program[] = [
   {
@@ -32,6 +35,13 @@ export const programs: Program[] = [
       { question: "どんな服装が必要ですか？", answer: "動きやすい運動着と運動靴があれば参加できます。飲み物とタオルもご用意ください。" },
       { question: "体験参加はできますか？", answer: "できます。まずは実際の雰囲気を体験してから、ご入会をご検討いただけます。" },
     ],
+    image: "/junior.jpg",
+    tags: [
+  "初心者歓迎",
+  "走・跳・投",
+  "楽しむ",
+],
+
   },
   {
     slug: "youth", number: "02", name: "YOUTH", englishTitle: "Performance", audience: "中学生〜高校生対象",
@@ -53,6 +63,13 @@ export const programs: Program[] = [
       { question: "専門種目が決まっていなくても大丈夫ですか？", answer: "大丈夫です。さまざまな動きを経験しながら、自分に合う種目を見つけていけます。" },
       { question: "大会への参加はできますか？", answer: "目標や所属状況に合わせて、競技会への挑戦をサポートします。" },
     ],
+    image: "/youth.jpg",
+    tags: [
+  "競技力向上",
+  "専門指導",
+  "大会出場",
+],
+
   },
   {
     slug: "elite", number: "03", name: "ELITE", englishTitle: "Elite Performance", audience: "大学生・一般競技者対象",
@@ -74,6 +91,13 @@ export const programs: Program[] = [
       { question: "専門種目に特化した指導は受けられますか？", answer: "種目・目標に応じて内容を組み立てます。まずは体験時にご相談ください。" },
       { question: "単発での参加は可能ですか？", answer: "参加形態はご相談いただけます。目標とスケジュールに合う方法をご提案します。" },
     ],
+    image: "/elite.jpg",
+    tags: [
+  "個別指導",
+  "ハイパフォーマンス",
+  "全国レベル",
+],
+
   },
   {
     slug: "masters", number: "04", name: "MASTERS", englishTitle: "Masters Athlete", audience: "一般・マスターズ対象",
@@ -95,6 +119,13 @@ export const programs: Program[] = [
       { question: "大会を目指さなくても参加できますか？", answer: "もちろんです。健康づくりや仲間との運動を目的とした参加も歓迎しています。" },
       { question: "どのくらいの頻度で参加できますか？", answer: "ご自身の生活リズムに合わせてご相談ください。継続できるペースを大切にします。" },
     ],
+    image: "/masters.jpg",
+    tags: [
+  "健康づくり",
+  "マスターズ",
+  "生涯スポーツ",
+],
+
   },
 ];
 export const programBySlug = Object.fromEntries(programs.map((program) => [program.slug, program])) as Record<Program["slug"], Program>;

@@ -11,7 +11,12 @@ export function ProgramDetailPage({ program }: { program: Program }) {
   const reveal = { initial: reduceMotion ? false : "hidden", whileInView: reduceMotion ? undefined : "visible", viewport: { once: true, amount: 0.2 }, variants: fadeUp, transition: revealTransition };
   return <main className="overflow-hidden bg-[#090a0c] text-white">
     <section className="relative flex min-h-[85svh] items-end overflow-hidden border-b border-white/10">
-      <div className="absolute inset-0 scale-105 bg-[url('/hero.jpg')] bg-cover bg-center opacity-55" />
+      <div
+  className="absolute inset-0 scale-105 bg-cover bg-center opacity-55"
+  style={{
+    backgroundImage: `url(${program.image})`,
+  }}
+/>
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-[#090a0c]/55 to-[#090a0c]" />
       <div className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-[#090a0c]/90 via-[#090a0c]/35 to-transparent md:w-3/4" />
       <div className="absolute bottom-0 h-1 w-full bg-gradient-to-r from-orange-500 via-orange-500 to-transparent" />

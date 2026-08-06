@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { primaryNavigation } from "./site";
 
@@ -27,21 +28,26 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
+      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-500 ${
         isScrolled || isMenuOpen
-          ? "border-b border-white/10 bg-[#090a0c]/95 backdrop-blur-md"
+         ? "border-b border-white/10 bg-[#090a0c]/80 backdrop-blur-xl"
           : "bg-gradient-to-b from-black/55 to-transparent"
       }`}
     >
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
-        <Brand onClick={closeMenu} />
+      <div
+  className={`mx-auto flex max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10 transition-all duration-500 ${
+    isScrolled ? "h-16" : "h-20"
+  }`}
+>
+        <Brand onClick={closeMenu} 
+        isScrolled={isScrolled}/>
 
         <nav aria-label="Main navigation" className="hidden items-center gap-6 lg:flex">
           {primaryNavigation.map((item) => (
             <Link
               key={item.label}
               href={item.href}
-              className="text-xs font-bold tracking-[0.14em] text-white/80 transition-colors hover:text-orange-400"
+              className="relative text-xs font-bold tracking-[0.16em] text-white/80 transition-all duration-300 hover:text-orange-400 after:absolute after:left-0 after:-bottom-2 after:h-[2px] after:w-0 after:bg-orange-500 after:transition-all after:duration-300 hover:after:w-full"
             >
               {item.label}
             </Link>
@@ -50,7 +56,7 @@ export default function Header() {
 
         <Link
           href="/#contact"
-          className="hidden items-center gap-2 bg-orange-500 px-5 py-3 text-xs font-black tracking-[0.12em] transition-colors hover:bg-orange-400 sm:inline-flex"
+          className="hidden items-center gap-2 rounded-md bg-orange-500 px-5 py-3 text-xs font-black tracking-[0.12em] shadow-lg shadow-orange-500/30 transition-all duration-300 hover:scale-105 hover:bg-orange-400 sm:inline-flex"
         >
           JOIN US <ArrowRight aria-hidden="true" size={15} />
         </Link>
@@ -95,11 +101,50 @@ export default function Header() {
   );
 }
 
-function Brand({ onClick }: { onClick: () => void }) {
+function Brand({
+  onClick,
+  isScrolled,
+}: {
+  onClick: () => void;
+  isScrolled: boolean;
+}) {
   return (
-    <Link href="/" onClick={onClick} className="leading-none" aria-label="SHONAI VAULTEX home">
-      <span className="block text-lg font-black tracking-[0.16em] sm:text-xl">SHONAI</span>
-      <span className="block text-sm font-black tracking-[0.28em] text-orange-500">VAULTEX</span>
-    </Link>
+   <Link
+  href="/"
+  onClick={onClick}
+  className={`flex items-center transition-all duration-500 ${
+  isScrolled ? "gap-1" : "gap-2"
+}`}
+>
+
+  <Image
+  src="/logo.png"
+  alt="SHONAI VAULTEX"
+  width={isScrolled ? 58 : 75}
+  height={isScrolled ? 58 : 75}
+  className="transition-all duration-500 ease-out"
+/>
+
+  <div
+  className={`transition-all duration-500 ${
+    isScrolled ? "scale-90" : "scale-100"
+  }`}
+>
+  <p
+  className={`font-black tracking-[0.25em] transition-all duration-500 ${
+    isScrolled ? "text-2xl" : "text-3xl"
+  }`}
+>
+    SHONAI
+  </p>
+
+  <p className={`text-xl font-black tracking-[0.3em] transition-all duration-500 ${
+    isScrolled ? "text-orange-500" : "text-orange-400"
+  }`}>
+    VAULTEX
+  </p>
+</div>
+
+</Link>
   );
 }
