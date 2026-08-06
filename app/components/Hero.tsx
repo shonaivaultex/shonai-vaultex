@@ -112,14 +112,6 @@ useEffect(() => {
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className="relative mx-auto w-full max-w-7xl -translate-y-10 px-5 pb-20 pt-36 sm:px-8 sm:pb-24 lg:-translate-y-12 lg:px-10"
       >
-        <Image
-        
-    src="/logo.png"
-    alt="SHONAI VAULTEX"
-    width={120}
-    height={120}
-    className="mb-8 opacity-90"
-  />
         <p className="mb-5 flex items-center gap-3 text-xs font-black tracking-[0.2em] text-orange-400">
           <span className="h-px w-9 bg-orange-500" />
           ATHLETICS CLUB

@@ -50,7 +50,21 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
           <SectionLabel index="03">PROGRAM</SectionLabel>
           <div className="mt-7 grid gap-10 lg:grid-cols-12"><h2 className="text-3xl font-black tracking-[-0.045em] sm:text-5xl lg:col-span-5">自分のペースで、<br />頂点を目指す。</h2><p className="max-w-md self-end text-sm leading-7 text-white/60 lg:col-span-5 lg:col-start-8">年齢と経験に合わせたプログラムで、運動の楽しさから本格的な競技力まで、一歩ずつサポートします。</p></div>
-          <div className="mt-14 border-t border-white/15">{programs.map((program) => <ProgramCard key={program.slug} program={program} />)}</div>
+          <div className="mt-16 grid gap-8 md:grid-cols-2">
+  {programs.map((program) => (
+    <ProgramCard
+      key={program.slug}
+      program={program}
+      compact
+    />
+  ))}
+</div>
+
+<div className="mt-12 flex justify-center">
+  <CtaLink href="/program" variant="outline">
+    VIEW ALL PROGRAMS
+  </CtaLink>
+</div>
         </div>
       </section>
 
