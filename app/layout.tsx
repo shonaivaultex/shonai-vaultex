@@ -21,6 +21,40 @@ export const metadata: Metadata = {
   },
   description:
     "山形県庄内地域を拠点とする総合陸上クラブ、SHONAI VAULTEX。挑戦する人を増やし、庄内から全国へ。",
+    keywords: [
+  "SHONAI VAULTEX",
+  "庄内陸上クラブ",
+  "酒田陸上クラブ",
+  "鶴岡陸上クラブ",
+  "山形陸上クラブ",
+  "陸上教室",
+  "ジュニア陸上",
+  "かけっこ教室",
+  "陸上競技",
+],
+    icons: {
+  icon: "/logo.png",
+  
+},
+metadataBase: new URL("https://shonai-vaultex.vercel.app"),
+
+openGraph: {
+  title: "SHONAI VAULTEX",
+  description:
+    "庄内から、全国へ。挑戦する人を増やす総合陸上クラブ。",
+  url: "https://shonai-vaultex.vercel.app",
+  siteName: "SHONAI VAULTEX",
+  locale: "ja_JP",
+  type: "website",
+  images: [
+    {
+      url: "/ogp.jpg",
+      width: 1200,
+      height: 630,
+      alt: "SHONAI VAULTEX",
+    },
+  ],
+},
 };
 
 export default function RootLayout({

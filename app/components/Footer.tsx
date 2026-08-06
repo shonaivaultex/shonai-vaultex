@@ -12,6 +12,11 @@ export default function Footer() {
             <span className="block text-sm font-black tracking-[0.28em] text-orange-500">VAULTEX</span>
           </Link>
           <p className="mt-4 text-xs leading-6 text-white/45">ATHLETICS CLUB / SHONAI, YAMAGATA</p>
+          <p className="mt-4 max-w-xs text-sm leading-7 text-white/55">
+  庄内から、全国へ。
+  <br />
+  挑戦する人を増やす総合陸上クラブ。
+</p>
         </div>
 
         <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-x-10 gap-y-4 sm:grid-cols-3">
@@ -30,10 +35,19 @@ export default function Footer() {
           >
             EMAIL <ArrowUpRight aria-hidden="true" size={14} />
           </a>
+          <a
+  href="https://www.instagram.com/"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="flex items-center gap-1 text-xs font-bold tracking-[0.1em] text-white/65 transition-colors hover:text-orange-500"
+>
+  INSTAGRAM <ArrowUpRight size={14} />
+</a>
         </nav>
       </div>
       <div className="mx-auto mt-10 max-w-7xl border-t border-white/10 px-5 pt-5 text-[10px] font-medium tracking-[0.12em] text-white/35 sm:px-8 lg:px-10">
-        © {new Date().getFullYear()} SHONAI VAULTEX
+       © {new Date().getFullYear()} SHONAI VAULTEX.
+All Rights Reserved.
       </div>
     </footer>
   );

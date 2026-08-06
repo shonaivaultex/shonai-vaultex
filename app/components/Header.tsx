@@ -90,7 +90,7 @@ export default function Header() {
             <Link
               href="/#contact"
               onClick={closeMenu}
-              className="mt-8 flex items-center justify-center gap-2 bg-orange-500 py-4 text-xs font-black tracking-[0.14em]"
+              className="mt-8 flex items-center justify-center gap-2 rounded-xl bg-orange-500 py-4 text-xs font-black tracking-[0.14em] shadow-lg shadow-orange-500/30 transition-all duration-300 hover:scale-[1.02]"
             >
               JOIN US <ArrowRight aria-hidden="true" size={16} />
             </Link>
@@ -112,7 +112,7 @@ function Brand({
    <Link
   href="/"
   onClick={onClick}
-  className={`flex items-center transition-all duration-500 ${
+  className={`flex items-center py-2 transition-all duration-500 ${
   isScrolled ? "gap-1" : "gap-2"
 }`}
 >
@@ -120,8 +120,8 @@ function Brand({
   <Image
   src="/logo.png"
   alt="SHONAI VAULTEX"
-  width={isScrolled ? 58 : 75}
-  height={isScrolled ? 58 : 75}
+  width={isScrolled ? 62 : 82}
+  height={isScrolled ? 62 : 82}
   className="transition-all duration-500 ease-out"
 />
 
