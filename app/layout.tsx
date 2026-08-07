@@ -19,6 +19,7 @@ export const metadata: Metadata = {
     default: "SHONAI VAULTEX | Athletics Club",
     template: "%s | SHONAI VAULTEX",
   },
+  
   description:
     "山形県庄内地域を拠点とする総合陸上クラブ、SHONAI VAULTEX。挑戦する人を増やし、庄内から全国へ。",
     keywords: [
@@ -48,11 +49,12 @@ openGraph: {
   type: "website",
   images: [
     {
-      url: "/ogp.jpg",
+      url: "/ogp2.jpg",
       width: 1200,
       height: 630,
       alt: "SHONAI VAULTEX",
     },
+    
   ],
 },
 };
