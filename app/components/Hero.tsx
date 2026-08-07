@@ -165,7 +165,7 @@ useEffect(() => {
 </p>
 
         <div className="mt-10 flex flex-wrap gap-4">
-  <CtaLink href="/#contact">
+  <CtaLink href="https://forms.gle/gE26L75sc31dJdJk7">
     無料体験に申し込む
   </CtaLink>
 

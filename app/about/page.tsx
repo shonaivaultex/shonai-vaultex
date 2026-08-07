@@ -214,8 +214,11 @@ export default function AboutPage() {
               ここから。
             </h2>
           </div>
-          <CtaLink href="/#contact" variant="outline">
-            体験会・お問い合わせ
+          <CtaLink href="https://forms.gle/orQ5SPpgJ6Zm5D5Q8" variant="outline">
+            体験会
+          </CtaLink>
+          <CtaLink href="https://forms.gle/9KLAq5PSkBudhbyL9" variant="outline">
+            お問い合わせ
           </CtaLink>
         </motion.div>
       </section>

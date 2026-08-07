@@ -60,7 +60,7 @@ export function ProgramDetailPage({ program }: { program: Program }) {
   ))}
 </div>
 <div className="mt-12 flex flex-wrap gap-4">
-  <CtaLink href="/#contact">
+  <CtaLink href="https://forms.gle/gE26L75sc31dJdJk7">
     無料体験を申し込む
   </CtaLink>
 
