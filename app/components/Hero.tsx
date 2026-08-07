@@ -92,7 +92,26 @@ useEffect(() => {
   fill
   priority
   sizes="100vw"
-  className="object-cover object-center brightness-75"
+  className="object-cover object-center brightness-60"
+/>
+{/* 動くオレンジの光 */}
+<motion.div
+  key={`glow-${currentSlide}`}
+  initial={{
+    x: "-40%",
+    opacity: 0,
+    scale: 0.8,
+  }}
+  animate={{
+    x: "120%",
+    opacity: [0, 0.18, 0],
+    scale: 1.4,
+  }}
+  transition={{
+    duration: 6,
+    ease: "linear",
+  }}
+  className="absolute top-0 left-0 h-full w-[45%] bg-orange-500 blur-[140px]"
 />
   </motion.div>
 </AnimatePresence>
@@ -120,10 +139,10 @@ useEffect(() => {
        <AnimatePresence mode="wait">
   <motion.div
     key={currentSlide}
-    initial={{ opacity: 0, y: 30 }}
-    animate={{ opacity: 1, y: 0 }}
+    initial={{opacity: 0, y: 80,scale: 0.92,}}
+    animate={{ opacity: 1, y: 0 ,scale: 1,}}
     exit={{ opacity: 0, y: -30 }}
-    transition={{ duration: 0.6 }}
+    transition={{duration: 0.9,ease: [0.22, 1, 0.36, 1],}}
   >
     <h1 className="max-w-5xl text-[clamp(3.8rem,10vw,9rem)] font-black leading-[0.82] tracking-[-0.07em]">
       {slides[currentSlide].title}

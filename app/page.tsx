@@ -90,7 +90,7 @@ useEffect(() => {
     <ProgramCard
       key={program.slug}
       program={program}
-      compact
+      
     />
   ))}
 </div>

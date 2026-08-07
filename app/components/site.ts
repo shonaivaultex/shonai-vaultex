@@ -5,6 +5,7 @@ export const siteNavigation = [
   { label: "PROGRAM", href: "/program" },
   { label: "NEWS", href: "/#news" },
   { label: "CONTACT", href: "/#contact" },
+  {label: "COACH", href: "/coach",},//
 ] as const;
 
 export const primaryNavigation = siteNavigation.filter(
