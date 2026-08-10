@@ -2,13 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
+import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
 
 export default function DeleteRecordButton({
   recordId,
   compact = false,
+  videoPath,
 }: {
   recordId: number;
   compact?: boolean;
+  videoPath?: string | null;
 }) {
   const router = useRouter();
 
@@ -18,6 +21,14 @@ export default function DeleteRecordButton({
     if (!ok) return;
 
     const supabase = createClient();
+
+    if (videoPath) {
+      const { error: storageError } = await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([videoPath]);
+      if (storageError) {
+        alert("動画を削除できませんでした：" + storageError.message);
+        return;
+      }
+    }
 
     const { error } = await supabase
       .from("performance_records")

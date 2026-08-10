@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { performanceEvents } from "@/lib/performance-events";
+import { awarenessCategories, createVideoPath, PERFORMANCE_VIDEO_BUCKET, validateVideo } from "@/lib/performance-awareness";
 
 export default function EditPerformancePage() {
   const router = useRouter();
@@ -13,6 +14,11 @@ export default function EditPerformancePage() {
   const [category, setCategory] = useState("");
   const [value, setValue] = useState("");
   const [date, setDate] = useState("");
+  const [awarenessCategory, setAwarenessCategory] = useState("");
+  const [awarenessNote, setAwarenessNote] = useState("");
+  const [videoPath, setVideoPath] = useState<string | null>(null);
+  const [newVideo, setNewVideo] = useState<File | null>(null);
+  const [removeVideo, setRemoveVideo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const events = performanceEvents.map((event) => event.name);
@@ -27,7 +33,7 @@ export default function EditPerformancePage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("performance_records")
-        .select("category, value, date")
+        .select("category, value, date, awareness_category, awareness_note, video_path")
         .eq("id", id)
         .single();
 
@@ -40,6 +46,9 @@ export default function EditPerformancePage() {
       setCategory(data.category ?? "");
       setValue(String(data.value ?? ""));
       setDate(data.date ?? "");
+      setAwarenessCategory(data.awareness_category ?? "");
+      setAwarenessNote(data.awareness_note ?? "");
+      setVideoPath(data.video_path ?? null);
       setLoading(false);
     };
 
@@ -51,23 +60,58 @@ export default function EditPerformancePage() {
 
     if (!id) return;
 
+    if (awarenessNote.length > 200) {
+      alert("意識メモは200文字以内にしてください。");
+      return;
+    }
+    const videoError = newVideo ? validateVideo(newVideo) : null;
+    if (videoError) {
+      alert(videoError);
+      return;
+    }
+
     setSaving(true);
 
     const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setSaving(false);
+      alert("ログインが必要です。");
+      return;
+    }
+
+    let nextVideoPath = removeVideo ? null : videoPath;
+    if (newVideo) {
+      nextVideoPath = createVideoPath(user.id, newVideo);
+      const { error: uploadError } = await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).upload(nextVideoPath, newVideo, { contentType: newVideo.type });
+      if (uploadError) {
+        setSaving(false);
+        alert("動画をアップロードできませんでした：" + uploadError.message);
+        return;
+      }
+    }
     const { error } = await supabase
       .from("performance_records")
       .update({
         category,
         value,
         date,
+        awareness_category: awarenessCategory || null,
+        awareness_note: awarenessNote.trim() || null,
+        video_path: nextVideoPath,
       })
       .eq("id", id);
 
     setSaving(false);
 
     if (error) {
+      if (newVideo && nextVideoPath) await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([nextVideoPath]);
       alert(error.message);
       return;
+    }
+
+    if (videoPath && videoPath !== nextVideoPath) {
+      await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([videoPath]);
     }
 
     router.push("/mypage");
@@ -129,6 +173,27 @@ export default function EditPerformancePage() {
     </option>
   ))}
 </select>
+          </div>
+
+          <div>
+            <label htmlFor="awareness" className="mb-2 block text-sm font-bold text-zinc-200">今日一番意識したこと（任意）</label>
+            <select id="awareness" value={awarenessCategory} onChange={(event) => setAwarenessCategory(event.target.value)} className="w-full rounded-xl border border-zinc-700 bg-[#111] px-4 py-3 text-white outline-none focus:border-[#ff7a00]">
+              <option value="">選択しない</option>
+              {awarenessCategories.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="awareness-note" className="mb-2 block text-sm font-bold text-zinc-200">何をどう意識しましたか？（任意）</label>
+            <textarea id="awareness-note" value={awarenessNote} onChange={(event) => setAwarenessNote(event.target.value)} maxLength={200} rows={3} placeholder="例：最後までリズムを変えずに走った" className="w-full resize-none rounded-xl border border-zinc-700 bg-[#111] px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-[#ff7a00]" />
+            <span className="mt-1 block text-right text-xs text-zinc-500">{awarenessNote.length}/200</span>
+          </div>
+
+          <div>
+            <label htmlFor="video" className="mb-2 block text-sm font-bold text-zinc-200">動画（任意・100MBまで）</label>
+            {videoPath && !removeVideo && !newVideo && <button type="button" onClick={() => setRemoveVideo(true)} className="mb-3 text-sm font-bold text-red-400 hover:text-red-300">現在の動画を削除</button>}
+            {removeVideo && !newVideo && <p className="mb-3 text-sm text-zinc-400">保存すると現在の動画を削除します。</p>}
+            <input id="video" type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" onChange={(event) => { setNewVideo(event.target.files?.[0] ?? null); if (event.target.files?.[0]) setRemoveVideo(false); }} className="block w-full rounded-xl border border-dashed border-zinc-700 bg-[#111] px-4 py-3 text-sm text-zinc-400 file:mr-4 file:rounded-lg file:border-0 file:bg-[#ff7a00] file:px-3 file:py-2 file:font-bold file:text-black" />
           </div>
 
           <div>

@@ -6,6 +6,7 @@ import { FormEvent, Suspense, useState } from "react";
 import { ArrowLeft, Check, LoaderCircle, Save } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 import { eventNamesByKind, type PerformanceKind, unitMap } from "@/lib/performance-events";
+import { awarenessCategories, createVideoPath, PERFORMANCE_VIDEO_BUCKET, validateVideo } from "@/lib/performance-awareness";
 
 function today() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
@@ -19,6 +20,9 @@ function PerformanceForm() {
   const [category, setCategory] = useState(eventOptions[0]);
   const [value, setValue] = useState("");
   const [date, setDate] = useState(today);
+  const [awarenessCategory, setAwarenessCategory] = useState("");
+  const [awarenessNote, setAwarenessNote] = useState("");
+  const [video, setVideo] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -31,6 +35,15 @@ const unit = unitMap[category] ?? "";
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue) || numericValue <= 0) {
       setErrorMessage("記録には0より大きい数値を入力してください。");
+      return;
+    }
+    if (awarenessNote.length > 200) {
+      setErrorMessage("意識メモは200文字以内にしてください。");
+      return;
+    }
+    const videoError = video ? validateVideo(video) : null;
+    if (videoError) {
+      setErrorMessage(videoError);
       return;
     }
 
@@ -48,14 +61,30 @@ const unit = unitMap[category] ?? "";
         return;
       }
 
+      let videoPath: string | null = null;
+      if (video) {
+        videoPath = createVideoPath(user.id, video);
+        const { error: uploadError } = await supabase.storage
+          .from(PERFORMANCE_VIDEO_BUCKET)
+          .upload(videoPath, video, { contentType: video.type, upsert: false });
+        if (uploadError) {
+          setErrorMessage(`動画をアップロードできませんでした：${uploadError.message}`);
+          return;
+        }
+      }
+
       const { error } = await supabase.from("performance_records").insert({
         user_id: user.id,
         category,
         value: numericValue,
         date,
+        awareness_category: awarenessCategory || null,
+        awareness_note: awarenessNote.trim() || null,
+        video_path: videoPath,
       });
 
       if (error) {
+        if (videoPath) await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([videoPath]);
         setErrorMessage(error.message);
         return;
       }
@@ -137,6 +166,25 @@ const unit = unitMap[category] ?? "";
                 onChange={(event) => setDate(event.target.value)}
                 className="mt-3 w-full rounded-xl border border-white/15 bg-[#101216] px-4 py-4 text-white outline-none transition focus:border-orange-500"
               />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-bold text-white">今日一番意識したこと <span className="font-normal text-white/40">（任意）</span></span>
+              <select value={awarenessCategory} onChange={(event) => setAwarenessCategory(event.target.value)} className="mt-3 w-full rounded-xl border border-white/15 bg-[#101216] px-4 py-4 text-white outline-none transition focus:border-orange-500">
+                <option value="">選択しない</option>
+                {awarenessCategories.map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-bold text-white">何をどう意識しましたか？ <span className="font-normal text-white/40">（任意）</span></span>
+              <textarea value={awarenessNote} onChange={(event) => setAwarenessNote(event.target.value)} maxLength={200} rows={3} placeholder="例：最後までリズムを変えずに走った" className="mt-3 w-full resize-none rounded-xl border border-white/15 bg-[#101216] px-4 py-4 text-white outline-none transition placeholder:text-white/25 focus:border-orange-500" />
+              <span className="mt-1 block text-right text-xs text-white/35">{awarenessNote.length}/200</span>
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-bold text-white">動画を追加 <span className="font-normal text-white/40">（任意・100MBまで）</span></span>
+              <input type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" onChange={(event) => setVideo(event.target.files?.[0] ?? null)} className="mt-3 block w-full rounded-xl border border-dashed border-white/20 bg-[#101216] px-4 py-4 text-sm text-white/65 file:mr-4 file:rounded-lg file:border-0 file:bg-orange-500 file:px-3 file:py-2 file:font-bold file:text-white" />
             </label>
           </div>
 

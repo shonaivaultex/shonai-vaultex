@@ -3,6 +3,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import PerformanceEventCard from "@/app/components/PerformanceEventCard";
 import { createClient } from "@/lib/supabase-server";
 import { eventKindMap, type PerformanceKind, unitMap } from "@/lib/performance-events";
+import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
 
 type Props = {
   kind: PerformanceKind;
@@ -35,7 +36,15 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
     (goals ?? []).map((goal) => [goal.category, Number(goal.target_value)]),
   );
 
-  const safeRecords = (records ?? []).filter(
+  const recordsWithVideoUrls = await Promise.all((records ?? []).map(async (record) => {
+    if (!record.video_path) return { ...record, video_url: null };
+    const { data } = await supabase.storage
+      .from(PERFORMANCE_VIDEO_BUCKET)
+      .createSignedUrl(record.video_path, 60 * 60);
+    return { ...record, video_url: data?.signedUrl ?? null };
+  }));
+
+  const safeRecords = recordsWithVideoUrls.filter(
     (record) => (eventKindMap[record.category] ?? "control-test") === kind,
   );
   const recordsByCategory = safeRecords.reduce<Record<string, typeof safeRecords>>((groups, record) => {

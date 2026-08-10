@@ -7,6 +7,10 @@ type PerformanceRecord = {
   id: number;
   value: number | string;
   date: string;
+  awareness_category?: string | null;
+  awareness_note?: string | null;
+  video_path?: string | null;
+  video_url?: string | null;
 };
 
 type PerformanceEventCardProps = {
@@ -171,6 +175,14 @@ export default function PerformanceEventCard({
                 <p style={{ margin: "4px 0 0", fontSize: 12, opacity: 0.55 }}>
                   {record.date}
                 </p>
+                {record.awareness_category && (
+                  <span className="mt-2 inline-flex rounded-full border border-orange-500/35 bg-orange-500/10 px-2.5 py-1 text-xs font-bold text-orange-300">
+                    {record.awareness_category}
+                  </span>
+                )}
+                {record.awareness_note && (
+                  <p className="mt-2 max-w-sm whitespace-pre-wrap text-sm leading-6 text-white/70">{record.awareness_note}</p>
+                )}
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -192,10 +204,29 @@ export default function PerformanceEventCard({
                 >
                   編集
                 </Link>
-                <DeleteRecordButton recordId={record.id} compact />
+                <DeleteRecordButton recordId={record.id} videoPath={record.video_path} compact />
               </div>
             </div>
           ))}
+        </div>
+      </details>
+
+      <details style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+        <summary className="cursor-pointer select-none px-6 py-4 text-sm font-bold text-orange-400">
+          動画を見る（{records.filter((record) => record.video_url).length}件）
+        </summary>
+        <div className="space-y-5 px-6 pb-6">
+          {records.some((record) => record.video_url) ? records.filter((record) => record.video_url).map((record) => (
+            <div key={record.id} className="border-t border-white/10 pt-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <strong>{record.value}{unit}</strong>
+                <span className="text-xs text-white/50">{record.date}</span>
+              </div>
+              <video controls preload="metadata" playsInline className="w-full rounded-xl bg-black" src={record.video_url ?? undefined}>
+                お使いのブラウザは動画再生に対応していません。
+              </video>
+            </div>
+          )) : <p className="border-t border-white/10 pt-5 text-sm text-white/45">動画付きの記録はまだありません。</p>}
         </div>
       </details>
     </article>
