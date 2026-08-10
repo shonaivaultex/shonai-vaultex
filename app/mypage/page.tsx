@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase-server";
 import { Activity, ChevronRight, Trophy } from "lucide-react";
 import { redirect } from "next/navigation";
+import LogoutButton from "@/app/components/LogoutButton";
 
 export default async function MyPage() {
   const supabase = await createClient();
@@ -82,6 +83,8 @@ export default async function MyPage() {
       <div
         style={{
           display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
           gap: 16,
           marginTop: 24,
         }}
@@ -89,6 +92,7 @@ export default async function MyPage() {
         <Link href="/edit">
           プロフィール編集
         </Link>
+        <LogoutButton />
       </div>
     </main>
   );
