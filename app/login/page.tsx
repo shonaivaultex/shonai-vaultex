@@ -150,10 +150,7 @@ const { error } = await supabase.auth.signInWithPassword({
 
         {!isPasswordSetup && (
         <div className="mt-7 border-t border-white/10 pt-6 text-center">
-          <p className="text-sm text-white/50">アカウントをお持ちでない方</p>
-          <Link href="/signup" className="mt-3 inline-flex items-center gap-2 text-xs font-black tracking-[0.12em] text-orange-400 transition hover:text-orange-300">
-            CREATE ACCOUNT <ArrowRight aria-hidden="true" size={15} />
-          </Link>
+          <p className="text-sm leading-7 text-white/50">会員アカウントは、クラブ入会後にお送りする<br />招待メールから登録できます。</p>
         </div>
         )}
 

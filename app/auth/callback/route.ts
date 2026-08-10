@@ -21,5 +21,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(new URL("/signup", url.origin));
+  return NextResponse.redirect(new URL("/login", url.origin));
 }
