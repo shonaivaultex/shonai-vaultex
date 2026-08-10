@@ -49,7 +49,7 @@ openGraph: {
   type: "website",
   images: [
     {
-      url: "/ogp2.jpg",
+      url: "/ogp.jpg",
       width: 1200,
       height: 630,
       alt: "SHONAI VAULTEX",
