@@ -1,7 +1,7 @@
-import Link from "next/link";
-import DeleteRecordButton from "@/app/components/DeleteRecordButton";
 import PerformanceChart from "@/app/components/PerformanceChart";
 import TargetGoalEditor from "@/app/components/TargetGoalEditor";
+import PerformanceVideoList from "@/app/components/PerformanceVideoList";
+import PerformanceHistoryModal from "@/app/components/PerformanceHistoryModal";
 
 type PerformanceRecord = {
   id: number;
@@ -70,6 +70,9 @@ export default function PerformanceEventCard({
   return (
     <article
       style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
         marginBottom: 16,
         borderRadius: 20,
         background: "#111",
@@ -78,7 +81,7 @@ export default function PerformanceEventCard({
         overflow: "hidden",
       }}
     >
-      <div style={{ padding: "22px 24px 18px" }}>
+      <div style={{ flex: 1, padding: "22px 24px 18px" }}>
         <p style={{ margin: 0, fontSize: 14, opacity: 0.7 }}>{category}</p>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
@@ -140,95 +143,9 @@ export default function PerformanceEventCard({
         </div>
       </div>
 
-      <details style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-        <summary
-          style={{
-            padding: "15px 24px",
-            color: "#ff7a00",
-            cursor: "pointer",
-            fontSize: 14,
-            fontWeight: 700,
-            userSelect: "none",
-          }}
-        >
-          履歴を見る（{records.length}件）
-        </summary>
+      <PerformanceHistoryModal records={records} unit={unit} />
 
-        <div style={{ padding: "0 24px 8px" }}>
-          {records.map((record) => (
-            <div
-              key={record.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 16,
-                padding: "16px 0",
-                borderTop: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <strong style={{ fontSize: 20 }}>
-                  {record.value}
-                  <span style={{ marginLeft: 4, fontSize: 13 }}>{unit}</span>
-                </strong>
-                <p style={{ margin: "4px 0 0", fontSize: 12, opacity: 0.55 }}>
-                  {record.date}
-                </p>
-                {record.awareness_category && (
-                  <span className="mt-2 inline-flex rounded-full border border-orange-500/35 bg-orange-500/10 px-2.5 py-1 text-xs font-bold text-orange-300">
-                    {record.awareness_category}
-                  </span>
-                )}
-                {record.awareness_note && (
-                  <p className="mt-2 max-w-sm whitespace-pre-wrap text-sm leading-6 text-white/70">{record.awareness_note}</p>
-                )}
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Link
-                  href={`/edit/${record.id}`}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: 36,
-                    padding: "0 13px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    background: "#1a1a1a",
-                    color: "white",
-                    textDecoration: "none",
-                    fontSize: 14,
-                  }}
-                >
-                  編集
-                </Link>
-                <DeleteRecordButton recordId={record.id} videoPath={record.video_path} compact />
-              </div>
-            </div>
-          ))}
-        </div>
-      </details>
-
-      <details style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-        <summary className="cursor-pointer select-none px-6 py-4 text-sm font-bold text-orange-400">
-          動画を見る（{records.filter((record) => record.video_url).length}件）
-        </summary>
-        <div className="space-y-5 px-6 pb-6">
-          {records.some((record) => record.video_url) ? records.filter((record) => record.video_url).map((record) => (
-            <div key={record.id} className="border-t border-white/10 pt-5">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <strong>{record.value}{unit}</strong>
-                <span className="text-xs text-white/50">{record.date}</span>
-              </div>
-              <video controls preload="metadata" playsInline className="w-full rounded-xl bg-black" src={record.video_url ?? undefined}>
-                お使いのブラウザは動画再生に対応していません。
-              </video>
-            </div>
-          )) : <p className="border-t border-white/10 pt-5 text-sm text-white/45">動画付きの記録はまだありません。</p>}
-        </div>
-      </details>
+      <PerformanceVideoList records={records} unit={unit} />
     </article>
   );
 }

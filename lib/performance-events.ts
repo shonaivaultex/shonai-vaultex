@@ -1,4 +1,4 @@
-export type PerformanceKind = "control-test" | "athletics";
+export type PerformanceKind = "control-test" | "athletics" | "unofficial-athletics";
 
 export type PerformanceEvent = {
   name: string;
@@ -39,7 +39,9 @@ export const performanceEvents: PerformanceEvent[] = [
 ];
 
 export const eventNamesByKind = (kind: PerformanceKind) =>
-  performanceEvents.filter((event) => event.kind === kind).map((event) => event.name);
+  performanceEvents
+    .filter((event) => event.kind === (kind === "unofficial-athletics" ? "athletics" : kind))
+    .map((event) => event.name);
 
 export const eventKindMap = Object.fromEntries(
   performanceEvents.map((event) => [event.name, event.kind]),

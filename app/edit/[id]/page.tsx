@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
-import { performanceEvents } from "@/lib/performance-events";
+import { performanceEvents, type PerformanceKind } from "@/lib/performance-events";
 import { awarenessCategories, createVideoPath, PERFORMANCE_VIDEO_BUCKET, validateVideo } from "@/lib/performance-awareness";
 
 export default function EditPerformancePage() {
@@ -14,6 +14,7 @@ export default function EditPerformancePage() {
   const [category, setCategory] = useState("");
   const [value, setValue] = useState("");
   const [date, setDate] = useState("");
+  const [recordKind, setRecordKind] = useState<PerformanceKind>("control-test");
   const [awarenessCategory, setAwarenessCategory] = useState("");
   const [awarenessNote, setAwarenessNote] = useState("");
   const [videoPath, setVideoPath] = useState<string | null>(null);
@@ -33,7 +34,7 @@ export default function EditPerformancePage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("performance_records")
-        .select("category, value, date, awareness_category, awareness_note, video_path")
+        .select("category, value, date, record_kind, awareness_category, awareness_note, video_path")
         .eq("id", id)
         .single();
 
@@ -46,6 +47,7 @@ export default function EditPerformancePage() {
       setCategory(data.category ?? "");
       setValue(String(data.value ?? ""));
       setDate(data.date ?? "");
+      setRecordKind(data.record_kind ?? (performanceEvents.find((event) => event.name === data.category)?.kind ?? "control-test"));
       setAwarenessCategory(data.awareness_category ?? "");
       setAwarenessNote(data.awareness_note ?? "");
       setVideoPath(data.video_path ?? null);
@@ -96,6 +98,7 @@ export default function EditPerformancePage() {
         category,
         value,
         date,
+        record_kind: recordKind,
         awareness_category: awarenessCategory || null,
         awareness_note: awarenessNote.trim() || null,
         video_path: nextVideoPath,
@@ -114,7 +117,7 @@ export default function EditPerformancePage() {
       await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([videoPath]);
     }
 
-    router.push("/mypage");
+    router.push(recordKind === "athletics" ? "/mypage/athletics" : recordKind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests");
   };
 
   if (loading) {

@@ -44,9 +44,10 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
     return { ...record, video_url: data?.signedUrl ?? null };
   }));
 
-  const safeRecords = recordsWithVideoUrls.filter(
-    (record) => (eventKindMap[record.category] ?? "control-test") === kind,
-  );
+  const safeRecords = recordsWithVideoUrls.filter((record) => {
+    const recordKind = record.record_kind ?? eventKindMap[record.category] ?? "control-test";
+    return recordKind === kind;
+  });
   const recordsByCategory = safeRecords.reduce<Record<string, typeof safeRecords>>((groups, record) => {
     (groups[record.category] ??= []).push(record);
     return groups;
@@ -61,10 +62,21 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
     });
     return { category, records: categoryRecords, best };
   });
+  const renderEventCard = ({ category, records: eventRecords, best }: (typeof eventGroups)[number]) => (
+    <PerformanceEventCard
+      key={category}
+      category={category}
+      unit={unitMap[category] ?? ""}
+      best={best}
+      records={eventRecords}
+      target={goalsByCategory.get(category) ?? null}
+      userId={user.id}
+    />
+  );
 
   return (
     <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8">
-      <div className="mx-auto max-w-xl">
+      <div className="mx-auto max-w-xl lg:max-w-7xl">
         <Link href="/mypage" className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-white/60 transition hover:text-orange-400">
           <ArrowLeft size={16} aria-hidden="true" /> MY PAGE
         </Link>
@@ -74,21 +86,14 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
           <p className="mt-3 leading-7 text-white/60">{description}</p>
         </header>
 
-        <div className="mt-10">
-          {eventGroups.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-8 text-center text-white/55">まだ記録がありません</div>
-          ) : eventGroups.map(({ category, records: eventRecords, best }) => (
-            <PerformanceEventCard
-              key={category}
-              category={category}
-              unit={unitMap[category] ?? ""}
-              best={best}
-              records={eventRecords}
-              target={goalsByCategory.get(category) ?? null}
-              userId={user.id}
-            />
-          ))}
-        </div>
+        {eventGroups.length === 0 ? (
+          <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.035] p-8 text-center text-white/55">まだ記録がありません</div>
+        ) : (
+          <>
+            <div className="mt-10 lg:hidden">{eventGroups.map(renderEventCard)}</div>
+            <div className="mt-10 hidden gap-5 lg:grid lg:grid-cols-3">{eventGroups.map(renderEventCard)}</div>
+          </>
+        )}
 
         <Link href={`/performance?kind=${kind}`} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-4 text-sm font-black tracking-[0.12em] transition hover:bg-orange-400">
           <Plus size={18} aria-hidden="true" /> 記録を追加

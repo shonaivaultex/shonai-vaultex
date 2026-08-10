@@ -15,7 +15,8 @@ function today() {
 function PerformanceForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const kind: PerformanceKind = searchParams.get("kind") === "athletics" ? "athletics" : "control-test";
+  const requestedKind = searchParams.get("kind");
+  const kind: PerformanceKind = requestedKind === "athletics" || requestedKind === "unofficial-athletics" ? requestedKind : "control-test";
   const eventOptions = eventNamesByKind(kind);
   const [category, setCategory] = useState(eventOptions[0]);
   const [value, setValue] = useState("");
@@ -78,6 +79,7 @@ const unit = unitMap[category] ?? "";
         category,
         value: numericValue,
         date,
+        record_kind: kind,
         awareness_category: awarenessCategory || null,
         awareness_note: awarenessNote.trim() || null,
         video_path: videoPath,
@@ -89,7 +91,7 @@ const unit = unitMap[category] ?? "";
         return;
       }
 
-      router.push(kind === "athletics" ? "/mypage/athletics" : "/mypage/control-tests");
+      router.push(kind === "athletics" ? "/mypage/athletics" : kind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests");
       router.refresh();
     } finally {
       setIsSaving(false);
@@ -100,7 +102,7 @@ const unit = unitMap[category] ?? "";
     <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 sm:px-8">
       <div className="mx-auto max-w-xl">
         <Link
-          href={kind === "athletics" ? "/mypage/athletics" : "/mypage/control-tests"}
+          href={kind === "athletics" ? "/mypage/athletics" : kind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests"}
           className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-white/60 transition hover:text-orange-400"
         >
           <ArrowLeft size={16} aria-hidden="true" />
@@ -110,7 +112,7 @@ const unit = unitMap[category] ?? "";
         <div className="mt-10 border-l-2 border-orange-500 pl-5">
           <p className="text-xs font-black tracking-[0.22em] text-orange-400">TRAINING LOG</p>
           <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl">
-            {kind === "athletics" ? "陸上競技記録を追加" : "テスト記録を追加"}
+            {kind === "athletics" ? "陸上競技記録を追加" : kind === "unofficial-athletics" ? "非公認陸上競技記録を追加" : "テスト記録を追加"}
           </h1>
           <p className="mt-3 leading-7 text-white/60">
             今日の挑戦を残そう。積み重ねた記録が、次の自信になる。
