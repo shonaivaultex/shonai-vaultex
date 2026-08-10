@@ -76,6 +76,13 @@ const { error } = await supabase.auth.signInWithPassword({
           </button>
         </form>
 
+        <div className="mt-7 border-t border-white/10 pt-6 text-center">
+          <p className="text-sm text-white/50">アカウントをお持ちでない方</p>
+          <Link href="/signup" className="mt-3 inline-flex items-center gap-2 text-xs font-black tracking-[0.12em] text-orange-400 transition hover:text-orange-300">
+            CREATE ACCOUNT <ArrowRight aria-hidden="true" size={15} />
+          </Link>
+        </div>
+
         <Link href="/" className="mt-7 inline-flex items-center gap-2 text-xs font-bold tracking-wide text-white/45 transition hover:text-white">
           <ArrowLeft aria-hidden="true" size={15} /> ホームへ戻る
         </Link>

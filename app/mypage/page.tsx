@@ -21,7 +21,7 @@ export default async function MyPage() {
     .single();
 
   if (!player) {
-    return <div>選手プロフィールが見つかりません</div>;
+    redirect("/profile/create");
   }
 
   return (
