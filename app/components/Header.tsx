@@ -77,7 +77,7 @@ export default function Header() {
           {isLoggedIn ? (
             <><UserRound aria-hidden="true" size={15} /> MY PAGE</>
           ) : (
-            <>JOIN US <ArrowRight aria-hidden="true" size={15} /></>
+            <>MEMBER LOGIN <ArrowRight aria-hidden="true" size={15} /></>
           )}
         </Link>
 
