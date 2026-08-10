@@ -115,7 +115,7 @@ export default function Header() {
               {isLoggedIn ? (
                 <><UserRound aria-hidden="true" size={16} /> MY PAGE</>
               ) : (
-                <>JOIN US <ArrowRight aria-hidden="true" size={16} /></>
+                <>MEMBER LOGIN <ArrowRight aria-hidden="true" size={16} /></>
               )}
             </Link>
           </nav>
