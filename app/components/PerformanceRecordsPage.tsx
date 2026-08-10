@@ -25,6 +25,16 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
 
   if (error) console.error("RECORD ERROR", error);
 
+  const { data: goals, error: goalsError } = await supabase
+    .from("performance_goals")
+    .select("category, target_value")
+    .eq("user_id", user.id);
+
+  if (goalsError) console.error("GOAL ERROR", goalsError);
+  const goalsByCategory = new Map(
+    (goals ?? []).map((goal) => [goal.category, Number(goal.target_value)]),
+  );
+
   const safeRecords = (records ?? []).filter(
     (record) => (eventKindMap[record.category] ?? "control-test") === kind,
   );
@@ -59,7 +69,15 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
           {eventGroups.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-8 text-center text-white/55">まだ記録がありません</div>
           ) : eventGroups.map(({ category, records: eventRecords, best }) => (
-            <PerformanceEventCard key={category} category={category} unit={unitMap[category] ?? ""} best={best} records={eventRecords} />
+            <PerformanceEventCard
+              key={category}
+              category={category}
+              unit={unitMap[category] ?? ""}
+              best={best}
+              records={eventRecords}
+              target={goalsByCategory.get(category) ?? null}
+              userId={user.id}
+            />
           ))}
         </div>
 
