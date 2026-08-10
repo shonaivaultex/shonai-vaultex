@@ -134,6 +134,7 @@ export default function PerformanceEventCard({
 
         <div style={{ marginTop: 24 }}>
           <PerformanceChart
+            unit={unit}
             records={records.map((record) => ({
               date: record.date,
               value: Number(record.value),

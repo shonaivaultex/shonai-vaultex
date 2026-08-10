@@ -19,8 +19,10 @@ type RecordData = {
 
 export default function PerformanceChart({
   records,
+  unit,
 }: {
   records: RecordData[];
+  unit?: string;
 }) {
 
   const data = [...records]
@@ -75,7 +77,20 @@ export default function PerformanceChart({
             width={48}
           />
 
-          <Tooltip />
+          <Tooltip
+            cursor={{ stroke: "rgba(255,122,0,0.35)", strokeDasharray: "4 4" }}
+            contentStyle={{
+              border: "1px solid rgba(255,122,0,0.75)",
+              borderRadius: 10,
+              background: "rgba(9,10,12,0.92)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+              padding: "8px 11px",
+            }}
+            labelStyle={{ color: "rgba(255,255,255,0.55)", fontSize: 11, marginBottom: 3 }}
+            itemStyle={{ color: "#ff7a00", fontSize: 13, fontWeight: 700, padding: 0 }}
+            labelFormatter={(label) => `日付：${label}`}
+            formatter={(value) => [`${value}${unit ?? ""}`, "記録"]}
+          />
 
           <Line
             type="monotone"
