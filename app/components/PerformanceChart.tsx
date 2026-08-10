@@ -30,6 +30,18 @@ export default function PerformanceChart({
       value: record.value,
     }));
 
+  const values = data.map((record) => record.value).filter(Number.isFinite);
+  const minimum = Math.min(...values);
+  const maximum = Math.max(...values);
+  const range = maximum - minimum;
+  const center = (minimum + maximum) / 2;
+  const padding = range > 0
+    ? Math.max(range * 0.25, Math.abs(center) * 0.005)
+    : Math.max(Math.abs(center) * 0.1, 0.1);
+  const yDomain: [number, number] = values.length === 0
+    ? [0, 1]
+    : [Math.max(0, minimum - padding), maximum + padding];
+
 
   return (
     <div
@@ -57,6 +69,10 @@ export default function PerformanceChart({
 
           <YAxis
             stroke="white"
+            domain={yDomain}
+            allowDataOverflow
+            tickFormatter={(value: number) => value.toLocaleString("ja-JP", { maximumFractionDigits: 2 })}
+            width={48}
           />
 
           <Tooltip />
