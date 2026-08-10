@@ -3,18 +3,34 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { ArrowRight, Menu, UserRound, X } from "lucide-react";
 import { primaryNavigation } from "./site";
+import { createClient } from "@/lib/supabase-browser";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const updateHeader = () => setIsScrolled(window.scrollY > 24);
     updateHeader();
     window.addEventListener("scroll", updateHeader, { passive: true });
     return () => window.removeEventListener("scroll", updateHeader);
+  }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(({ data }) => {
+      setIsLoggedIn(Boolean(data.user));
+    });
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(Boolean(session?.user));
+    });
+
+    return () => data.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -55,10 +71,14 @@ export default function Header() {
         </nav>
 
         <Link
-          href="/#contact"
+          href={isLoggedIn ? "/mypage" : "/login"}
           className="hidden items-center gap-2 rounded-md bg-orange-500 px-5 py-3 text-xs font-black tracking-[0.12em] shadow-lg shadow-orange-500/30 transition-all duration-300 hover:scale-105 hover:bg-orange-400 sm:inline-flex"
         >
-          JOIN US <ArrowRight aria-hidden="true" size={15} />
+          {isLoggedIn ? (
+            <><UserRound aria-hidden="true" size={15} /> MY PAGE</>
+          ) : (
+            <>JOIN US <ArrowRight aria-hidden="true" size={15} /></>
+          )}
         </Link>
 
         <button
@@ -88,11 +108,15 @@ export default function Header() {
               </Link>
             ))}
             <Link
-              href="/#contact"
+              href={isLoggedIn ? "/mypage" : "/login"}
               onClick={closeMenu}
               className="mt-8 flex items-center justify-center gap-2 rounded-xl bg-orange-500 py-4 text-xs font-black tracking-[0.14em] shadow-lg shadow-orange-500/30 transition-all duration-300 hover:scale-[1.02]"
             >
-              JOIN US <ArrowRight aria-hidden="true" size={16} />
+              {isLoggedIn ? (
+                <><UserRound aria-hidden="true" size={16} /> MY PAGE</>
+              ) : (
+                <>JOIN US <ArrowRight aria-hidden="true" size={16} /></>
+              )}
             </Link>
           </nav>
         </div>
