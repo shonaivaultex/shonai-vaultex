@@ -1,6 +1,5 @@
 import PerformanceChart from "@/app/components/PerformanceChart";
 import TargetGoalEditor from "@/app/components/TargetGoalEditor";
-import PerformanceVideoList from "@/app/components/PerformanceVideoList";
 import PerformanceHistoryModal from "@/app/components/PerformanceHistoryModal";
 
 type PerformanceRecord = {
@@ -144,8 +143,6 @@ export default function PerformanceEventCard({
       </div>
 
       <PerformanceHistoryModal records={records} unit={unit} />
-
-      <PerformanceVideoList records={records} unit={unit} />
     </article>
   );
 }
