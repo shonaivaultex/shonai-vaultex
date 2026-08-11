@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import PWARegister from "./components/PWARegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,6 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  applicationName: "SHONAI VAULTEX",
+  manifest: "/manifest.webmanifest",
   title: {
     default: "SHONAI VAULTEX | Athletics Club",
     template: "%s | SHONAI VAULTEX",
@@ -33,10 +36,8 @@ export const metadata: Metadata = {
   "かけっこ教室",
   "陸上競技",
 ],
-    icons: {
-  icon: "/logo.png",
-  
-},
+    icons: { icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }, { url: "/icon-512.png", sizes: "512x512", type: "image/png" }], apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }] },
+    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "VAULTEX" },
 metadataBase: new URL("https://shonai-vaultex.vercel.app"),
 
 openGraph: {
@@ -59,6 +60,8 @@ openGraph: {
 },
 };
 
+export const viewport: Viewport = { themeColor: "#090a0c", colorScheme: "dark", viewportFit: "cover" };
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -70,6 +73,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-[#090a0c] font-sans text-white">
+  <PWARegister />
   <Header />
   <div className="flex-1">{children}</div>
   <Footer />
