@@ -14,6 +14,7 @@ export default function EditPage() {
   const [event, setEvent] = useState("");
   const [best, setBest] = useState("");
   const [programClass, setProgramClass] = useState("");
+  const [rankingNamePublic, setRankingNamePublic] = useState(false);
 
   useEffect(() => {
     getProfile();
@@ -40,6 +41,7 @@ export default function EditPage() {
       setEvent(data.event);
       setBest(data.personal_best);
       setProgramClass(data.program_class ?? "");
+      setRankingNamePublic(data.ranking_name_public ?? false);
     }
   }
 
@@ -59,7 +61,8 @@ export default function EditPage() {
     name:name,
     event:event,
     personal_best:best,
-    program_class:programClass || null
+    program_class:programClass || null,
+    ranking_name_public: rankingNamePublic
   })
   .eq("user_id", user?.id);
 
@@ -117,6 +120,11 @@ if(error){
             border: "1px solid #333",
           }}
         />
+      </label>
+
+      <label style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: 15, border: "1px solid #333", borderRadius: 12 }}>
+        <input type="checkbox" checked={rankingNamePublic} onChange={(e) => setRankingNamePublic(e.target.checked)} style={{ marginTop: 4 }} />
+        <span><strong>ランキングに名前を公開する</strong><small style={{ display: "block", marginTop: 6, color: "#888" }}>OFFの場合はクラス名を使った匿名表示になります。</small></span>
       </label>
 
       <label>

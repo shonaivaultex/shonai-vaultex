@@ -13,6 +13,7 @@ export default function CreateProfilePage() {
   const [eventName, setEventName] = useState("");
   const [school, setSchool] = useState("");
   const [programClass, setProgramClass] = useState("");
+  const [rankingNamePublic, setRankingNamePublic] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -62,6 +63,7 @@ export default function CreateProfilePage() {
       event: eventName.trim(),
       school: school.trim(),
       program_class: programClass,
+      ranking_name_public: rankingNamePublic,
     });
 
     setLoading(false);
@@ -99,6 +101,10 @@ export default function CreateProfilePage() {
               <option value="">クラスを選択</option>
               {programClasses.map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
+          </label>
+          <label className="flex items-start gap-3 border border-white/10 bg-black/20 p-4 sm:col-span-2">
+            <input type="checkbox" checked={rankingNamePublic} onChange={(event) => setRankingNamePublic(event.target.checked)} className="mt-1 accent-orange-500" />
+            <span><strong className="block text-sm">ランキングに名前を公開する</strong><span className="mt-1 block text-xs leading-5 text-white/45">OFFの場合は「ユース会員」など匿名で表示されます。</span></span>
           </label>
 
           {errorMessage && <p role="alert" className="border-l-2 border-orange-500 bg-orange-500/10 px-4 py-3 text-sm text-orange-200 sm:col-span-2">{errorMessage}</p>}

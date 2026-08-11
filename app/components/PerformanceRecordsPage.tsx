@@ -15,6 +15,7 @@ type Props = {
 };
 
 type FeedbackRow = { id: number; record_id: number; coach_id: string; body: string; created_at: string; acknowledged_at: string | null };
+type LeaderboardRow = { ranking_scope: "overall" | "class"; leaderboard_position: number; display_name: string; best_value: number | string; is_current_user: boolean };
 
 export default async function PerformanceRecordsPage({ kind, title, eyebrow, description, selectedYear = null }: Props) {
   const supabase = await createClient();
@@ -90,14 +91,20 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
       p_record_kind: kind,
       p_year: selectedYear,
     }).maybeSingle();
+    const { data: leaderboard } = await supabase.rpc("get_performance_leaderboard", {
+      p_category: category,
+      p_record_kind: kind,
+      p_year: selectedYear,
+    });
     return {
       category,
       records: categoryRecords,
       best,
       ranking: ranking as { overall_rank: number; overall_total: number; overall_top_percent: number; class_rank: number | null; class_total: number | null; class_top_percent: number | null; program_class: string | null } | null,
+      leaderboard: (leaderboard ?? []) as LeaderboardRow[],
     };
   }));
-  const renderEventCard = ({ category, records: eventRecords, best, ranking }: (typeof eventGroups)[number]) => (
+  const renderEventCard = ({ category, records: eventRecords, best, ranking, leaderboard }: (typeof eventGroups)[number]) => (
     <PerformanceEventCard
       key={category}
       category={category}
@@ -108,6 +115,7 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
       userId={user.id}
       scopeLabel={selectedYear === null ? "PB" : "SB"}
       ranking={ranking}
+      leaderboard={leaderboard}
     />
   );
 
