@@ -33,6 +33,8 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
   if (error) console.error("RECORD ERROR", error);
 
   const recordIds = (records ?? []).map((record) => record.id);
+  const { data: requestRows } = recordIds.length ? await supabase.from("feedback_requests").select("id, record_id, request_type, message, priority, status").in("record_id", recordIds).eq("status", "pending") : { data: [] };
+  const requestByRecord = new Map((requestRows ?? []).map((item) => [item.record_id, item]));
   const { data: feedbackRows } = recordIds.length
     ? await supabase.from("coach_feedback").select("id, record_id, coach_id, body, created_at, acknowledged_at").in("record_id", recordIds).order("created_at", { ascending: false })
     : { data: [] };
@@ -57,11 +59,11 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
   );
 
   const recordsWithVideoUrls = await Promise.all((records ?? []).map(async (record) => {
-    if (!record.video_path) return { ...record, video_url: null, coach_feedback: feedbackByRecord[record.id] ?? [] };
+    if (!record.video_path) return { ...record, video_url: null, coach_feedback: feedbackByRecord[record.id] ?? [], feedback_request: requestByRecord.get(record.id) ?? null };
     const { data } = await supabase.storage
       .from(PERFORMANCE_VIDEO_BUCKET)
       .createSignedUrl(record.video_path, 60 * 60);
-    return { ...record, video_url: data?.signedUrl ?? null, coach_feedback: feedbackByRecord[record.id] ?? [] };
+    return { ...record, video_url: data?.signedUrl ?? null, coach_feedback: feedbackByRecord[record.id] ?? [], feedback_request: requestByRecord.get(record.id) ?? null };
   }));
 
   const recordsForKind = recordsWithVideoUrls.filter((record) =>

@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 import { Play, X } from "lucide-react";
 import DeleteRecordButton from "@/app/components/DeleteRecordButton";
 import { createClient } from "@/lib/supabase-browser";
+import FeedbackRequestButton from "@/app/components/FeedbackRequestButton";
 
 type CoachFeedback = { id: number; body: string; created_at: string; acknowledged_at?: string | null; coach_name: string };
-type RecordItem = { id: number; value: number | string; date: string; awareness_category?: string | null; awareness_note?: string | null; video_path?: string | null; video_url?: string | null; coach_feedback?: CoachFeedback[] };
+type FeedbackRequest = { id: number; request_type: string; message: string | null; priority: string; status: string };
+type RecordItem = { id: number; value: number | string; date: string; awareness_category?: string | null; awareness_note?: string | null; video_path?: string | null; video_url?: string | null; coach_feedback?: CoachFeedback[]; feedback_request?: FeedbackRequest | null };
 
 export default function PerformanceHistoryModal({ records, unit, focusRecordId }: { records: RecordItem[]; unit: string; focusRecordId?: number | null }) {
   const [open, setOpen] = useState(false);
@@ -50,6 +52,7 @@ export default function PerformanceHistoryModal({ records, unit, focusRecordId }
           </div>
           {record.video_url && <button type="button" onClick={() => setPlayingId(playingId === record.id ? null : record.id)} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-black text-white transition hover:bg-orange-400"><Play size={15} fill="currentColor" />{playingId === record.id ? "動画を閉じる" : "動画を見る"}</button>}
           {playingId === record.id && record.video_url && <div className="mt-4 rounded-xl border border-orange-500/30 bg-black p-2"><video key={record.id} autoPlay controls playsInline className="max-h-[58vh] w-full rounded-lg object-contain" src={record.video_url}>お使いのブラウザは動画再生に対応していません。</video></div>}
+          <FeedbackRequestButton recordId={record.id} initialRequest={record.feedback_request} />
           {(record.coach_feedback ?? []).map((feedback) => {
             const acknowledged = Boolean(feedback.acknowledged_at) || acknowledgedIds.includes(feedback.id);
             return <div key={feedback.id} className="mt-4 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] p-4">

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import NewsPanel, { type NewsItem } from "@/app/components/NewsPanel";
 import { eventKindMap } from "@/lib/performance-events";
+import SchedulePanel, { type ScheduleItem } from "@/app/components/SchedulePanel";
 
 export default async function MyPage() {
   const supabase = await createClient();
@@ -33,6 +34,7 @@ export default async function MyPage() {
     .eq("user_id", user.id)
     .eq("role", "coach")
     .maybeSingle();
+  const { data: schedules } = await supabase.from("schedules").select("*").gte("starts_at", new Date().toISOString()).order("starts_at").limit(2);
 
   const { data: announcements } = await supabase.from("announcements").select("id, title, body, priority, created_at").order("created_at", { ascending: false }).limit(10);
   const announcementIds = (announcements ?? []).map((item) => item.id);
@@ -90,6 +92,7 @@ export default async function MyPage() {
       </div>
 
       <NewsPanel initialItems={newsItems} userId={user.id} />
+      <SchedulePanel items={(schedules ?? []) as ScheduleItem[]} />
       <h2 style={{ marginTop: 40, marginBottom: 20 }}>PERFORMANCE</h2>
       {coachRole && <Link href="/coach/dashboard" className="mb-5 flex items-center justify-between rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-5 text-white transition hover:border-emerald-400"><span><strong className="block text-lg">コーチダッシュボード</strong><span className="mt-1 block text-sm text-white/50">担当選手の確認・フィードバック</span></span><ChevronRight className="text-emerald-400" /></Link>}
       <div style={{ display: "grid", gap: 14 }}>
