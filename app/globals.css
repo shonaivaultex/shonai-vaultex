@@ -31,3 +31,25 @@ body {
   outline: 2px solid #fb923c;
   outline-offset: 4px;
 }
+
+button:not(:disabled), a[href] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled):active, a[href]:active {
+  opacity: 0.82;
+}
+
+@keyframes navigation-progress {
+  0% { transform: translateX(-110%); }
+  55% { transform: translateX(160%); }
+  100% { transform: translateX(340%); }
+}
+
+.navigation-progress {
+  animation: navigation-progress 1.05s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navigation-progress { animation-duration: 2s; }
+}
