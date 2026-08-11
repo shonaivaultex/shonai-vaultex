@@ -18,6 +18,7 @@ export default function CoachFeedbackForm({ recordId, requestId }: { recordId: n
     const { error: saveError } = await supabase.from("coach_feedback").insert({ record_id: recordId, coach_id: user.id, body: body.trim() });
     setSaving(false);
     if (saveError) { setError(saveError.message); return; }
+    fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "feedback", recordId }) }).catch(() => undefined);
     setBody(""); router.refresh();
   }
   return <form onSubmit={submit} className="mt-4 rounded-xl border border-orange-500/25 bg-orange-500/[0.05] p-4">

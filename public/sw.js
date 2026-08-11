@@ -24,3 +24,13 @@ self.addEventListener("fetch", (event) => {
     })));
   }
 });
+
+self.addEventListener("push", (event) => {
+  const data = event.data?.json() ?? {};
+  event.waitUntil(self.registration.showNotification(data.title ?? "SHONAI VAULTEX", { body: data.body ?? "新しいお知らせがあります。", icon: "/icon-192.png", badge: "/icon-192.png", data: { url: data.url ?? "/mypage" }, tag: data.tag ?? "vaultex-notification", renotify: true }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close(); const url = event.notification.data?.url ?? "/mypage";
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => { const existing = clients.find((client) => new URL(client.url).pathname === new URL(url, self.location.origin).pathname); return existing ? existing.focus() : self.clients.openWindow(url); }));
+});
