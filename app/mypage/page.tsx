@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase-server";
 import { Activity, ChevronRight, Medal, Trophy } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
+import NewsPanel, { type NewsItem } from "@/app/components/NewsPanel";
+import { eventKindMap } from "@/lib/performance-events";
 
 export default async function MyPage() {
   const supabase = await createClient();
@@ -31,6 +33,19 @@ export default async function MyPage() {
     .eq("user_id", user.id)
     .eq("role", "coach")
     .maybeSingle();
+
+  const { data: announcements } = await supabase.from("announcements").select("id, title, body, priority, created_at").order("created_at", { ascending: false }).limit(10);
+  const announcementIds = (announcements ?? []).map((item) => item.id);
+  const { data: readRows } = announcementIds.length ? await supabase.from("announcement_reads").select("announcement_id").eq("user_id", user.id).in("announcement_id", announcementIds) : { data: [] };
+  const readIds = new Set((readRows ?? []).map((item) => item.announcement_id));
+  const { data: ownRecords } = await supabase.from("performance_records").select("id, category, record_kind").eq("user_id", user.id);
+  const ownRecordIds = (ownRecords ?? []).map((item) => item.id);
+  const { data: unreadFeedback } = ownRecordIds.length ? await supabase.from("coach_feedback").select("id, record_id, body, created_at").in("record_id", ownRecordIds).is("acknowledged_at", null).order("created_at", { ascending: false }).limit(10) : { data: [] };
+  const recordById = new Map((ownRecords ?? []).map((record) => [record.id, record]));
+  const newsItems: NewsItem[] = [
+    ...(announcements ?? []).map((item) => ({ id: `announcement-${item.id}`, kind: "announcement" as const, title: item.title, body: item.body, date: item.created_at, important: item.priority === "important", unread: !readIds.has(item.id), announcementId: item.id })),
+    ...(unreadFeedback ?? []).map((item) => { const record = recordById.get(item.record_id); const kind = record?.record_kind ?? (record ? eventKindMap[record.category] : "control-test"); const href = kind === "athletics" ? "/mypage/athletics" : kind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests"; return { id: `feedback-${item.id}`, kind: "feedback" as const, title: `${record?.category ?? "記録"}にフィードバックが届きました`, body: item.body, date: item.created_at, href, unread: true }; }),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
 
   return (
     <main
@@ -74,6 +89,7 @@ export default async function MyPage() {
         <p><strong>VAULTEX CLASS</strong><br />{player.program_class ?? "未選択"}</p>
       </div>
 
+      <NewsPanel initialItems={newsItems} userId={user.id} />
       <h2 style={{ marginTop: 40, marginBottom: 20 }}>PERFORMANCE</h2>
       {coachRole && <Link href="/coach/dashboard" className="mb-5 flex items-center justify-between rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-5 text-white transition hover:border-emerald-400"><span><strong className="block text-lg">コーチダッシュボード</strong><span className="mt-1 block text-sm text-white/50">担当選手の確認・フィードバック</span></span><ChevronRight className="text-emerald-400" /></Link>}
       <div style={{ display: "grid", gap: 14 }}>

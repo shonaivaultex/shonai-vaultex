@@ -14,6 +14,8 @@ type Props = {
   selectedYear?: number | null;
 };
 
+type FeedbackRow = { id: number; record_id: number; coach_id: string; body: string; created_at: string; acknowledged_at: string | null };
+
 export default async function PerformanceRecordsPage({ kind, title, eyebrow, description, selectedYear = null }: Props) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -28,6 +30,20 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
 
   if (error) console.error("RECORD ERROR", error);
 
+  const recordIds = (records ?? []).map((record) => record.id);
+  const { data: feedbackRows } = recordIds.length
+    ? await supabase.from("coach_feedback").select("id, record_id, coach_id, body, created_at, acknowledged_at").in("record_id", recordIds).order("created_at", { ascending: false })
+    : { data: [] };
+  const coachIds = [...new Set((feedbackRows ?? []).map((item) => item.coach_id))];
+  const { data: coaches } = coachIds.length
+    ? await supabase.from("players").select("user_id, name").in("user_id", coachIds)
+    : { data: [] };
+  const coachNames = new Map((coaches ?? []).map((coach) => [coach.user_id, coach.name]));
+  const feedbackByRecord = ((feedbackRows ?? []) as FeedbackRow[]).reduce<Record<number, Array<FeedbackRow & { coach_name: string }>>>((groups, item) => {
+    (groups[item.record_id] ??= []).push({ ...item, coach_name: coachNames.get(item.coach_id) ?? "VAULTEXコーチ" });
+    return groups;
+  }, {});
+
   const { data: goals, error: goalsError } = await supabase
     .from("performance_goals")
     .select("category, target_value")
@@ -39,11 +55,11 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
   );
 
   const recordsWithVideoUrls = await Promise.all((records ?? []).map(async (record) => {
-    if (!record.video_path) return { ...record, video_url: null };
+    if (!record.video_path) return { ...record, video_url: null, coach_feedback: feedbackByRecord[record.id] ?? [] };
     const { data } = await supabase.storage
       .from(PERFORMANCE_VIDEO_BUCKET)
       .createSignedUrl(record.video_path, 60 * 60);
-    return { ...record, video_url: data?.signedUrl ?? null };
+    return { ...record, video_url: data?.signedUrl ?? null, coach_feedback: feedbackByRecord[record.id] ?? [] };
   }));
 
   const recordsForKind = recordsWithVideoUrls.filter((record) =>
