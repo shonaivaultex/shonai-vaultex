@@ -22,6 +22,7 @@ type PerformanceEventCardProps = {
   scopeLabel?: "PB" | "SB";
   ranking?: { overall_rank: number; overall_total: number; overall_top_percent: number; class_rank: number | null; class_total: number | null; class_top_percent: number | null; program_class: string | null } | null;
   leaderboard?: Array<{ ranking_scope: "overall" | "class"; leaderboard_position: number; display_name: string; best_value: number | string; is_current_user: boolean }>;
+  focusRecordId?: number | null;
 };
 
 function round(value: number, digits = 2) {
@@ -45,6 +46,7 @@ export default function PerformanceEventCard({
   scopeLabel = "PB",
   ranking,
   leaderboard = [],
+  focusRecordId,
 }: PerformanceEventCardProps) {
   const chronological = [...records].sort((a, b) => {
     const dateDifference = new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -176,7 +178,7 @@ export default function PerformanceEventCard({
         </div>
       </div>
 
-      <PerformanceHistoryModal records={records} unit={unit} />
+      <PerformanceHistoryModal records={records} unit={unit} focusRecordId={focusRecordId} />
     </article>
   );
 }

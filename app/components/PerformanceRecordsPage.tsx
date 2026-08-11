@@ -12,12 +12,13 @@ type Props = {
   eyebrow: string;
   description: string;
   selectedYear?: number | null;
+  focusRecordId?: number | null;
 };
 
 type FeedbackRow = { id: number; record_id: number; coach_id: string; body: string; created_at: string; acknowledged_at: string | null };
 type LeaderboardRow = { ranking_scope: "overall" | "class"; leaderboard_position: number; display_name: string; best_value: number | string; is_current_user: boolean };
 
-export default async function PerformanceRecordsPage({ kind, title, eyebrow, description, selectedYear = null }: Props) {
+export default async function PerformanceRecordsPage({ kind, title, eyebrow, description, selectedYear = null, focusRecordId = null }: Props) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -116,6 +117,7 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
       scopeLabel={selectedYear === null ? "PB" : "SB"}
       ranking={ranking}
       leaderboard={leaderboard}
+      focusRecordId={focusRecordId}
     />
   );
 
@@ -131,6 +133,9 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
           <p className="mt-3 leading-7 text-white/60">{description}</p>
         </header>
         <SeasonSelector years={availableYears} selectedYear={selectedYear} />
+        <Link href={`/performance?kind=${kind}`} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-4 text-sm font-black tracking-[0.12em] transition hover:bg-orange-400 lg:ml-auto lg:w-fit lg:min-w-56">
+          <Plus size={18} aria-hidden="true" /> 記録を追加
+        </Link>
 
         {eventGroups.length === 0 ? (
           <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.035] p-8 text-center text-white/55">まだ記録がありません</div>
