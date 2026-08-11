@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
+import { programClasses } from "@/lib/program-classes";
 
 export default function CreateProfilePage() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function CreateProfilePage() {
   const [grade, setGrade] = useState("");
   const [eventName, setEventName] = useState("");
   const [school, setSchool] = useState("");
+  const [programClass, setProgramClass] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -59,6 +61,7 @@ export default function CreateProfilePage() {
       grade: grade.trim(),
       event: eventName.trim(),
       school: school.trim(),
+      program_class: programClass,
     });
 
     setLoading(false);
@@ -90,6 +93,13 @@ export default function CreateProfilePage() {
           <ProfileField label="GRADE / 学年" value={grade} onChange={setGrade} placeholder="中学2年" />
           <ProfileField label="EVENT / 専門種目" value={eventName} onChange={setEventName} placeholder="100m" />
           <ProfileField label="SCHOOL / 所属" value={school} onChange={setSchool} placeholder="〇〇中学校" />
+          <label className="block sm:col-span-2">
+            <span className="mb-2 block text-[11px] font-black tracking-[0.14em] text-white/55">VAULTEX CLASS / クラス</span>
+            <select value={programClass} onChange={(event) => setProgramClass(event.target.value)} required className="w-full border border-white/15 bg-[#101216] px-4 py-4 text-sm text-white outline-none transition focus:border-orange-500">
+              <option value="">クラスを選択</option>
+              {programClasses.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
 
           {errorMessage && <p role="alert" className="border-l-2 border-orange-500 bg-orange-500/10 px-4 py-3 text-sm text-orange-200 sm:col-span-2">{errorMessage}</p>}
 

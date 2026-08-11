@@ -25,6 +25,13 @@ export default async function MyPage() {
     redirect("/profile/create");
   }
 
+  const { data: coachRole } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("role", "coach")
+    .maybeSingle();
+
   return (
     <main
       style={{
@@ -64,9 +71,11 @@ export default async function MyPage() {
           <br />
           {player.school}
         </p>
+        <p><strong>VAULTEX CLASS</strong><br />{player.program_class ?? "未選択"}</p>
       </div>
 
       <h2 style={{ marginTop: 40, marginBottom: 20 }}>PERFORMANCE</h2>
+      {coachRole && <Link href="/coach/dashboard" className="mb-5 flex items-center justify-between rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-5 text-white transition hover:border-emerald-400"><span><strong className="block text-lg">コーチダッシュボード</strong><span className="mt-1 block text-sm text-white/50">担当選手の確認・フィードバック</span></span><ChevronRight className="text-emerald-400" /></Link>}
       <div style={{ display: "grid", gap: 14 }}>
         <Link href="/mypage/control-tests" className="group flex items-center gap-4 rounded-2xl border border-orange-500/60 bg-[#111] p-5 text-white no-underline transition hover:border-orange-400">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-500/15 text-orange-400"><Activity aria-hidden="true" /></span>

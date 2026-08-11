@@ -4,15 +4,17 @@ import PerformanceEventCard from "@/app/components/PerformanceEventCard";
 import { createClient } from "@/lib/supabase-server";
 import { eventKindMap, type PerformanceKind, unitMap } from "@/lib/performance-events";
 import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
+import SeasonSelector from "@/app/components/SeasonSelector";
 
 type Props = {
   kind: PerformanceKind;
   title: string;
   eyebrow: string;
   description: string;
+  selectedYear?: number | null;
 };
 
-export default async function PerformanceRecordsPage({ kind, title, eyebrow, description }: Props) {
+export default async function PerformanceRecordsPage({ kind, title, eyebrow, description, selectedYear = null }: Props) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -44,25 +46,42 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
     return { ...record, video_url: data?.signedUrl ?? null };
   }));
 
-  const safeRecords = recordsWithVideoUrls.filter((record) => {
-    const recordKind = record.record_kind ?? eventKindMap[record.category] ?? "control-test";
-    return recordKind === kind;
+  const recordsForKind = recordsWithVideoUrls.filter((record) =>
+    (record.record_kind ?? eventKindMap[record.category] ?? "control-test") === kind,
+  );
+  const availableYears = [...new Set(recordsForKind.map((record) => new Date(`${record.date}T00:00:00`).getFullYear()))]
+    .filter(Number.isFinite)
+    .sort((a, b) => b - a);
+
+  const safeRecords = recordsForKind.filter((record) => {
+    const recordYear = new Date(`${record.date}T00:00:00`).getFullYear();
+    return selectedYear === null || recordYear === selectedYear;
   });
   const recordsByCategory = safeRecords.reduce<Record<string, typeof safeRecords>>((groups, record) => {
     (groups[record.category] ??= []).push(record);
     return groups;
   }, {});
 
-  const eventGroups = Object.entries(recordsByCategory).map(([category, categoryRecords]) => {
+  const eventGroups = await Promise.all(Object.entries(recordsByCategory).map(async ([category, categoryRecords]) => {
     const isTimeEvent = ["秒", "分"].includes(unitMap[category]);
     const best = categoryRecords.reduce((currentBest, record) => {
       const value = Number(record.value);
       const bestValue = Number(currentBest.value);
       return isTimeEvent ? (value < bestValue ? record : currentBest) : (value > bestValue ? record : currentBest);
     });
-    return { category, records: categoryRecords, best };
-  });
-  const renderEventCard = ({ category, records: eventRecords, best }: (typeof eventGroups)[number]) => (
+    const { data: ranking } = await supabase.rpc("get_performance_rankings", {
+      p_category: category,
+      p_record_kind: kind,
+      p_year: selectedYear,
+    }).maybeSingle();
+    return {
+      category,
+      records: categoryRecords,
+      best,
+      ranking: ranking as { overall_rank: number; overall_total: number; overall_top_percent: number; class_rank: number | null; class_total: number | null; class_top_percent: number | null; program_class: string | null } | null,
+    };
+  }));
+  const renderEventCard = ({ category, records: eventRecords, best, ranking }: (typeof eventGroups)[number]) => (
     <PerformanceEventCard
       key={category}
       category={category}
@@ -71,6 +90,8 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
       records={eventRecords}
       target={goalsByCategory.get(category) ?? null}
       userId={user.id}
+      scopeLabel={selectedYear === null ? "PB" : "SB"}
+      ranking={ranking}
     />
   );
 
@@ -85,6 +106,7 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
           <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-5xl">{title}</h1>
           <p className="mt-3 leading-7 text-white/60">{description}</p>
         </header>
+        <SeasonSelector years={availableYears} selectedYear={selectedYear} />
 
         {eventGroups.length === 0 ? (
           <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.035] p-8 text-center text-white/55">まだ記録がありません</div>

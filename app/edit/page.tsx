@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useRouter } from "next/navigation";
+import { programClasses } from "@/lib/program-classes";
 
 export default function EditPage() {
 
@@ -12,6 +13,7 @@ export default function EditPage() {
   const [name, setName] = useState("");
   const [event, setEvent] = useState("");
   const [best, setBest] = useState("");
+  const [programClass, setProgramClass] = useState("");
 
   useEffect(() => {
     getProfile();
@@ -37,6 +39,7 @@ export default function EditPage() {
       setName(data.name);
       setEvent(data.event);
       setBest(data.personal_best);
+      setProgramClass(data.program_class ?? "");
     }
   }
 
@@ -55,7 +58,8 @@ export default function EditPage() {
   .update({
     name:name,
     event:event,
-    personal_best:best
+    personal_best:best,
+    program_class:programClass || null
   })
   .eq("user_id", user?.id);
 
@@ -113,6 +117,14 @@ if(error){
             border: "1px solid #333",
           }}
         />
+      </label>
+
+      <label>
+        <p>VAULTEXクラス</p>
+        <select value={programClass} onChange={(e) => setProgramClass(e.target.value)} style={{ width: "100%", padding: 15, borderRadius: 12, background: "#1a1a1a", color: "white", border: "1px solid #333" }}>
+          <option value="">クラスを選択</option>
+          {programClasses.map((item) => <option key={item} value={item}>{item}</option>)}
+        </select>
       </label>
 
       <label>

@@ -19,6 +19,8 @@ type PerformanceEventCardProps = {
   records: PerformanceRecord[];
   target: number | null;
   userId: string;
+  scopeLabel?: "PB" | "SB";
+  ranking?: { overall_rank: number; overall_total: number; overall_top_percent: number; class_rank: number | null; class_total: number | null; class_top_percent: number | null; program_class: string | null } | null;
 };
 
 function round(value: number, digits = 2) {
@@ -39,6 +41,8 @@ export default function PerformanceEventCard({
   records,
   target,
   userId,
+  scopeLabel = "PB",
+  ranking,
 }: PerformanceEventCardProps) {
   const chronological = [...records].sort((a, b) => {
     const dateDifference = new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -85,7 +89,7 @@ export default function PerformanceEventCard({
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-xl bg-white/[0.045] p-4">
-            <span className="block text-[11px] font-extrabold tracking-[0.12em] text-orange-400">PB</span>
+            <span className="block text-[11px] font-extrabold tracking-[0.12em] text-orange-400">{scopeLabel}</span>
             <strong className="mt-2 block text-2xl leading-none sm:text-3xl">
               {best.value}<span className="ml-1.5 text-sm text-white/60">{unit}</span>
             </strong>
@@ -131,6 +135,16 @@ export default function PerformanceEventCard({
             </strong>
           </div>
         </div>
+
+        {ranking && (
+          <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.025] p-4">
+            <p className="m-0 text-[11px] font-bold tracking-[0.08em] text-white/45">VAULTEXランキング</p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div><span className="block text-xs text-white/45">全体</span><strong className="mt-1 block text-base text-orange-300">{ranking.overall_rank}位／{ranking.overall_total}人</strong><span className="text-xs text-white/50">上位{Math.max(1, Math.ceil(ranking.overall_top_percent))}%</span></div>
+              <div><span className="block text-xs text-white/45">{ranking.program_class ?? "クラス未選択"}</span>{ranking.class_rank !== null && ranking.class_total !== null && ranking.class_top_percent !== null ? <><strong className="mt-1 block text-base text-orange-300">{ranking.class_rank}位／{ranking.class_total}人</strong><span className="text-xs text-white/50">上位{Math.max(1, Math.ceil(ranking.class_top_percent))}%</span></> : <strong className="mt-1 block text-sm text-white/35">プロフィールで選択</strong>}</div>
+            </div>
+          </div>
+        )}
 
         <div style={{ marginTop: 24 }}>
           <PerformanceChart
