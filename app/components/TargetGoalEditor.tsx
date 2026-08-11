@@ -58,7 +58,7 @@ export default function TargetGoalEditor({ category, initialTarget, unit, userId
   return (
     <div>
       <div className="flex items-center gap-2">
-        <div className="flex min-w-0 flex-1 items-center rounded-lg border border-orange-500/60 bg-black/30 px-3 focus-within:border-orange-400">
+        <div className="flex min-w-0 flex-1 items-center rounded-lg border border-orange-500/60 bg-black/30 px-2 focus-within:border-orange-400">
           <input
             type="number"
             min="0"
@@ -70,10 +70,11 @@ export default function TargetGoalEditor({ category, initialTarget, unit, userId
               if (event.key === "Escape" && initialTarget !== null) setEditing(false);
             }}
             autoFocus
-            className="min-w-0 flex-1 bg-transparent py-2 text-lg font-bold outline-none"
+            placeholder="0"
+            className="min-w-0 flex-1 bg-transparent py-2 text-lg font-bold tabular-nums text-white caret-orange-400 outline-none placeholder:text-white/25 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             aria-label={`${category}の目標記録`}
           />
-          <span className="text-xs text-white/45">{unit}</span>
+          <span className="ml-1 shrink-0 text-xs text-white/60">{unit}</span>
         </div>
         <button type="button" onClick={() => void saveGoal()} disabled={saving} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-orange-500 text-black transition hover:bg-orange-400 disabled:opacity-50" aria-label="目標を保存">
           <Check size={17} aria-hidden="true" />
@@ -88,4 +89,3 @@ export default function TargetGoalEditor({ category, initialTarget, unit, userId
     </div>
   );
 }
-
