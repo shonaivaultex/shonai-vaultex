@@ -103,7 +103,7 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
       category,
       records: categoryRecords,
       best,
-      ranking: ranking as { overall_rank: number; overall_total: number; overall_top_percent: number; class_rank: number | null; class_total: number | null; class_top_percent: number | null; program_class: string | null } | null,
+      ranking: ranking as { overall_rank: number; overall_total: number; overall_top_percent: number; class_rank: number | null; class_total: number | null; class_top_percent: number | null; program_class: string | null; gender: "male" | "female" } | null,
       leaderboard: (leaderboard ?? []) as LeaderboardRow[],
     };
   }));

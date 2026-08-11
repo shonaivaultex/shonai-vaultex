@@ -20,7 +20,7 @@ type PerformanceEventCardProps = {
   target: number | null;
   userId: string;
   scopeLabel?: "PB" | "SB";
-  ranking?: { overall_rank: number; overall_total: number; overall_top_percent: number; class_rank: number | null; class_total: number | null; class_top_percent: number | null; program_class: string | null } | null;
+  ranking?: { overall_rank: number; overall_total: number; overall_top_percent: number; class_rank: number | null; class_total: number | null; class_top_percent: number | null; program_class: string | null; gender: "male" | "female" } | null;
   leaderboard?: Array<{ ranking_scope: "overall" | "class"; leaderboard_position: number; display_name: string; best_value: number | string; is_current_user: boolean }>;
   focusRecordId?: number | null;
 };
@@ -148,14 +148,14 @@ export default function PerformanceEventCard({
 
         {ranking && (
           <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.025] p-4">
-            <p className="m-0 text-[11px] font-bold tracking-[0.08em] text-white/45">VAULTEXランキング</p>
+            <p className="m-0 text-[11px] font-bold tracking-[0.08em] text-white/45">VAULTEX {ranking.gender === "female" ? "女子" : "男子"}ランキング</p>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <div><span className="block text-xs text-white/45">全体</span><strong className="mt-1 block text-base text-orange-300">{ranking.overall_rank}位／{ranking.overall_total}人</strong><span className="text-xs text-white/50">上位{Math.max(1, Math.ceil(ranking.overall_top_percent))}%</span></div>
               <div><span className="block text-xs text-white/45">{ranking.program_class ?? "クラス未選択"}</span>{ranking.class_rank !== null && ranking.class_total !== null && ranking.class_top_percent !== null ? <><strong className="mt-1 block text-base text-orange-300">{ranking.class_rank}位／{ranking.class_total}人</strong><span className="text-xs text-white/50">上位{Math.max(1, Math.ceil(ranking.class_top_percent))}%</span></> : <strong className="mt-1 block text-sm text-white/35">プロフィールで選択</strong>}</div>
             </div>
             {leaderboard.length > 0 && (
               <div className="mt-4 grid gap-4 border-t border-white/10 pt-4 sm:grid-cols-2">
-                <Leaderboard title="全体 TOP 3" rows={overallLeaders} unit={unit} />
+                <Leaderboard title={`${ranking.gender === "female" ? "女子" : "男子"} 全体 TOP 3`} rows={overallLeaders} unit={unit} />
                 <Leaderboard title={`${ranking.program_class ?? "クラス"} TOP 3`} rows={classLeaders} unit={unit} />
               </div>
             )}

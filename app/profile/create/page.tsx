@@ -13,6 +13,7 @@ export default function CreateProfilePage() {
   const [eventName, setEventName] = useState("");
   const [school, setSchool] = useState("");
   const [programClass, setProgramClass] = useState("");
+  const [gender, setGender] = useState("");
   const [rankingNamePublic, setRankingNamePublic] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -63,6 +64,7 @@ export default function CreateProfilePage() {
       event: eventName.trim(),
       school: school.trim(),
       program_class: programClass,
+      gender,
       ranking_name_public: rankingNamePublic,
     });
 
@@ -95,6 +97,12 @@ export default function CreateProfilePage() {
           <ProfileField label="GRADE / 学年" value={grade} onChange={setGrade} placeholder="中学2年" />
           <ProfileField label="EVENT / 専門種目" value={eventName} onChange={setEventName} placeholder="100m" />
           <ProfileField label="SCHOOL / 所属" value={school} onChange={setSchool} placeholder="〇〇中学校" />
+          <label className="block sm:col-span-2">
+            <span className="mb-2 block text-[11px] font-black tracking-[0.14em] text-white/55">GENDER / ランキング区分</span>
+            <select value={gender} onChange={(event) => setGender(event.target.value)} required className="w-full border border-white/15 bg-[#101216] px-4 py-4 text-sm text-white outline-none transition focus:border-orange-500">
+              <option value="">男子／女子を選択</option><option value="male">男子</option><option value="female">女子</option>
+            </select>
+          </label>
           <label className="block sm:col-span-2">
             <span className="mb-2 block text-[11px] font-black tracking-[0.14em] text-white/55">VAULTEX CLASS / クラス</span>
             <select value={programClass} onChange={(event) => setProgramClass(event.target.value)} required className="w-full border border-white/15 bg-[#101216] px-4 py-4 text-sm text-white outline-none transition focus:border-orange-500">
