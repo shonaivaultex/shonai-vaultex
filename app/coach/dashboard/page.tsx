@@ -9,6 +9,7 @@ import FeedbackRequestQueue, { type FeedbackQueueItem } from "@/app/components/F
 import MemberManagement from "@/app/components/MemberManagement";
 import AthletesByClass from "@/app/components/AthletesByClass";
 import BugReportManager, { type BugReportItem } from "@/app/components/BugReportManager";
+import CoachInvitationManager from "@/app/components/CoachInvitationManager";
 
 export default async function CoachDashboardPage() {
   const supabase = await createClient();
@@ -42,6 +43,7 @@ export default async function CoachDashboardPage() {
     <header className="mt-10 border-l-2 border-orange-500 pl-5"><p className="text-xs font-black tracking-[0.22em] text-orange-400">COACH DASHBOARD</p><h1 className="mt-3 text-4xl font-black">担当選手</h1><p className="mt-3 text-white/55">選手の現状を確認して、記録ごとにフィードバックできます。</p></header>
     <div className="mt-8 flex flex-wrap gap-2">{classes.map((item) => <span key={item} className="rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-300">{item}</span>)}</div>
     <FeedbackRequestQueue items={queueItems} />
+    <CoachInvitationManager />
     <BugReportManager initialItems={bugReportItems} />
     <MemberManagement members={(allAthletes ?? []).map((athlete) => ({ ...athlete, member_status: athlete.member_status ?? "active" }))} />
     <CoachAnnouncementForm />
