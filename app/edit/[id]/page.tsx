@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { performanceEvents, type PerformanceKind } from "@/lib/performance-events";
-import { awarenessCategories, createVideoPath, PERFORMANCE_VIDEO_BUCKET, validateVideo } from "@/lib/performance-awareness";
+import { awarenessCategories, createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
 
 export default function EditPerformancePage() {
   const router = useRouter();
@@ -22,6 +22,7 @@ export default function EditPerformancePage() {
   const [removeVideo, setRemoveVideo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const events = performanceEvents.map((event) => event.name);
 
   useEffect(() => {
@@ -84,11 +85,13 @@ export default function EditPerformancePage() {
 
     let nextVideoPath = removeVideo ? null : videoPath;
     if (newVideo) {
+      setUploadProgress(0);
       nextVideoPath = createVideoPath(user.id, newVideo);
-      const { error: uploadError } = await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).upload(nextVideoPath, newVideo, { contentType: newVideo.type });
-      if (uploadError) {
+      try {
+        await uploadVideoWithProgress(supabase, nextVideoPath, newVideo, setUploadProgress);
+      } catch (uploadError) {
         setSaving(false);
-        alert("動画をアップロードできませんでした：" + uploadError.message);
+        alert("動画をアップロードできませんでした：" + (uploadError instanceof Error ? uploadError.message : "不明なエラー"));
         return;
       }
     }
@@ -196,7 +199,8 @@ export default function EditPerformancePage() {
             <label htmlFor="video" className="mb-2 block text-sm font-bold text-zinc-200">動画（任意・100MBまで）</label>
             {videoPath && !removeVideo && !newVideo && <button type="button" onClick={() => setRemoveVideo(true)} className="mb-3 text-sm font-bold text-red-400 hover:text-red-300">現在の動画を削除</button>}
             {removeVideo && !newVideo && <p className="mb-3 text-sm text-zinc-400">保存すると現在の動画を削除します。</p>}
-            <input id="video" type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" onChange={(event) => { setNewVideo(event.target.files?.[0] ?? null); if (event.target.files?.[0]) setRemoveVideo(false); }} className="block w-full rounded-xl border border-dashed border-zinc-700 bg-[#111] px-4 py-3 text-sm text-zinc-400 file:mr-4 file:rounded-lg file:border-0 file:bg-[#ff7a00] file:px-3 file:py-2 file:font-bold file:text-black" />
+            <input id="video" type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" disabled={saving} onChange={(event) => { const selected = event.target.files?.[0] ?? null; const validationError = selected ? validateVideo(selected) : null; setUploadProgress(0); if (validationError) { alert(validationError); setNewVideo(null); event.target.value = ""; return; } setNewVideo(selected); if (selected) setRemoveVideo(false); }} className="block w-full rounded-xl border border-dashed border-zinc-700 bg-[#111] px-4 py-3 text-sm text-zinc-400 file:mr-4 file:rounded-lg file:border-0 file:bg-[#ff7a00] file:px-3 file:py-2 file:font-bold file:text-black disabled:opacity-50" />
+            {newVideo && <div className="mt-3 rounded-xl border border-zinc-700 bg-black/20 p-3"><div className="flex items-center justify-between gap-3 text-xs"><span className="min-w-0 truncate text-zinc-400">{newVideo.name}</span><strong className="shrink-0 text-orange-400">{formatVideoSize(newVideo.size)} / 100MB</strong></div>{saving && <div className="mt-3"><div className="mb-1 flex justify-between text-xs text-zinc-400"><span>{uploadProgress < 100 ? "動画をアップロード中" : "動画の処理完了"}</span><span>{uploadProgress}%</span></div><div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#ff7a00] transition-[width]" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-2 text-xs text-zinc-500">完了するまでこの画面を閉じないでください。</p></div>}</div>}
           </div>
 
           <div>
@@ -239,7 +243,7 @@ export default function EditPerformancePage() {
             disabled={saving}
             className="w-full rounded-xl bg-[#ff7a00] px-4 py-4 text-sm font-black tracking-widest text-black transition hover:bg-[#ff921f] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {saving ? "保存中..." : "保存する"}
+            {saving ? (newVideo && uploadProgress < 100 ? `動画アップロード中 ${uploadProgress}%` : "保存中...") : "保存する"}
           </button>
         </form>
       </div>

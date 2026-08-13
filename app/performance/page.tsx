@@ -6,7 +6,7 @@ import { FormEvent, Suspense, useState } from "react";
 import { ArrowLeft, Check, LoaderCircle, Save } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 import { eventNamesByKind, type PerformanceKind, unitMap } from "@/lib/performance-events";
-import { awarenessCategories, createVideoPath, PERFORMANCE_VIDEO_BUCKET, validateVideo } from "@/lib/performance-awareness";
+import { awarenessCategories, createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
 
 function today() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
@@ -25,6 +25,7 @@ function PerformanceForm() {
   const [awarenessNote, setAwarenessNote] = useState("");
   const [video, setVideo] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
 
 const unit = unitMap[category] ?? "";
@@ -64,12 +65,12 @@ const unit = unitMap[category] ?? "";
 
       let videoPath: string | null = null;
       if (video) {
+        setUploadProgress(0);
         videoPath = createVideoPath(user.id, video);
-        const { error: uploadError } = await supabase.storage
-          .from(PERFORMANCE_VIDEO_BUCKET)
-          .upload(videoPath, video, { contentType: video.type, upsert: false });
-        if (uploadError) {
-          setErrorMessage(`動画をアップロードできませんでした：${uploadError.message}`);
+        try {
+          await uploadVideoWithProgress(supabase, videoPath, video, setUploadProgress);
+        } catch (uploadError) {
+          setErrorMessage(`動画をアップロードできませんでした：${uploadError instanceof Error ? uploadError.message : "不明なエラー"}`);
           return;
         }
       }
@@ -186,7 +187,8 @@ const unit = unitMap[category] ?? "";
 
             <label className="block">
               <span className="text-sm font-bold text-white">動画を追加 <span className="font-normal text-white/40">（任意・100MBまで）</span></span>
-              <input type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" onChange={(event) => setVideo(event.target.files?.[0] ?? null)} className="mt-3 block w-full rounded-xl border border-dashed border-white/20 bg-[#101216] px-4 py-4 text-sm text-white/65 file:mr-4 file:rounded-lg file:border-0 file:bg-orange-500 file:px-3 file:py-2 file:font-bold file:text-white" />
+              <input type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" disabled={isSaving} onChange={(event) => { const selected = event.target.files?.[0] ?? null; const validationError = selected ? validateVideo(selected) : null; setUploadProgress(0); if (validationError) { setVideo(null); setErrorMessage(validationError); event.target.value = ""; return; } setErrorMessage(""); setVideo(selected); }} className="mt-3 block w-full rounded-xl border border-dashed border-white/20 bg-[#101216] px-4 py-4 text-sm text-white/65 file:mr-4 file:rounded-lg file:border-0 file:bg-orange-500 file:px-3 file:py-2 file:font-bold file:text-white disabled:opacity-50" />
+              {video && <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3"><div className="flex items-center justify-between gap-3 text-xs"><span className="min-w-0 truncate text-white/65">{video.name}</span><strong className="shrink-0 text-orange-300">{formatVideoSize(video.size)} / 100MB</strong></div>{isSaving && <div className="mt-3"><div className="mb-1 flex justify-between text-xs text-white/50"><span>{uploadProgress < 100 ? "動画をアップロード中" : "動画の処理完了"}</span><span>{uploadProgress}%</span></div><div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-orange-500 transition-[width]" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-2 text-xs text-white/35">完了するまでこの画面を閉じないでください。</p></div>}</div>}
             </label>
           </div>
 
@@ -202,7 +204,7 @@ const unit = unitMap[category] ?? "";
             className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-4 text-sm font-black tracking-[0.14em] text-white transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? <LoaderCircle className="animate-spin" size={18} /> : <Save size={18} />}
-            {isSaving ? "SAVING..." : "記録を保存"}
+            {isSaving ? (video && uploadProgress < 100 ? `動画アップロード中 ${uploadProgress}%` : "保存中...") : "記録を保存"}
           </button>
 
           <p className="mt-5 flex items-center gap-2 text-xs text-white/45">
