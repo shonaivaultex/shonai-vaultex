@@ -7,6 +7,7 @@ import NewsPanel, { type NewsItem } from "@/app/components/NewsPanel";
 import { eventKindMap } from "@/lib/performance-events";
 import SchedulePanel, { type ScheduleItem } from "@/app/components/SchedulePanel";
 import PushNotificationButton from "@/app/components/PushNotificationButton";
+import BugReportButton from "@/app/components/BugReportButton";
 
 export default async function MyPage() {
   const supabase = await createClient();
@@ -95,6 +96,7 @@ export default async function MyPage() {
       <NewsPanel initialItems={newsItems} userId={user.id} />
       <PushNotificationButton />
       <a href="/api/performance/export" download className="mt-3 flex w-full items-center justify-between rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-sm text-white/75 transition hover:border-orange-500/40 hover:text-white"><span className="flex items-center gap-2 font-bold"><Download size={17} className="text-orange-400" />記録データをCSVで保存</span><span className="text-xs text-white/35">全記録をバックアップ</span></a>
+      <BugReportButton />
       <SchedulePanel items={(schedules ?? []) as ScheduleItem[]} />
       <h2 style={{ marginTop: 40, marginBottom: 20 }}>PERFORMANCE</h2>
       {coachRole && <Link href="/coach/dashboard" className="mb-5 flex items-center justify-between rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-5 text-white transition hover:border-emerald-400"><span><strong className="block text-lg">コーチダッシュボード</strong><span className="mt-1 block text-sm text-white/50">担当選手の確認・フィードバック</span></span><ChevronRight className="text-emerald-400" /></Link>}

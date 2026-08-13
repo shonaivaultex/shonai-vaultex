@@ -8,6 +8,7 @@ import type { ScheduleItem } from "@/app/components/SchedulePanel";
 import FeedbackRequestQueue, { type FeedbackQueueItem } from "@/app/components/FeedbackRequestQueue";
 import MemberManagement from "@/app/components/MemberManagement";
 import AthletesByClass from "@/app/components/AthletesByClass";
+import BugReportManager, { type BugReportItem } from "@/app/components/BugReportManager";
 
 export default async function CoachDashboardPage() {
   const supabase = await createClient();
@@ -33,11 +34,15 @@ export default async function CoachDashboardPage() {
     if (!record || !athlete) return [];
     return [{ id: request.id, recordId: record.id, athleteId: record.user_id, athleteName: athlete.name, programClass: athlete.program_class, category: record.category, value: record.value, requestType: request.request_type, message: request.message, priority: request.priority, status: request.status, createdAt: request.created_at, answeredAt: request.answered_at }];
   });
+  const { data: bugReports } = await supabase.from("bug_reports").select("id, user_id, category, detail, page_url, user_agent, status, created_at").order("created_at", { ascending: false }).limit(100);
+  const memberNames = new Map((allAthletes ?? []).map((athlete) => [athlete.user_id, athlete.name]));
+  const bugReportItems: BugReportItem[] = (bugReports ?? []).map((item) => ({ id: item.id, memberName: memberNames.get(item.user_id) ?? "会員", category: item.category, detail: item.detail, pageUrl: item.page_url, userAgent: item.user_agent, status: item.status, createdAt: item.created_at }));
   return <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8"><div className="mx-auto max-w-5xl">
     <Link href="/mypage" className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-white/60 hover:text-orange-400"><ArrowLeft size={16} />自分のマイページ</Link>
     <header className="mt-10 border-l-2 border-orange-500 pl-5"><p className="text-xs font-black tracking-[0.22em] text-orange-400">COACH DASHBOARD</p><h1 className="mt-3 text-4xl font-black">担当選手</h1><p className="mt-3 text-white/55">選手の現状を確認して、記録ごとにフィードバックできます。</p></header>
     <div className="mt-8 flex flex-wrap gap-2">{classes.map((item) => <span key={item} className="rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-300">{item}</span>)}</div>
     <FeedbackRequestQueue items={queueItems} />
+    <BugReportManager initialItems={bugReportItems} />
     <MemberManagement members={(allAthletes ?? []).map((athlete) => ({ ...athlete, member_status: athlete.member_status ?? "active" }))} />
     <CoachAnnouncementForm />
     <CoachScheduleManager initialItems={(schedules ?? []) as ScheduleItem[]} initialTemplates={(scheduleTemplates ?? []) as ScheduleTemplate[]} initialAttendance={attendance ?? []} />
