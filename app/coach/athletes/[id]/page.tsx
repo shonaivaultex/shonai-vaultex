@@ -15,7 +15,7 @@ export default async function CoachAthletePage({ params, searchParams }: { param
   if (!user) redirect(`/login?next=/coach/athletes/${athleteId}`);
   const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "coach").maybeSingle();
   if (!role) redirect("/mypage");
-  const { data: athlete } = await supabase.from("players").select("user_id, name, grade, event, program_class").eq("user_id", athleteId).maybeSingle();
+  const { data: athlete } = await supabase.from("players").select("user_id, name, grade, event, program_class").eq("user_id", athleteId).eq("member_status", "active").maybeSingle();
   if (!athlete) notFound();
   const { data: records, error } = await supabase.from("performance_records").select("*").eq("user_id", athleteId).order("date", { ascending: false });
   if (error) notFound();

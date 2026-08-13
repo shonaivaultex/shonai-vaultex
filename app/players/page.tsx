@@ -9,7 +9,8 @@ export default async function PlayersPage(){
 
   const { data: players } = await supabase
     .from("players")
-    .select("*");
+    .select("*")
+    .eq("member_status", "active");
 
 
   return (

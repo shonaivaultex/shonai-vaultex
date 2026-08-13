@@ -18,6 +18,7 @@ const { id } = await params;
     .from("players")
     .select("*")
     .eq("id", id)
+    .eq("member_status", "active")
     .single();
 
 

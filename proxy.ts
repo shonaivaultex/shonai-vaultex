@@ -29,9 +29,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  const { data: player } = await supabase.from("players").select("member_status").eq("user_id", user.id).maybeSingle();
+  if (player && player.member_status && player.member_status !== "active") {
+    const inactiveUrl = request.nextUrl.clone(); inactiveUrl.pathname = "/account-inactive"; inactiveUrl.search = "";
+    return NextResponse.redirect(inactiveUrl);
+  }
+
   return response;
 }
 
 export const config = {
-  matcher: ["/mypage/:path*", "/profile/:path*"],
+  matcher: ["/mypage/:path*", "/profile/:path*", "/performance/:path*", "/edit/:path*"],
 };
