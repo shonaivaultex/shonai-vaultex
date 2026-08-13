@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase-server";
 import CoachAnnouncementForm from "@/app/components/CoachAnnouncementForm";
 import CoachScheduleManager, { type ScheduleTemplate } from "@/app/components/CoachScheduleManager";
@@ -41,6 +41,10 @@ export default async function CoachDashboardPage() {
   return <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8"><div className="mx-auto max-w-5xl">
     <Link href="/mypage" className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-white/60 hover:text-orange-400"><ArrowLeft size={16} />自分のマイページ</Link>
     <header className="mt-10 border-l-2 border-orange-500 pl-5"><p className="text-xs font-black tracking-[0.22em] text-orange-400">COACH DASHBOARD</p><h1 className="mt-3 text-4xl font-black">担当選手</h1><p className="mt-3 text-white/55">選手の現状を確認して、記録ごとにフィードバックできます。</p></header>
+    <a href="/coach-manual.pdf" target="_blank" rel="noopener noreferrer" className="mt-8 flex items-center justify-between rounded-2xl border border-orange-500/40 bg-orange-500/[0.08] p-5 text-white transition hover:border-orange-400 hover:bg-orange-500/[0.12]">
+      <span className="flex items-center gap-4"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-orange-500/15 text-orange-400"><BookOpen size={22} aria-hidden="true" /></span><span><strong className="block text-base">コーチ用使用マニュアル</strong><span className="mt-1 block text-xs text-white/50">選手確認・フィードバック・管理機能の使い方</span></span></span>
+      <ChevronRight className="shrink-0 text-orange-400" aria-hidden="true" />
+    </a>
     <div className="mt-8 flex flex-wrap gap-2">{classes.map((item) => <span key={item} className="rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-300">{item}</span>)}</div>
     <FeedbackRequestQueue items={queueItems} />
     <CoachInvitationManager />
