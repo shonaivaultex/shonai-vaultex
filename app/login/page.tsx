@@ -114,8 +114,6 @@ const { error } = await supabase.auth.signInWithPassword({
               <input className="min-w-0 flex-1 bg-transparent py-4 text-sm outline-none placeholder:text-white/25" type="password" autoComplete="new-password" placeholder="もう一度入力" value={passwordConfirmation} onChange={(e) => setPasswordConfirmation(e.target.value)} required minLength={8} />
             </span>
           </label>
-          <div className="text-right"><Link href="/forgot-password" className="text-xs font-bold text-orange-400 transition hover:text-orange-300">パスワードを忘れた方</Link></div>
-
           {errorMessage && <p role="alert" className="border-l-2 border-orange-500 bg-orange-500/10 px-4 py-3 text-sm text-orange-200">{errorMessage}</p>}
 
           <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 bg-orange-500 px-5 py-4 text-xs font-black tracking-[0.16em] text-white transition hover:bg-orange-400 disabled:cursor-wait disabled:opacity-60">
@@ -139,6 +137,15 @@ const { error } = await supabase.auth.signInWithPassword({
               <input className="min-w-0 flex-1 bg-transparent py-4 text-sm outline-none placeholder:text-white/25" type="password" autoComplete="current-password" placeholder="パスワード" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </span>
           </label>
+
+          <div className="flex justify-end">
+            <Link
+              href="/forgot-password"
+              className="inline-flex min-h-11 items-center px-1 text-sm font-bold text-orange-400 transition hover:text-orange-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+            >
+              パスワードを忘れた方はこちら
+            </Link>
+          </div>
 
           {errorMessage && <p role="alert" className="border-l-2 border-orange-500 bg-orange-500/10 px-4 py-3 text-sm text-orange-200">{errorMessage}</p>}
 
