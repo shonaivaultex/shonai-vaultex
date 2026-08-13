@@ -34,6 +34,7 @@ export const performanceEvents: PerformanceEvent[] = [
   { name: "ハンマー投", unit: "m", kind: "athletics" },
   { name: "やり投", unit: "m", kind: "athletics" },
   { name: "十種競技", unit: "点", kind: "athletics" },
+  { name: "八種競技", unit: "点", kind: "athletics" },
   { name: "七種競技", unit: "点", kind: "athletics" },
   { name: "その他", unit: "", kind: "control-test" },
 ];
