@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
-import { createAdminClient } from "@/lib/supabase-admin";
+import { createClient as createStandaloneClient } from "@supabase/supabase-js";
+import { createAdminClient, hasAdminKey } from "@/lib/supabase-admin";
 import { programClasses } from "@/lib/program-classes";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,7 @@ function normalize(input: InviteInput) {
 
 export async function GET() {
   if (!await requireCoach()) return NextResponse.json({ error: "権限がありません。" }, { status: 403 });
+  if (!hasAdminKey()) return NextResponse.json({ invitations: [] });
   try {
     const admin = createAdminClient();
     const users = [];
@@ -76,13 +78,27 @@ export async function POST(request: NextRequest) {
       if (emails.has(item.email)) return NextResponse.json({ error: `${item.email}が重複しています。` }, { status: 400 });
       emails.add(item.email);
     }
-    const admin = createAdminClient();
     const results: Array<{ email: string; ok: boolean; message: string }> = [];
+    const admin = hasAdminKey() ? createAdminClient() : null;
+    const signupClient = admin ? null : createStandaloneClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false } },
+    );
     for (const item of invitations) {
-      const { data, error } = await admin.auth.admin.inviteUserByEmail(item.email, {
-        data: { name: item.name, program_class: item.programClass },
-        redirectTo: `${new URL(request.url).origin}/activate`,
-      });
+      const { data, error } = admin
+        ? await admin.auth.admin.inviteUserByEmail(item.email, {
+            data: { name: item.name, program_class: item.programClass },
+            redirectTo: `${new URL(request.url).origin}/activate`,
+          })
+        : await signupClient!.auth.signUp({
+            email: item.email,
+            password: `${crypto.randomUUID()}Aa1!`,
+            options: {
+              data: { name: item.name, program_class: item.programClass },
+              emailRedirectTo: `${new URL(request.url).origin}/activate`,
+            },
+          });
       if (error || !data.user) {
         results.push({ email: item.email, ok: false, message: error?.message ?? "招待できませんでした。" });
         continue;

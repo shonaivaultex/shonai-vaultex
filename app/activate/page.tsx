@@ -36,11 +36,20 @@ export default function ActivatePage() {
 
     setLoading(true);
     const supabase = createClient();
-    const { error: verificationError } = await supabase.auth.verifyOtp({
+    let { error: verificationError } = await supabase.auth.verifyOtp({
       email: email.trim(),
       token: code,
       type: "invite",
     });
+
+    if (verificationError) {
+      const signupVerification = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: code,
+        type: "signup",
+      });
+      verificationError = signupVerification.error;
+    }
 
     if (verificationError) {
       setLoading(false);
