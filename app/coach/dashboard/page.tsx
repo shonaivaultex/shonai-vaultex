@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, ChevronRight, Users } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase-server";
 import CoachAnnouncementForm from "@/app/components/CoachAnnouncementForm";
 import CoachScheduleManager, { type ScheduleTemplate } from "@/app/components/CoachScheduleManager";
 import type { ScheduleItem } from "@/app/components/SchedulePanel";
 import FeedbackRequestQueue, { type FeedbackQueueItem } from "@/app/components/FeedbackRequestQueue";
 import MemberManagement from "@/app/components/MemberManagement";
+import AthletesByClass from "@/app/components/AthletesByClass";
 
 export default async function CoachDashboardPage() {
   const supabase = await createClient();
@@ -40,6 +41,6 @@ export default async function CoachDashboardPage() {
     <MemberManagement members={(allAthletes ?? []).map((athlete) => ({ ...athlete, member_status: athlete.member_status ?? "active" }))} />
     <CoachAnnouncementForm />
     <CoachScheduleManager initialItems={(schedules ?? []) as ScheduleItem[]} initialTemplates={(scheduleTemplates ?? []) as ScheduleTemplate[]} initialAttendance={attendance ?? []} />
-    <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{(athletes ?? []).map((athlete) => <Link key={athlete.user_id} href={`/coach/athletes/${athlete.user_id}`} className="group rounded-2xl border border-white/10 bg-[#111] p-5 transition hover:border-orange-500/60"><span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-500/15 text-orange-400"><Users size={20} /></span><strong className="mt-4 block text-lg">{athlete.name}</strong><span className="mt-1 block text-sm text-white/45">{athlete.program_class}・{athlete.grade}</span><span className="mt-1 block text-sm text-white/45">{athlete.event}</span><ChevronRight className="mt-4 text-orange-400 transition group-hover:translate-x-1" /></Link>)}</div>
+    <AthletesByClass athletes={athletes ?? []} />
   </div></main>;
 }
