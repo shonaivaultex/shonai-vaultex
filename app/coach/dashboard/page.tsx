@@ -35,6 +35,11 @@ export default async function CoachDashboardPage() {
     if (!record || !athlete) return [];
     return [{ id: request.id, recordId: record.id, athleteId: record.user_id, athleteName: athlete.name, programClass: athlete.program_class, category: record.category, value: record.value, requestType: request.request_type, message: request.message, priority: request.priority, status: request.status, createdAt: request.created_at, answeredAt: request.answered_at }];
   });
+  const { data: videoRequests } = await supabase.from("video_feedback_requests").select("id, user_id, event_name, message, priority, status, created_at, responded_at").in("status", ["pending", "answered"]).order("created_at", { ascending: false }).limit(500);
+  const videoQueueItems = (videoRequests ?? []).flatMap<FeedbackQueueItem>((request) => {
+    const athlete = athleteMap.get(request.user_id); if (!athlete) return [];
+    return [{ id: request.id, recordId: null, videoRequestId: request.id, athleteId: request.user_id, athleteName: athlete.name, programClass: athlete.program_class, category: request.event_name, value: "", requestType: "video", message: request.message, priority: request.priority, status: request.status, createdAt: request.created_at, answeredAt: request.responded_at }];
+  });
   const { data: bugReports } = await supabase.from("bug_reports").select("id, user_id, category, detail, page_url, user_agent, status, created_at").order("created_at", { ascending: false }).limit(100);
   const memberNames = new Map((allAthletes ?? []).map((athlete) => [athlete.user_id, athlete.name]));
   const bugReportItems: BugReportItem[] = (bugReports ?? []).map((item) => ({ id: item.id, memberName: memberNames.get(item.user_id) ?? "会員", category: item.category, detail: item.detail, pageUrl: item.page_url, userAgent: item.user_agent, status: item.status, createdAt: item.created_at }));
@@ -46,7 +51,7 @@ export default async function CoachDashboardPage() {
       <ChevronRight className="shrink-0 text-orange-400" aria-hidden="true" />
     </a>
     <div className="mt-8 flex flex-wrap gap-2">{classes.map((item) => <span key={item} className="rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-300">{item}</span>)}</div>
-    <FeedbackRequestQueue items={queueItems} />
+    <FeedbackRequestQueue items={[...queueItems, ...videoQueueItems]} />
     <CoachInvitationManager />
     <BugReportManager initialItems={bugReportItems} />
     <MemberManagement members={(allAthletes ?? []).map((athlete) => ({ ...athlete, member_status: athlete.member_status ?? "active" }))} />

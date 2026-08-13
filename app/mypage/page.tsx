@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-server";
-import { Activity, BookOpen, ChevronRight, Download, Medal, Trophy } from "lucide-react";
+import { Activity, BookOpen, ChevronRight, Download, Medal, Trophy, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import NewsPanel, { type NewsItem } from "@/app/components/NewsPanel";
@@ -98,6 +98,9 @@ export default async function MyPage() {
       <a href="/api/performance/export" download className="mt-3 flex w-full items-center justify-between rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-sm text-white/75 transition hover:border-orange-500/40 hover:text-white"><span className="flex items-center gap-2 font-bold"><Download size={17} className="text-orange-400" />記録データをCSVで保存</span><span className="text-xs text-white/35">全記録をバックアップ</span></a>
       <BugReportButton />
       <SchedulePanel items={(schedules ?? []) as ScheduleItem[]} />
+      <Link href="/mypage/video-feedback" className="mt-5 flex items-center justify-between rounded-2xl border border-sky-500/40 bg-sky-500/[0.08] p-5 text-white transition hover:border-sky-400 hover:bg-sky-500/[0.12]">
+        <span className="flex items-center gap-4"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sky-500/15 text-sky-400"><Video size={22} aria-hidden="true" /></span><span><strong className="block text-base">動画だけ見てもらう</strong><span className="mt-1 block text-xs text-white/50">記録なしでフォームや動作をコーチへ相談</span></span></span><ChevronRight className="shrink-0 text-sky-400" aria-hidden="true" />
+      </Link>
       <a
         href="/member-manual.pdf"
         target="_blank"
