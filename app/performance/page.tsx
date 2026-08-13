@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
-import { ArrowLeft, Check, LoaderCircle, Save } from "lucide-react";
+import { ArrowLeft, Check, LoaderCircle, Save, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 import { eventNamesByKind, type PerformanceKind, unitMap } from "@/lib/performance-events";
 import { awarenessCategories, createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
@@ -24,6 +24,7 @@ function PerformanceForm() {
   const [awarenessCategory, setAwarenessCategory] = useState("");
   const [awarenessNote, setAwarenessNote] = useState("");
   const [video, setVideo] = useState<File | null>(null);
+  const [videoInputKey, setVideoInputKey] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
@@ -187,8 +188,8 @@ const unit = unitMap[category] ?? "";
 
             <label className="block">
               <span className="text-sm font-bold text-white">動画を追加 <span className="font-normal text-white/40">（任意・100MBまで）</span></span>
-              <input type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" disabled={isSaving} onChange={(event) => { const selected = event.target.files?.[0] ?? null; const validationError = selected ? validateVideo(selected) : null; setUploadProgress(0); if (validationError) { setVideo(null); setErrorMessage(validationError); event.target.value = ""; return; } setErrorMessage(""); setVideo(selected); }} className="mt-3 block w-full rounded-xl border border-dashed border-white/20 bg-[#101216] px-4 py-4 text-sm text-white/65 file:mr-4 file:rounded-lg file:border-0 file:bg-orange-500 file:px-3 file:py-2 file:font-bold file:text-white disabled:opacity-50" />
-              {video && <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3"><div className="flex items-center justify-between gap-3 text-xs"><span className="min-w-0 truncate text-white/65">{video.name}</span><strong className="shrink-0 text-orange-300">{formatVideoSize(video.size)} / 100MB</strong></div>{isSaving && <div className="mt-3"><div className="mb-1 flex justify-between text-xs text-white/50"><span>{uploadProgress < 100 ? "動画をアップロード中" : "動画の処理完了"}</span><span>{uploadProgress}%</span></div><div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-orange-500 transition-[width]" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-2 text-xs text-white/35">完了するまでこの画面を閉じないでください。</p></div>}</div>}
+              <input key={videoInputKey} type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" disabled={isSaving} onChange={(event) => { const selected = event.target.files?.[0] ?? null; const validationError = selected ? validateVideo(selected) : null; setUploadProgress(0); if (validationError) { setVideo(null); setErrorMessage(validationError); event.target.value = ""; return; } setErrorMessage(""); setVideo(selected); }} className="mt-3 block w-full rounded-xl border border-dashed border-white/20 bg-[#101216] px-4 py-4 text-sm text-white/65 file:mr-4 file:rounded-lg file:border-0 file:bg-orange-500 file:px-3 file:py-2 file:font-bold file:text-white disabled:opacity-50" />
+              {video && <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3"><div className="flex items-center justify-between gap-3 text-xs"><span className="min-w-0 truncate text-white/65">{video.name}</span><div className="flex shrink-0 items-center gap-3"><strong className="text-orange-300">{formatVideoSize(video.size)} / 100MB</strong><button type="button" disabled={isSaving} onClick={() => { setVideo(null); setUploadProgress(0); setVideoInputKey((value) => value + 1); setErrorMessage(""); }} className="inline-flex items-center gap-1 rounded-lg border border-red-500/30 px-2.5 py-1.5 font-bold text-red-300 disabled:opacity-40"><Trash2 size={13} />動画を削除</button></div></div>{isSaving && <div className="mt-3"><div className="mb-1 flex justify-between text-xs text-white/50"><span>{uploadProgress < 100 ? "動画をアップロード中" : "動画の処理完了"}</span><span>{uploadProgress}%</span></div><div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-orange-500 transition-[width]" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-2 text-xs text-white/35">完了するまでこの画面を閉じないでください。</p></div>}</div>}
             </label>
           </div>
 
