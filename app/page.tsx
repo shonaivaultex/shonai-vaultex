@@ -10,9 +10,6 @@ import { ContactLine } from "./components/ui/ContactLine";
 import { CtaLink } from "./components/ui/CtaLink";
 import { SectionLabel } from "./components/ui/SectionLabel";
 import { Stat } from "./components/ui/Stat";
-console.log("LoadingScreen =", LoadingScreen);
-
-
 const features = [
   { icon: Trophy, title: "WINNING MINDSET", text: "挑戦を楽しみ、最後までやり抜く力を。競技を通じて、自分の可能性を広げます。" },
   { icon: Users, title: "TEAM & COMMUNITY", text: "仲間と高め合う日々が、自信になる。地域に根ざした、あたたかく強いチームです。" },
