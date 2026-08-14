@@ -7,6 +7,7 @@ type PerformanceRecord = {
   value: number | string;
   date: string;
   awareness_category?: string | null;
+  awareness_categories?: string[] | null;
   awareness_note?: string | null;
   video_path?: string | null;
   video_url?: string | null;

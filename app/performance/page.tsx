@@ -6,7 +6,8 @@ import { FormEvent, Suspense, useState } from "react";
 import { ArrowLeft, Check, LoaderCircle, Save, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 import { eventNamesByKind, type PerformanceKind, unitMap } from "@/lib/performance-events";
-import { awarenessCategories, createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
+import { createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
+import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
 
 function today() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
@@ -21,7 +22,7 @@ function PerformanceForm() {
   const [category, setCategory] = useState(eventOptions[0]);
   const [value, setValue] = useState("");
   const [date, setDate] = useState(today);
-  const [awarenessCategory, setAwarenessCategory] = useState("");
+  const [awarenessTags, setAwarenessTags] = useState<string[]>([]);
   const [awarenessNote, setAwarenessNote] = useState("");
   const [video, setVideo] = useState<File | null>(null);
   const [videoInputKey, setVideoInputKey] = useState(0);
@@ -82,7 +83,8 @@ const unit = unitMap[category] ?? "";
         value: numericValue,
         date,
         record_kind: kind,
-        awareness_category: awarenessCategory || null,
+        awareness_category: awarenessTags[0] || null,
+        awareness_categories: awarenessTags.length ? awarenessTags : null,
         awareness_note: awarenessNote.trim() || null,
         video_path: videoPath,
       });
@@ -172,13 +174,7 @@ const unit = unitMap[category] ?? "";
               />
             </label>
 
-            <label className="block">
-              <span className="text-sm font-bold text-white">今日一番意識したこと <span className="font-normal text-white/40">（任意）</span></span>
-              <select value={awarenessCategory} onChange={(event) => setAwarenessCategory(event.target.value)} className="mt-3 w-full rounded-xl border border-white/15 bg-[#101216] px-4 py-4 text-white outline-none transition focus:border-orange-500">
-                <option value="">選択しない</option>
-                {awarenessCategories.map((option) => <option key={option} value={option}>{option}</option>)}
-              </select>
-            </label>
+            <div><span className="text-sm font-bold text-white">意識したこと <span className="font-normal text-white/40">（任意・複数選択可）</span></span><AwarenessTagSelector value={awarenessTags} onChange={setAwarenessTags} /></div>
 
             <label className="block">
               <span className="text-sm font-bold text-white">何をどう意識しましたか？ <span className="font-normal text-white/40">（任意）</span></span>

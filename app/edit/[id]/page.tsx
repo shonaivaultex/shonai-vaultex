@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 import { performanceEvents, type PerformanceKind } from "@/lib/performance-events";
-import { awarenessCategories, createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
+import { createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
+import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
 
 export default function EditPerformancePage() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function EditPerformancePage() {
   const [value, setValue] = useState("");
   const [date, setDate] = useState("");
   const [recordKind, setRecordKind] = useState<PerformanceKind>("control-test");
-  const [awarenessCategory, setAwarenessCategory] = useState("");
+  const [awarenessTags, setAwarenessTags] = useState<string[]>([]);
   const [awarenessNote, setAwarenessNote] = useState("");
   const [videoPath, setVideoPath] = useState<string | null>(null);
   const [newVideo, setNewVideo] = useState<File | null>(null);
@@ -37,7 +38,7 @@ export default function EditPerformancePage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("performance_records")
-        .select("category, value, date, record_kind, awareness_category, awareness_note, video_path")
+        .select("category, value, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path")
         .eq("id", id)
         .single();
 
@@ -51,7 +52,7 @@ export default function EditPerformancePage() {
       setValue(String(data.value ?? ""));
       setDate(data.date ?? "");
       setRecordKind(data.record_kind ?? (performanceEvents.find((event) => event.name === data.category)?.kind ?? "control-test"));
-      setAwarenessCategory(data.awareness_category ?? "");
+      setAwarenessTags(data.awareness_categories?.length ? data.awareness_categories : data.awareness_category ? [data.awareness_category] : []);
       setAwarenessNote(data.awareness_note ?? "");
       setVideoPath(data.video_path ?? null);
       setLoading(false);
@@ -104,7 +105,8 @@ export default function EditPerformancePage() {
         value,
         date,
         record_kind: recordKind,
-        awareness_category: awarenessCategory || null,
+        awareness_category: awarenessTags[0] || null,
+        awareness_categories: awarenessTags.length ? awarenessTags : null,
         awareness_note: awarenessNote.trim() || null,
         video_path: nextVideoPath,
       })
@@ -183,13 +185,7 @@ export default function EditPerformancePage() {
 </select>
           </div>
 
-          <div>
-            <label htmlFor="awareness" className="mb-2 block text-sm font-bold text-zinc-200">今日一番意識したこと（任意）</label>
-            <select id="awareness" value={awarenessCategory} onChange={(event) => setAwarenessCategory(event.target.value)} className="w-full rounded-xl border border-zinc-700 bg-[#111] px-4 py-3 text-white outline-none focus:border-[#ff7a00]">
-              <option value="">選択しない</option>
-              {awarenessCategories.map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
-          </div>
+          <div><span className="mb-2 block text-sm font-bold text-zinc-200">意識したこと（任意・複数選択可）</span><AwarenessTagSelector value={awarenessTags} onChange={setAwarenessTags} /></div>
 
           <div>
             <label htmlFor="awareness-note" className="mb-2 block text-sm font-bold text-zinc-200">何をどう意識しましたか？（任意）</label>

@@ -276,9 +276,7 @@ export default function VideoFeedbackManager({
                     <h3 className="mt-2 text-lg font-black">
                       {item.event_name}
                     </h3>
-                    <p className="mt-1 text-xs text-white/35">
-                      {new Date(item.created_at).toLocaleString("ja-JP")}
-                    </p>
+                    <p className="mt-1 text-xs font-bold text-white/45">依頼日：{new Date(item.created_at).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}</p><p className="mt-1 text-[11px] text-white/30">{new Date(item.created_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}</p>
                   </div>
                   <button
                     onClick={() => cancel(item)}
