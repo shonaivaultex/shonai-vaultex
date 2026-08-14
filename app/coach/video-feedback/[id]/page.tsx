@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase-server";
 import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
 import CompatibleVideoPlayer from "@/app/components/CompatibleVideoPlayer";
 import VideoFeedbackConversation, { type VideoFeedbackMessage } from "@/app/components/VideoFeedbackConversation";
+import VideoFeedbackAssignee from "@/app/components/VideoFeedbackAssignee";
 
 export default async function CoachVideoFeedbackPage({
   params,
@@ -40,6 +41,11 @@ export default async function CoachVideoFeedbackPage({
     .from(PERFORMANCE_VIDEO_BUCKET)
     .createSignedUrl(request.video_path, 3600);
   const { data: messages } = await supabase.from("video_feedback_messages").select("id, sender_id, sender_role, body, created_at, video_feedback_message_reactions(user_id, reaction)").eq("request_id", request.id).order("created_at");
+  const coachMessageIds = (messages ?? []).filter((message) => message.sender_role === "coach").map((message) => message.id);
+  const { data: messageReads } = coachMessageIds.length ? await supabase.from("video_feedback_message_reads").select("message_id").eq("user_id", request.user_id).in("message_id", coachMessageIds) : { data: [] };
+  const readMessageIds = new Set((messageReads ?? []).map((item) => item.message_id));
+  const conversationMessages = (messages ?? []).map((message) => ({ ...message, read_by_athlete: message.sender_role === "coach" && readMessageIds.has(message.id) }));
+  const { data: availableCoaches } = await supabase.rpc("get_video_feedback_coaches", { p_request_id: request.id });
   return (
     <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8">
       <div className="mx-auto max-w-3xl">
@@ -80,6 +86,7 @@ export default async function CoachVideoFeedbackPage({
               {request.message}
             </p>
           )}
+          <VideoFeedbackAssignee requestId={request.id} initialCoachId={request.assigned_coach_id ?? null} coaches={(availableCoaches ?? []) as Array<{ user_id: string; name: string }>} />
           {signed?.signedUrl && (
             <div className="mt-5">
               <p className="mb-3 text-sm font-bold text-orange-400">
@@ -92,7 +99,7 @@ export default async function CoachVideoFeedbackPage({
               />
             </div>
           )}
-          <VideoFeedbackConversation requestId={request.id} messages={(messages ?? []) as VideoFeedbackMessage[]} role="coach" />
+          <VideoFeedbackConversation requestId={request.id} messages={conversationMessages as VideoFeedbackMessage[]} role="coach" />
         </article>
       </div>
     </main>
