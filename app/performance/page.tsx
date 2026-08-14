@@ -176,7 +176,7 @@ const unit = unitMap[category] ?? "";
         <div className="mt-10 border-l-2 border-orange-500 pl-5">
           <p className="text-xs font-black tracking-[0.22em] text-orange-400">TRAINING LOG</p>
           <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl">
-            {kind === "athletics" ? "陸上競技記録を追加" : kind === "unofficial-athletics" ? "非公認陸上競技記録を追加" : "テスト記録を追加"}
+            {kind === "athletics" ? "本番記録を追加" : kind === "unofficial-athletics" ? "練習記録を追加" : "コントロールテストを追加"}
           </h1>
           <p className="mt-3 leading-7 text-white/60">
             今日の挑戦を残そう。積み重ねた記録が、次の自信になる。
