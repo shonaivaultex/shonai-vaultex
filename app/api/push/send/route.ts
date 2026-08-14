@@ -25,11 +25,14 @@ export async function POST(request: Request) {
       return { ok: true, endpoint: target.endpoint };
     } catch (error) {
       const statusCode = typeof error === "object" && error && "statusCode" in error ? Number(error.statusCode) : null;
-      console.error("Push notification failed", { statusCode, endpointHost: new URL(target.endpoint).host });
-      return { ok: false, endpoint: target.endpoint, statusCode };
+      const responseBody = typeof error === "object" && error && "body" in error && typeof error.body === "string" ? error.body : "";
+      let reason = responseBody;
+      try { reason = JSON.parse(responseBody).reason ?? responseBody; } catch { /* Use the original response text. */ }
+      console.error("Push notification failed", { statusCode, reason, endpointHost: new URL(target.endpoint).host });
+      return { ok: false, endpoint: target.endpoint, statusCode, reason };
     }
   }));
   const staleEndpoints = deliveries.filter((item) => !item.ok && (item.statusCode === 404 || item.statusCode === 410)).map((item) => item.endpoint);
   if (kind === "test" && staleEndpoints.length) await supabase.from("push_subscriptions").delete().eq("user_id", user.id).in("endpoint", staleEndpoints);
-  return NextResponse.json({ attempted: deliveries.length, sent: deliveries.filter((item) => item.ok).length, failed: deliveries.filter((item) => !item.ok).length });
+  return NextResponse.json({ attempted: deliveries.length, sent: deliveries.filter((item) => item.ok).length, failed: deliveries.filter((item) => !item.ok).length, reasons: kind === "test" ? [...new Set(deliveries.filter((item) => !item.ok).map((item) => item.reason || `HTTP ${item.statusCode ?? "error"}`))] : undefined });
 }
