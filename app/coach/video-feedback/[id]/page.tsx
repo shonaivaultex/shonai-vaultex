@@ -39,7 +39,7 @@ export default async function CoachVideoFeedbackPage({
   const { data: signed } = await supabase.storage
     .from(PERFORMANCE_VIDEO_BUCKET)
     .createSignedUrl(request.video_path, 3600);
-  const { data: messages } = await supabase.from("video_feedback_messages").select("id, sender_id, sender_role, body, created_at").eq("request_id", request.id).order("created_at");
+  const { data: messages } = await supabase.from("video_feedback_messages").select("id, sender_id, sender_role, body, created_at, video_feedback_message_reactions(user_id, reaction)").eq("request_id", request.id).order("created_at");
   return (
     <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8">
       <div className="mx-auto max-w-3xl">

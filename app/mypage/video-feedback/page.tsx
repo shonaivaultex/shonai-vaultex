@@ -11,7 +11,7 @@ export default async function VideoFeedbackPage() {
   if (!user) redirect("/login?next=/mypage/video-feedback");
   const { data: requests } = await supabase.from("video_feedback_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
   const requestIds = (requests ?? []).map((item) => item.id);
-  const { data: messages } = requestIds.length ? await supabase.from("video_feedback_messages").select("id, request_id, sender_id, sender_role, body, created_at").in("request_id", requestIds).order("created_at") : { data: [] };
+  const { data: messages } = requestIds.length ? await supabase.from("video_feedback_messages").select("id, request_id, sender_id, sender_role, body, created_at, video_feedback_message_reactions(user_id, reaction)").in("request_id", requestIds).order("created_at") : { data: [] };
   const items = await Promise.all((requests ?? []).map(async (item) => {
     const { data } = await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).createSignedUrl(item.video_path, 3600);
     return { ...item, video_url: data?.signedUrl ?? null, messages: (messages ?? []).filter((message) => message.request_id === item.id) };
