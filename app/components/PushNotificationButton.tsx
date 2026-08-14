@@ -43,10 +43,25 @@ export default function PushNotificationButton() {
     if (error) { setPreferences(preferences); alert("通知設定を保存できませんでした：" + error.message); }
   }
 
+  async function sendTest() {
+    if (!endpoint) return;
+    setSaving(true);
+    try {
+      const response = await fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "test", endpoint }) });
+      const result = await response.json();
+      if (!response.ok || result.sent !== 1) throw new Error(result.error || "テスト通知を送信できませんでした。");
+      alert("テスト通知を送信しました。スマホの通知をご確認ください。");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "テスト通知を送信できませんでした。");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return <section className={`mt-5 overflow-hidden rounded-xl border ${enabled ? "border-emerald-500/30 bg-emerald-500/[0.06]" : "border-orange-500/30 bg-orange-500/[0.07]"}`}>
     {!enabled ? <button type="button" onClick={enable} disabled={saving} className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-bold text-orange-300"><span className="flex items-center gap-2"><Bell size={17} />お知らせ通知をONにする</span><span className="text-xs font-normal opacity-60">{saving ? "設定中…" : "タップして許可"}</span></button> : <>
       <button type="button" onClick={() => setOpen((current) => !current)} className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-bold text-emerald-300"><BellRing size={17} /><span>通知設定</span><span className="ml-auto text-xs font-normal opacity-60">通知ON</span><ChevronDown size={16} className={`transition ${open ? "rotate-180" : ""}`} /></button>
-      {open && <div className="divide-y divide-white/10 border-t border-white/10 px-4">{options.map((option) => <div key={option.key} className="flex items-center gap-4 py-3"><div className="min-w-0 flex-1"><strong className="block text-sm text-white/85">{option.title}</strong><span className="text-xs text-white/40">{option.detail}</span></div><button type="button" role="switch" aria-checked={preferences[option.key]} disabled={saving} onClick={() => toggle(option.key)} className={`relative h-7 w-12 shrink-0 rounded-full transition disabled:opacity-50 ${preferences[option.key] ? "bg-emerald-500" : "bg-white/15"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${preferences[option.key] ? "left-6" : "left-1"}`} /></button></div>)}</div>}
+      {open && <div className="divide-y divide-white/10 border-t border-white/10 px-4">{options.map((option) => <div key={option.key} className="flex items-center gap-4 py-3"><div className="min-w-0 flex-1"><strong className="block text-sm text-white/85">{option.title}</strong><span className="text-xs text-white/40">{option.detail}</span></div><button type="button" role="switch" aria-checked={preferences[option.key]} disabled={saving} onClick={() => toggle(option.key)} className={`relative h-7 w-12 shrink-0 rounded-full transition disabled:opacity-50 ${preferences[option.key] ? "bg-emerald-500" : "bg-white/15"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${preferences[option.key] ? "left-6" : "left-1"}`} /></button></div>)}<div className="py-3"><button type="button" disabled={saving} onClick={sendTest} className="w-full rounded-lg border border-emerald-500/40 px-4 py-2 text-sm font-bold text-emerald-300 transition hover:bg-emerald-500/10 disabled:opacity-50">{saving ? "送信中…" : "テスト通知を送る"}</button></div></div>}
     </>}
   </section>;
 }
