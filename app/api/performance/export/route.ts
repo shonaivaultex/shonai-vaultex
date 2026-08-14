@@ -4,8 +4,8 @@ import { unitMap } from "@/lib/performance-events";
 
 const kindLabels: Record<string, string> = {
   "control-test": "コントロールテスト",
-  athletics: "公認陸上競技記録",
-  "unofficial-athletics": "非公認陸上競技記録",
+  athletics: "本番記録",
+  "unofficial-athletics": "練習記録",
 };
 
 function csvCell(value: unknown) {
