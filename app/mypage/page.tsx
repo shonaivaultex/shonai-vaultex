@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-server";
-import { Activity, BookOpen, ChevronRight, Download, Medal, Trophy, Video } from "lucide-react";
+import { Activity, BookOpen, CalendarDays, ChevronDown, ChevronRight, Download, Medal, Plus, Settings, Trophy, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import NewsPanel, { type NewsItem } from "@/app/components/NewsPanel";
@@ -67,60 +67,26 @@ export default async function MyPage() {
         padding: 20,
       }}
     >
-      <h1>MY PAGE</h1>
+      <h1 className="text-3xl font-black">MY PAGE</h1>
 
       {/* プロフィール */}
-      <div
-        style={{
-          marginTop: 30,
-          padding: 30,
-          borderRadius: 20,
-          background: "#111",
-          color: "white",
-        }}
-      >
-        <h2>{player.name}</h2>
-
-        <p>
-          <strong>GRADE</strong>
-          <br />
-          {player.grade}
-        </p>
-
-        <p>
-          <strong>EVENT</strong>
-          <br />
-          {player.event}
-        </p>
-
-        <p>
-          <strong>SCHOOL</strong>
-          <br />
-          {player.school}
-        </p>
-        <p><strong>VAULTEX CLASS</strong><br />{player.program_class ?? "未選択"}</p>
+      <div className="mt-6 rounded-2xl border border-white/10 bg-[#111] p-5 text-white">
+        <h2 className="text-xl font-black">{player.name}</h2>
+        <p className="mt-2 text-sm text-white/50">{player.program_class ?? "クラス未選択"} ・ {player.grade ?? "学年未設定"}</p>
+        <p className="mt-1 text-sm text-white/50">{player.event ?? "種目未設定"}</p>
       </div>
 
+      <section className="mt-6">
+        <p className="mb-3 text-xs font-black tracking-[0.16em] text-orange-400">QUICK ACTION</p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Link href="/performance" className="flex items-center gap-3 rounded-2xl bg-orange-500 p-4 font-black text-black transition hover:bg-orange-400 sm:flex-col sm:justify-center sm:text-center"><Plus size={22} /><span>記録を追加</span></Link>
+          <Link href="/mypage/video-feedback" className="flex items-center gap-3 rounded-2xl border border-sky-500/45 bg-sky-500/[0.09] p-4 font-black text-white transition hover:border-sky-400 sm:flex-col sm:justify-center sm:text-center"><Video size={22} className="text-sky-400" /><span>動画を送る</span></Link>
+          <Link href="/mypage/schedules" className="flex items-center gap-3 rounded-2xl border border-white/15 bg-[#111] p-4 font-black text-white transition hover:border-orange-500/50 sm:flex-col sm:justify-center sm:text-center"><CalendarDays size={22} className="text-orange-400" /><span>予定を見る</span></Link>
+        </div>
+      </section>
+
       <NewsPanel initialItems={newsItems} userId={user.id} />
-      <PushNotificationButton />
-      <a href="/api/performance/export" download className="mt-3 flex w-full items-center justify-between rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-sm text-white/75 transition hover:border-orange-500/40 hover:text-white"><span className="flex items-center gap-2 font-bold"><Download size={17} className="text-orange-400" />記録データをCSVで保存</span><span className="text-xs text-white/35">全記録をバックアップ</span></a>
-      <BugReportButton />
       <SchedulePanel items={(schedules ?? []) as ScheduleItem[]} />
-      <Link href="/mypage/video-feedback" className="mt-5 flex items-center justify-between rounded-2xl border border-sky-500/40 bg-sky-500/[0.08] p-5 text-white transition hover:border-sky-400 hover:bg-sky-500/[0.12]">
-        <span className="flex items-center gap-4"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sky-500/15 text-sky-400"><Video size={22} aria-hidden="true" /></span><span><strong className="block text-base">動画だけ見てもらう</strong><span className="mt-1 block text-xs text-white/50">記録なしでフォームや動作をコーチへ相談</span></span></span><ChevronRight className="shrink-0 text-sky-400" aria-hidden="true" />
-      </Link>
-      <a
-        href="/member-manual.pdf"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-5 flex items-center justify-between rounded-2xl border border-orange-500/40 bg-orange-500/[0.08] p-5 text-white transition hover:border-orange-400 hover:bg-orange-500/[0.12]"
-      >
-        <span className="flex items-center gap-4">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-orange-500/15 text-orange-400"><BookOpen size={22} aria-hidden="true" /></span>
-          <span><strong className="block text-base">マイページ使用マニュアル</strong><span className="mt-1 block text-xs text-white/50">基本操作や記録・動画の使い方を見る</span></span>
-        </span>
-        <ChevronRight className="shrink-0 text-orange-400" aria-hidden="true" />
-      </a>
       <h2 style={{ marginTop: 40, marginBottom: 20 }}>PERFORMANCE</h2>
       {coachRole && <Link href="/coach/dashboard" className="mb-5 flex items-center justify-between rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-5 text-white transition hover:border-emerald-400"><span><strong className="block text-lg">コーチダッシュボード</strong><span className="mt-1 block text-sm text-white/50">担当選手の確認・フィードバック</span></span><ChevronRight className="text-emerald-400" /></Link>}
       <div style={{ display: "grid", gap: 14 }}>
@@ -141,6 +107,17 @@ export default async function MyPage() {
         </Link>
       </div>
 
+      <details className="group mt-8 overflow-hidden rounded-2xl border border-white/10 bg-[#111] text-white open:border-orange-500/35">
+        <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-4 marker:hidden"><Settings size={19} className="text-white/45" /><strong>その他</strong><span className="text-xs text-white/35">設定・保存・ヘルプ</span><ChevronDown size={18} className="ml-auto text-white/40 transition group-open:rotate-180" /></summary>
+        <div className="border-t border-white/10 p-4">
+          <PushNotificationButton />
+          <a href="/api/performance/export" download className="mt-3 flex w-full items-center justify-between rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-sm text-white/75 transition hover:border-orange-500/40 hover:text-white"><span className="flex items-center gap-2 font-bold"><Download size={17} className="text-orange-400" />記録データをCSVで保存</span><span className="text-xs text-white/35">バックアップ</span></a>
+          <a href="/member-manual.pdf" target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center justify-between rounded-xl border border-white/10 px-4 py-3 text-sm text-white/75"><span className="flex items-center gap-2 font-bold"><BookOpen size={17} className="text-orange-400" />使用マニュアル</span><ChevronRight size={16} /></a>
+          <BugReportButton />
+          <Link href="/edit" className="mt-3 block rounded-xl border border-white/10 px-4 py-3 text-sm font-bold text-white/70">プロフィール編集</Link>
+        </div>
+      </details>
+
       <div
         style={{
           display: "flex",
@@ -150,9 +127,7 @@ export default async function MyPage() {
           marginTop: 24,
         }}
       >
-        <Link href="/edit">
-          プロフィール編集
-        </Link>
+        <span />
         <LogoutButton />
       </div>
     </main>
