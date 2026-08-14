@@ -3,8 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Play } from "lucide-react";
 import { createClient } from "@/lib/supabase-server";
 import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
-import StandaloneVideoFeedbackForm from "@/app/components/StandaloneVideoFeedbackForm";
 import CompatibleVideoPlayer from "@/app/components/CompatibleVideoPlayer";
+import VideoFeedbackConversation, { type VideoFeedbackMessage } from "@/app/components/VideoFeedbackConversation";
 
 export default async function CoachVideoFeedbackPage({
   params,
@@ -39,6 +39,7 @@ export default async function CoachVideoFeedbackPage({
   const { data: signed } = await supabase.storage
     .from(PERFORMANCE_VIDEO_BUCKET)
     .createSignedUrl(request.video_path, 3600);
+  const { data: messages } = await supabase.from("video_feedback_messages").select("id, sender_id, sender_role, body, created_at").eq("request_id", request.id).order("created_at");
   return (
     <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8">
       <div className="mx-auto max-w-3xl">
@@ -91,20 +92,7 @@ export default async function CoachVideoFeedbackPage({
               />
             </div>
           )}
-          {request.response && (
-            <div className="mt-5 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4">
-              <span className="text-xs font-black text-emerald-300">
-                送信済みフィードバック
-              </span>
-              <p className="mt-2 whitespace-pre-wrap leading-7 text-white/80">
-                {request.response}
-              </p>
-            </div>
-          )}
-          <StandaloneVideoFeedbackForm
-            requestId={request.id}
-            initialBody={request.response ?? ""}
-          />
+          <VideoFeedbackConversation requestId={request.id} messages={(messages ?? []) as VideoFeedbackMessage[]} role="coach" />
         </article>
       </div>
     </main>

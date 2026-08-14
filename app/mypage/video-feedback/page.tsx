@@ -10,9 +10,11 @@ export default async function VideoFeedbackPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/mypage/video-feedback");
   const { data: requests } = await supabase.from("video_feedback_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+  const requestIds = (requests ?? []).map((item) => item.id);
+  const { data: messages } = requestIds.length ? await supabase.from("video_feedback_messages").select("id, request_id, sender_id, sender_role, body, created_at").in("request_id", requestIds).order("created_at") : { data: [] };
   const items = await Promise.all((requests ?? []).map(async (item) => {
     const { data } = await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).createSignedUrl(item.video_path, 3600);
-    return { ...item, video_url: data?.signedUrl ?? null };
+    return { ...item, video_url: data?.signedUrl ?? null, messages: (messages ?? []).filter((message) => message.request_id === item.id) };
   }));
   return <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8"><div className="mx-auto max-w-3xl">
     <Link href="/mypage" className="inline-flex items-center gap-2 text-xs font-bold text-white/60 hover:text-orange-400"><ArrowLeft size={16} />マイページ</Link>

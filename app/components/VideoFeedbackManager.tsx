@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
 import CompatibleVideoPlayer from "@/app/components/CompatibleVideoPlayer";
+import VideoFeedbackConversation, { type VideoFeedbackMessage } from "@/app/components/VideoFeedbackConversation";
 
 type Item = {
   id: number;
@@ -19,6 +20,7 @@ type Item = {
   response: string | null;
   responded_at: string | null;
   created_at: string;
+  messages: VideoFeedbackMessage[];
 };
 const awareness = [
   "",
@@ -309,16 +311,7 @@ export default function VideoFeedbackManager({
                   </div>
                   </details>
                 )}
-                {item.response && (
-                  <div className="mt-4 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4">
-                    <span className="text-xs font-black text-emerald-300">
-                      コーチフィードバック
-                    </span>
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-white/80">
-                      {item.response}
-                    </p>
-                  </div>
-                )}
+                <VideoFeedbackConversation requestId={item.id} messages={item.messages ?? []} role="athlete" />
               </article>
             ))}
           </div>
