@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
-import { ArrowLeft, Check, LoaderCircle, Save, Trash2 } from "lucide-react";
+import { Activity, ArrowLeft, Check, ChevronRight, LoaderCircle, Medal, Save, Trash2, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 import { eventNamesByKind, type PerformanceKind, unitMap } from "@/lib/performance-events";
 import { createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
@@ -17,7 +17,8 @@ function PerformanceForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedKind = searchParams.get("kind");
-  const kind: PerformanceKind = requestedKind === "athletics" || requestedKind === "unofficial-athletics" ? requestedKind : "control-test";
+  const hasSelectedKind = requestedKind === "athletics" || requestedKind === "unofficial-athletics" || requestedKind === "control-test";
+  const kind: PerformanceKind = hasSelectedKind ? requestedKind : "control-test";
   const eventOptions = eventNamesByKind(kind);
   const [category, setCategory] = useState(eventOptions[0]);
   const [value, setValue] = useState("");
@@ -31,6 +32,65 @@ function PerformanceForm() {
   const [errorMessage, setErrorMessage] = useState("");
 
 const unit = unitMap[category] ?? "";
+
+  if (!hasSelectedKind) {
+    const choices = [
+      {
+        kind: "unofficial-athletics",
+        title: "練習記録",
+        description: "練習跳躍・練習投てき・実践練習",
+        icon: Medal,
+      },
+      {
+        kind: "athletics",
+        title: "本番記録",
+        description: "大会・記録会・公認記録",
+        icon: Trophy,
+      },
+      {
+        kind: "control-test",
+        title: "コントロールテスト",
+        description: "スプリント・ジャンプ・筋力測定",
+        icon: Activity,
+      },
+    ] as const;
+
+    return (
+      <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8">
+        <div className="mx-auto max-w-xl">
+          <Link href="/mypage" className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-white/60 transition hover:text-orange-400">
+            <ArrowLeft size={16} aria-hidden="true" />
+            MY PAGE
+          </Link>
+
+          <div className="mt-10 border-l-2 border-orange-500 pl-5">
+            <p className="text-xs font-black tracking-[0.22em] text-orange-400">QUICK RECORD</p>
+            <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-5xl">何を記録しますか？</h1>
+            <p className="mt-3 leading-7 text-white/60">追加する記録の種類を選んでください。</p>
+          </div>
+
+          <div className="mt-10 grid gap-3">
+            {choices.map(({ kind: choiceKind, title, description, icon: Icon }) => (
+              <Link
+                key={choiceKind}
+                href={`/performance?kind=${choiceKind}`}
+                className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-[#111] p-5 transition hover:border-orange-500/70 hover:bg-orange-500/[0.06]"
+              >
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-500/15 text-orange-400">
+                  <Icon size={23} aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block text-lg">{title}</strong>
+                  <span className="mt-1 block text-sm leading-6 text-white/45">{description}</span>
+                </span>
+                <ChevronRight className="shrink-0 text-orange-400 transition group-hover:translate-x-1" aria-hidden="true" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   async function saveRecord(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
