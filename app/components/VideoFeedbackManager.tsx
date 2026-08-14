@@ -103,7 +103,7 @@ export default function VideoFeedbackManager({
       return;
     }
     setProgress(100);
-    if (savedRequest) fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "video_feedback", requestId: savedRequest.id, senderRole: "athlete", isInitial: true }) }).catch(() => undefined);
+    if (savedRequest) await fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "video_feedback", requestId: savedRequest.id, senderRole: "athlete", isInitial: true }) }).catch(() => undefined);
     setFile(null);
     setEventName("");
     setCategory("");

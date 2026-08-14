@@ -26,10 +26,11 @@ export default function VideoFeedbackConversation({ requestId, messages, role }:
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setError("ログインが必要です。"); setSaving(false); return; }
     const { error: saveError } = await supabase.from("video_feedback_messages").insert({ request_id: requestId, sender_id: user.id, sender_role: role, body: body.trim() });
+    if (saveError) { setError(saveError.message); setSaving(false); return; }
+    await fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "video_feedback", requestId, senderRole: role, isInitial: false }) }).catch(() => undefined);
+    setBody("");
     setSaving(false);
-    if (saveError) { setError(saveError.message); return; }
-    fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "video_feedback", requestId, senderRole: role, isInitial: false }) }).catch(() => undefined);
-    setBody(""); router.refresh();
+    router.refresh();
   }
 
   return <section className="mt-5 rounded-xl border border-white/10 bg-black/20 p-4">
