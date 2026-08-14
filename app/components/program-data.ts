@@ -46,16 +46,16 @@ export const programs: Program[] = [
   {
     slug: "youth", number: "02", name: "YOUTH", englishTitle: "Performance", audience: "中学生〜高校生対象",
     heroTitle: "伸びる瞬間を、\nつかみにいく。", lead: "自分の可能性に向き合い、\n次のステージへ。",
-    description: "成長期のからだと向き合いながら、競技に必要な技術・体力・考え方を磨くクラスです。目標に向かう日々の積み重ねを通して、競技者としても人としても強くなります。",
+    description: "成長期のからだと向き合いながら、競技に必要な技術・体力・考え方を磨くクラスです。カウンセリングをもとに、コーチと一緒に自分に合った練習方針を考え、自分で成長をつくる力を育てます。",
     highlights: [
       { title: "TECHNIQUE", description: "専門性を意識したドリルと反復で、競技につながる技術の土台をつくります。" },
       { title: "CONDITIONING", description: "成長段階に合わせて、けがを防ぎながら動けるからだを育てます。" },
-      { title: "MINDSET", description: "目標設定と振り返りを習慣にし、自分で成長をつくる力を養います。" },
+      { title: "CO-CREATION", description: "目標や課題をコーチと共有し、練習の目的と進め方を一緒に考えます。" },
     ],
     flow: [
       { time: "01", title: "PREPARE", description: "状態を確認し、競技動作につながるウォームアップを行います。" },
-      { time: "02", title: "BUILD", description: "走力・跳躍・投てきの要素を、段階的なメニューで高めます。" },
-      { time: "03", title: "PERFORM", description: "テーマ練習と記録への挑戦を通じて、実戦力を磨きます。" },
+      { time: "02", title: "PLAN", description: "その日の目的を確認し、複数の選択肢から自分に必要な練習を考えます。" },
+      { time: "03", title: "PERFORM", description: "個人・種目別の課題に取り組み、コーチの助言を受けながら実戦力を磨きます。" },
       { time: "04", title: "REVIEW", description: "コーチと振り返り、次回までの課題と目標を明確にします。" },
     ],
     faq: [
@@ -74,14 +74,14 @@ export const programs: Program[] = [
   {
     slug: "elite", number: "03", name: "ELITE", englishTitle: "Elite Performance", audience: "大学生・一般競技者対象",
     heroTitle: "記録の先へ、\n限界の先へ。", lead: "競技人生を、自分の力で\n切り拓く。",
-    description: "より高いレベルを目指す競技者のためのパフォーマンスクラスです。技術、フィジカル、コンディショニングを統合し、個別の目標に対して質の高いトレーニング環境を提供します。",
+    description: "より高いレベルを目指す競技者のためのパフォーマンスクラスです。選手自身の考えを軸に、カウンセリングとデータを用いてコーチと個別方針を設計し、技術・フィジカル・コンディショニングを統合します。",
     highlights: [
-      { title: "INDIVIDUAL PLAN", description: "競技種目と目標、現在地に合わせたトレーニングの道筋を設計します。" },
+      { title: "INDIVIDUAL PLAN", description: "選手が考える目標と課題をもとに、コーチとトレーニングの道筋を設計します。" },
       { title: "HIGH PERFORMANCE", description: "技術とフィジカルをつなげ、試合で発揮できるパフォーマンスを追求します。" },
       { title: "SUSTAINABILITY", description: "長く挑戦を続けるために、回復・栄養・セルフケアの力も磨きます。" },
     ],
     flow: [
-      { time: "01", title: "ASSESS", description: "その日の状態と狙いを確認し、トレーニングを最適化します。" },
+      { time: "01", title: "ASSESS", description: "選手がその日の状態と狙いを伝え、コーチと内容を最適化します。" },
       { time: "02", title: "ACTIVATE", description: "可動性・安定性・出力を整え、競技に向けて準備します。" },
       { time: "03", title: "EXECUTE", description: "専門練習と高強度のトレーニングで、競技力を引き上げます。" },
       { time: "04", title: "ANALYZE", description: "結果を分析し、次のサイクルへつながる改善点を共有します。" },
@@ -102,7 +102,7 @@ export const programs: Program[] = [
   {
     slug: "masters", number: "04", name: "MASTERS", englishTitle: "Masters Athlete", audience: "一般・マスターズ対象",
     heroTitle: "何歳からでも、\n自己ベストへ。", lead: "挑戦を続けるから、\n毎日はもっと面白い。",
-    description: "健康づくりから競技復帰、マスターズ大会への挑戦まで。年齢や経験に合わせて、走る・跳ぶ・投げる楽しさをもう一度見つけるクラスです。",
+    description: "健康づくりから競技復帰、マスターズ大会への挑戦まで。生活リズムや体調、目標をカウンセリングで共有し、自分に無理なく続けられる練習方針をコーチと一緒につくるクラスです。",
     highlights: [
       { title: "MOVE WELL", description: "日常を軽やかに過ごすための、動きやすいからだづくりを大切にします。" },
       { title: "PERSONAL GOALS", description: "健康、仲間づくり、記録更新。それぞれの目標に合わせて取り組めます。" },
