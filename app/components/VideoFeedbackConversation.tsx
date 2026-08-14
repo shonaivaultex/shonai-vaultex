@@ -28,6 +28,7 @@ export default function VideoFeedbackConversation({ requestId, messages, role }:
     const { error: saveError } = await supabase.from("video_feedback_messages").insert({ request_id: requestId, sender_id: user.id, sender_role: role, body: body.trim() });
     setSaving(false);
     if (saveError) { setError(saveError.message); return; }
+    fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "video_feedback", requestId, senderRole: role, isInitial: false }) }).catch(() => undefined);
     setBody(""); router.refresh();
   }
 

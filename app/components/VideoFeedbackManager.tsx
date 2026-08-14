@@ -85,7 +85,7 @@ export default function VideoFeedbackManager({
       return;
     }
     setProgress(75);
-    const { error: saveError } = await supabase
+    const { data: savedRequest, error: saveError } = await supabase
       .from("video_feedback_requests")
       .insert({
         user_id: user.id,
@@ -94,7 +94,7 @@ export default function VideoFeedbackManager({
         awareness_category: category || null,
         message: message.trim() || null,
         priority: urgent ? "urgent" : "normal",
-      });
+      }).select("id").single();
     if (saveError) {
       await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([path]);
       setError(saveError.message);
@@ -103,6 +103,7 @@ export default function VideoFeedbackManager({
       return;
     }
     setProgress(100);
+    if (savedRequest) fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "video_feedback", requestId: savedRequest.id, senderRole: "athlete", isInitial: true }) }).catch(() => undefined);
     setFile(null);
     setEventName("");
     setCategory("");

@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase-browser";
 type Preferences = { notify_feedback: boolean; notify_important: boolean; notify_schedule: boolean };
 const defaults: Preferences = { notify_feedback: true, notify_important: true, notify_schedule: true };
 const options: Array<{ key: keyof Preferences; title: string; detail: string }> = [
-  { key: "notify_feedback", title: "フィードバック", detail: "コーチからアドバイスが届いた時" },
+  { key: "notify_feedback", title: "フィードバック", detail: "依頼・回答・再質問が届いた時" },
   { key: "notify_important", title: "重要なお知らせ", detail: "重要に設定されたクラブ連絡" },
   { key: "notify_schedule", title: "予定変更", detail: "練習予定の変更・中止" },
 ];

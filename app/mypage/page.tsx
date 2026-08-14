@@ -45,10 +45,18 @@ export default async function MyPage() {
   const { data: ownRecords } = await supabase.from("performance_records").select("id, category, record_kind").eq("user_id", user.id);
   const ownRecordIds = (ownRecords ?? []).map((item) => item.id);
   const { data: unreadFeedback } = ownRecordIds.length ? await supabase.from("coach_feedback").select("id, record_id, body, created_at").in("record_id", ownRecordIds).is("acknowledged_at", null).order("created_at", { ascending: false }).limit(10) : { data: [] };
+  const { data: videoRequests } = await supabase.from("video_feedback_requests").select("id, event_name").eq("user_id", user.id);
+  const videoRequestIds = (videoRequests ?? []).map((item) => item.id);
+  const { data: videoMessages } = videoRequestIds.length ? await supabase.from("video_feedback_messages").select("id, request_id, body, created_at").in("request_id", videoRequestIds).eq("sender_role", "coach").order("created_at", { ascending: false }).limit(10) : { data: [] };
+  const videoMessageIds = (videoMessages ?? []).map((item) => item.id);
+  const { data: videoMessageReads } = videoMessageIds.length ? await supabase.from("video_feedback_message_reads").select("message_id").eq("user_id", user.id).in("message_id", videoMessageIds) : { data: [] };
+  const readVideoMessageIds = new Set((videoMessageReads ?? []).map((item) => item.message_id));
+  const videoRequestMap = new Map((videoRequests ?? []).map((item) => [item.id, item]));
   const recordById = new Map((ownRecords ?? []).map((record) => [record.id, record]));
   const newsItems: NewsItem[] = [
     ...(announcements ?? []).map((item) => ({ id: `announcement-${item.id}`, kind: "announcement" as const, title: item.title, body: item.body, date: item.created_at, important: item.priority === "important", unread: !readIds.has(item.id), announcementId: item.id })),
     ...(unreadFeedback ?? []).map((item) => { const record = recordById.get(item.record_id); const kind = record?.record_kind ?? (record ? eventKindMap[record.category] : "control-test"); const baseHref = kind === "athletics" ? "/mypage/athletics" : kind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests"; const href = `${baseHref}?feedback=${item.record_id}`; return { id: `feedback-${item.id}`, kind: "feedback" as const, title: `${record?.category ?? "記録"}にフィードバックが届きました`, body: item.body, date: item.created_at, href, unread: true }; }),
+    ...(videoMessages ?? []).map((item) => ({ id: `video-message-${item.id}`, kind: "feedback" as const, title: `${videoRequestMap.get(item.request_id)?.event_name ?? "動画"}に返信が届きました`, body: item.body, date: item.created_at, href: "/mypage/video-feedback", unread: !readVideoMessageIds.has(item.id), videoMessageId: item.id })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
 
   return (
