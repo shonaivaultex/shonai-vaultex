@@ -100,7 +100,7 @@ export default async function MyPage() {
         <p className="mt-1 text-sm text-white/50">{player.event ?? "種目未設定"}</p>
       </div>
 
-      {coachRole && <Link href="/coach/dashboard" className="mt-4 flex items-center justify-between rounded-2xl border border-emerald-400/60 bg-emerald-500/15 p-5 text-white shadow-[0_0_24px_rgba(16,185,129,0.08)] transition hover:border-emerald-300 hover:bg-emerald-500/20"><span><span className="text-[10px] font-black tracking-[0.18em] text-emerald-400">COACH MENU</span><strong className="mt-1 block text-lg">コーチダッシュボードを開く</strong><span className="mt-1 block text-sm text-white/50">依頼・担当選手・管理機能</span></span><ChevronRight className="text-emerald-400" /></Link>}
+      {coachRole && <Link href="/coach/dashboard" prefetch className="mt-4 flex items-center justify-between rounded-2xl border border-emerald-400/60 bg-emerald-500/15 p-5 text-white shadow-[0_0_24px_rgba(16,185,129,0.08)] transition hover:border-emerald-300 hover:bg-emerald-500/20"><span><span className="text-[10px] font-black tracking-[0.18em] text-emerald-400">COACH MENU</span><strong className="mt-1 block text-lg">コーチダッシュボードを開く</strong><span className="mt-1 block text-sm text-white/50">依頼・担当選手</span></span><ChevronRight className="text-emerald-400" /></Link>}
 
       <section className="mt-6">
         <p className="mb-3 text-xs font-black tracking-[0.16em] text-orange-400">QUICK ACTION</p>
