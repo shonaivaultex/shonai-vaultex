@@ -100,6 +100,8 @@ export default async function MyPage() {
         <p className="mt-1 text-sm text-white/50">{player.event ?? "種目未設定"}</p>
       </div>
 
+      {coachRole && <Link href="/coach/dashboard" className="mt-4 flex items-center justify-between rounded-2xl border border-emerald-400/60 bg-emerald-500/15 p-5 text-white shadow-[0_0_24px_rgba(16,185,129,0.08)] transition hover:border-emerald-300 hover:bg-emerald-500/20"><span><span className="text-[10px] font-black tracking-[0.18em] text-emerald-400">COACH MENU</span><strong className="mt-1 block text-lg">コーチダッシュボードを開く</strong><span className="mt-1 block text-sm text-white/50">依頼・担当選手・管理機能</span></span><ChevronRight className="text-emerald-400" /></Link>}
+
       <section className="mt-6">
         <p className="mb-3 text-xs font-black tracking-[0.16em] text-orange-400">QUICK ACTION</p>
         <div className="grid gap-3 sm:grid-cols-3">
@@ -114,7 +116,6 @@ export default async function MyPage() {
       <NewsPanel initialItems={newsItems} userId={user.id} />
       <SchedulePanel items={(schedules ?? []) as ScheduleItem[]} />
       <h2 style={{ marginTop: 40, marginBottom: 20 }}>PERFORMANCE</h2>
-      {coachRole && <Link href="/coach/dashboard" className="mb-5 flex items-center justify-between rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-5 text-white transition hover:border-emerald-400"><span><strong className="block text-lg">コーチダッシュボード</strong><span className="mt-1 block text-sm text-white/50">担当選手の確認・フィードバック</span></span><ChevronRight className="text-emerald-400" /></Link>}
       <div style={{ display: "grid", gap: 14 }}>
         <Link href="/mypage/unofficial-athletics" className="group flex items-center gap-4 rounded-2xl border border-orange-500/60 bg-[#111] p-5 text-white no-underline transition hover:border-orange-400">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-500/15 text-orange-400"><Medal aria-hidden="true" /></span>
