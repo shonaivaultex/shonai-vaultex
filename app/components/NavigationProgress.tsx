@@ -1,24 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-
-const memberRoutes = ["/mypage", "/mypage/athletics", "/mypage/control-tests", "/mypage/unofficial-athletics", "/mypage/schedules", "/performance"];
+import { usePathname } from "next/navigation";
 
 export default function NavigationProgress() {
   const pathname = usePathname();
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => { setLoading(false); }, [pathname]);
-
-  useEffect(() => {
-    const prefetch = () => {
-      if (pathname.startsWith("/mypage") || pathname.startsWith("/coach")) memberRoutes.forEach((route) => router.prefetch(route));
-    };
-    const id = window.setTimeout(prefetch, 600);
-    return () => window.clearTimeout(id);
-  }, [pathname, router]);
 
   useEffect(() => {
     const beginNavigation = (event: MouseEvent) => {
