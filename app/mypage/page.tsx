@@ -8,6 +8,19 @@ import { eventKindMap } from "@/lib/performance-events";
 import SchedulePanel, { type ScheduleItem } from "@/app/components/SchedulePanel";
 import PushNotificationButton from "@/app/components/PushNotificationButton";
 import BugReportButton from "@/app/components/BugReportButton";
+import MonthlyGrowthReport, { type GrowthRecord } from "@/app/components/MonthlyGrowthReport";
+
+function japanMonthKeys() {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
+  const year = Number(parts.find((part) => part.type === "year")?.value);
+  const month = Number(parts.find((part) => part.type === "month")?.value);
+  const previous = new Date(Date.UTC(year, month - 2, 1));
+  return {
+    currentMonth: `${year}-${String(month).padStart(2, "0")}`,
+    previousMonth: `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, "0")}`,
+    previousMonthStart: `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, "0")}-01`,
+  };
+}
 
 export default async function MyPage() {
   const supabase = await createClient();
@@ -20,34 +33,45 @@ export default async function MyPage() {
     redirect("/login?next=/mypage");
   }
 
-  const { data: player } = await supabase
-    .from("players")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
+  const { currentMonth, previousMonth, previousMonthStart } = japanMonthKeys();
+
+  const [
+    { data: player },
+    { data: coachRole },
+    { data: schedules },
+    { data: announcements },
+    { data: ownRecords },
+    { data: videoRequests },
+    { data: growthRecords },
+  ] = await Promise.all([
+    supabase.from("players").select("*").eq("user_id", user.id).single(),
+    supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "coach").maybeSingle(),
+    supabase.from("schedules").select("*").gte("starts_at", new Date().toISOString()).order("starts_at").limit(2),
+    supabase.from("announcements").select("id, title, body, priority, created_at").order("created_at", { ascending: false }).limit(10),
+    supabase.from("performance_records").select("id, category, record_kind").eq("user_id", user.id),
+    supabase.from("video_feedback_requests").select("id, event_name").eq("user_id", user.id),
+    supabase.from("performance_records").select("id, category, value, date, awareness_category, awareness_categories").eq("user_id", user.id).gte("date", previousMonthStart).order("date", { ascending: false }),
+  ]);
 
   if (!player) {
     redirect("/profile/create");
   }
 
-  const { data: coachRole } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("role", "coach")
-    .maybeSingle();
-  const { data: schedules } = await supabase.from("schedules").select("*").gte("starts_at", new Date().toISOString()).order("starts_at").limit(2);
-
-  const { data: announcements } = await supabase.from("announcements").select("id, title, body, priority, created_at").order("created_at", { ascending: false }).limit(10);
   const announcementIds = (announcements ?? []).map((item) => item.id);
-  const { data: readRows } = announcementIds.length ? await supabase.from("announcement_reads").select("announcement_id").eq("user_id", user.id).in("announcement_id", announcementIds) : { data: [] };
-  const readIds = new Set((readRows ?? []).map((item) => item.announcement_id));
-  const { data: ownRecords } = await supabase.from("performance_records").select("id, category, record_kind").eq("user_id", user.id);
   const ownRecordIds = (ownRecords ?? []).map((item) => item.id);
-  const { data: unreadFeedback } = ownRecordIds.length ? await supabase.from("coach_feedback").select("id, record_id, body, created_at").in("record_id", ownRecordIds).is("acknowledged_at", null).order("created_at", { ascending: false }).limit(10) : { data: [] };
-  const { data: videoRequests } = await supabase.from("video_feedback_requests").select("id, event_name").eq("user_id", user.id);
   const videoRequestIds = (videoRequests ?? []).map((item) => item.id);
-  const { data: videoMessages } = videoRequestIds.length ? await supabase.from("video_feedback_messages").select("id, request_id, body, created_at").in("request_id", videoRequestIds).eq("sender_role", "coach").order("created_at", { ascending: false }).limit(10) : { data: [] };
+  const [{ data: readRows }, { data: unreadFeedback }, { data: videoMessages }] = await Promise.all([
+    announcementIds.length
+      ? supabase.from("announcement_reads").select("announcement_id").eq("user_id", user.id).in("announcement_id", announcementIds)
+      : Promise.resolve({ data: [] }),
+    ownRecordIds.length
+      ? supabase.from("coach_feedback").select("id, record_id, body, created_at").in("record_id", ownRecordIds).is("acknowledged_at", null).order("created_at", { ascending: false }).limit(10)
+      : Promise.resolve({ data: [] }),
+    videoRequestIds.length
+      ? supabase.from("video_feedback_messages").select("id, request_id, body, created_at").in("request_id", videoRequestIds).eq("sender_role", "coach").order("created_at", { ascending: false }).limit(10)
+      : Promise.resolve({ data: [] }),
+  ]);
+  const readIds = new Set((readRows ?? []).map((item) => item.announcement_id));
   const videoMessageIds = (videoMessages ?? []).map((item) => item.id);
   const { data: videoMessageReads } = videoMessageIds.length ? await supabase.from("video_feedback_message_reads").select("message_id").eq("user_id", user.id).in("message_id", videoMessageIds) : { data: [] };
   const readVideoMessageIds = new Set((videoMessageReads ?? []).map((item) => item.message_id));
@@ -84,6 +108,8 @@ export default async function MyPage() {
           <Link href="/mypage/schedules" className="flex items-center gap-3 rounded-2xl border border-white/15 bg-[#111] p-4 font-black text-white transition hover:border-orange-500/50 sm:flex-col sm:justify-center sm:text-center"><CalendarDays size={22} className="text-orange-400" /><span>予定を見る</span></Link>
         </div>
       </section>
+
+      <MonthlyGrowthReport records={(growthRecords ?? []) as GrowthRecord[]} currentMonth={currentMonth} previousMonth={previousMonth} />
 
       <NewsPanel initialItems={newsItems} userId={user.id} />
       <SchedulePanel items={(schedules ?? []) as ScheduleItem[]} />
