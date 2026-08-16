@@ -1,11 +1,12 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import { Play, Send, Trash2, Upload, X } from "lucide-react";
+import { Send, Trash2, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
-import CompatibleVideoPlayer from "@/app/components/CompatibleVideoPlayer";
+import { FEEDBACK_ATTACHMENT_BUCKET } from "@/lib/feedback-attachments";
+import LazyVideoPlayer from "@/app/components/LazyVideoPlayer";
 import VideoFeedbackConversation, { type VideoFeedbackMessage } from "@/app/components/VideoFeedbackConversation";
 
 type Item = {
@@ -134,6 +135,8 @@ export default function VideoFeedbackManager({
     await supabase.storage
       .from(PERFORMANCE_VIDEO_BUCKET)
       .remove([item.video_path]);
+    const attachmentPaths = item.messages.flatMap((message) => message.sender_role === "athlete" && message.attachment_path ? [message.attachment_path] : []);
+    if (attachmentPaths.length) await supabase.storage.from(FEEDBACK_ATTACHMENT_BUCKET).remove(attachmentPaths);
     router.refresh();
   }
   return (
@@ -297,18 +300,9 @@ export default function VideoFeedbackManager({
                   </p>
                 )}
                 {item.video_url && (
-                  <details className="mt-4">
-                    <summary className="cursor-pointer text-sm font-bold text-orange-400">
-                      <Play size={15} className="mr-2 inline" />
-                      動画を見る
-                    </summary>
-                  <div className="mt-3">
-                    <CompatibleVideoPlayer
-                      src={item.video_url}
-                      className="max-h-[60vh] w-full rounded-xl bg-black object-contain"
-                    />
+                  <div className="mt-4">
+                    <LazyVideoPlayer src={item.video_url} label="依頼動画を見る" />
                   </div>
-                  </details>
                 )}
                 <VideoFeedbackConversation requestId={item.id} messages={item.messages ?? []} role="athlete" />
               </article>
