@@ -19,15 +19,28 @@ export default async function CoachDashboardPage() {
   if (!role) redirect("/mypage");
   const { data: assignments } = await supabase.from("coach_class_assignments").select("program_class").eq("coach_id", user.id);
   const classes = (assignments ?? []).map((item) => item.program_class);
-  const { data: allAthletes } = classes.length ? await supabase.from("players").select("user_id, name, grade, event, program_class, member_status").in("program_class", classes).order("program_class").order("name") : { data: [] };
+  const [
+    { data: allAthletes },
+    { data: schedules },
+    { data: scheduleTemplates },
+    { data: requests },
+    { data: videoRequests },
+    { data: bugReports },
+  ] = await Promise.all([
+    classes.length ? supabase.from("players").select("user_id, name, grade, event, program_class, member_status").in("program_class", classes).order("program_class").order("name") : Promise.resolve({ data: [] }),
+    supabase.from("schedules").select("*").eq("author_id", user.id).gte("starts_at", new Date().toISOString()).order("starts_at").limit(20),
+    supabase.from("schedule_templates").select("*").eq("author_id", user.id).order("name"),
+    supabase.from("feedback_requests").select("id, record_id, request_type, message, priority, status, created_at, answered_at").in("status", ["pending", "answered"]).order("created_at", { ascending: false }).limit(500),
+    supabase.from("video_feedback_requests").select("id, user_id, event_name, message, priority, status, created_at, responded_at").in("status", ["pending", "answered"]).order("created_at", { ascending: false }).limit(500),
+    supabase.from("bug_reports").select("id, user_id, category, detail, page_url, user_agent, status, created_at").order("created_at", { ascending: false }).limit(100),
+  ]);
   const athletes = (allAthletes ?? []).filter((athlete) => (athlete.member_status ?? "active") === "active");
-  const { data: schedules } = await supabase.from("schedules").select("*").eq("author_id", user.id).gte("starts_at", new Date().toISOString()).order("starts_at").limit(20);
   const scheduleIds = (schedules ?? []).map((item) => item.id);
-  const { data: attendance } = scheduleIds.length ? await supabase.from("schedule_attendance").select("schedule_id, status").in("schedule_id", scheduleIds) : { data: [] };
-  const { data: scheduleTemplates } = await supabase.from("schedule_templates").select("*").eq("author_id", user.id).order("name");
-  const { data: requests } = await supabase.from("feedback_requests").select("id, record_id, request_type, message, priority, status, created_at, answered_at").in("status", ["pending", "answered"]).order("created_at", { ascending: false }).limit(500);
   const requestRecordIds = (requests ?? []).map((item) => item.record_id);
-  const { data: requestRecords } = requestRecordIds.length ? await supabase.from("performance_records").select("id, user_id, category, value, date").in("id", requestRecordIds) : { data: [] };
+  const [{ data: attendance }, { data: requestRecords }] = await Promise.all([
+    scheduleIds.length ? supabase.from("schedule_attendance").select("schedule_id, status").in("schedule_id", scheduleIds) : Promise.resolve({ data: [] }),
+    requestRecordIds.length ? supabase.from("performance_records").select("id, user_id, category, value, date").in("id", requestRecordIds) : Promise.resolve({ data: [] }),
+  ]);
   const requestRecordMap = new Map((requestRecords ?? []).map((item) => [item.id, item]));
   const athleteMap = new Map((athletes ?? []).map((item) => [item.user_id, item]));
   const queueItems = (requests ?? []).flatMap<FeedbackQueueItem>((request) => {
@@ -35,12 +48,10 @@ export default async function CoachDashboardPage() {
     if (!record || !athlete) return [];
     return [{ id: request.id, recordId: record.id, athleteId: record.user_id, athleteName: athlete.name, programClass: athlete.program_class, category: record.category, value: record.value, requestType: request.request_type, message: request.message, priority: request.priority, status: request.status, createdAt: request.created_at, answeredAt: request.answered_at }];
   });
-  const { data: videoRequests } = await supabase.from("video_feedback_requests").select("id, user_id, event_name, message, priority, status, created_at, responded_at").in("status", ["pending", "answered"]).order("created_at", { ascending: false }).limit(500);
   const videoQueueItems = (videoRequests ?? []).flatMap<FeedbackQueueItem>((request) => {
     const athlete = athleteMap.get(request.user_id); if (!athlete) return [];
     return [{ id: request.id, recordId: null, videoRequestId: request.id, athleteId: request.user_id, athleteName: athlete.name, programClass: athlete.program_class, category: request.event_name, value: "", requestType: "video", message: request.message, priority: request.priority, status: request.status, createdAt: request.created_at, answeredAt: request.responded_at }];
   });
-  const { data: bugReports } = await supabase.from("bug_reports").select("id, user_id, category, detail, page_url, user_agent, status, created_at").order("created_at", { ascending: false }).limit(100);
   const memberNames = new Map((allAthletes ?? []).map((athlete) => [athlete.user_id, athlete.name]));
   const bugReportItems: BugReportItem[] = (bugReports ?? []).map((item) => ({ id: item.id, memberName: memberNames.get(item.user_id) ?? "会員", category: item.category, detail: item.detail, pageUrl: item.page_url, userAgent: item.user_agent, status: item.status, createdAt: item.created_at }));
   return <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8"><div className="mx-auto max-w-5xl">
