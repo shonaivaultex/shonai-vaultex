@@ -9,14 +9,8 @@ import { controlTestDefinitions, performanceCategoryForMeasurement } from "@/lib
 
 type Values = Record<string, string>;
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
-const numberOrNull = (value: string) => value.trim() ? Number(value) : null;
+const numberOrNull = (value: string) => value.trim() ? Number(value.trim().replace(/[，,]/g, ".")) : null;
 const primaryKey = (code: string, metric: string) => `${code}_${metric}`;
-const rjTrials = (values: Values, count: number) => Array.from({ length: count }, (_, index) => ({
-  trialNumber: index + 1,
-  jumpHeightCm: numberOrNull(values[`rj_${index + 1}_height`] ?? ""),
-  contactTimeMs: numberOrNull(values[`rj_${index + 1}_contact`] ?? ""),
-  rjIndex: numberOrNull(values[`rj_${index + 1}_index`] ?? ""),
-}));
 
 type InitialSettings = {
   shot_front_throw_weight?: number;
@@ -44,14 +38,8 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError("");
-    const trials = rjTrials(values,rjJumpCount);
-    const hasRjData = trials.some((trial) => trial.jumpHeightCm !== null || trial.contactTimeMs !== null || trial.rjIndex !== null);
-    const completeRj = trials.every((trial) => (trial.jumpHeightCm ?? 0) > 0 && (trial.contactTimeMs ?? 0) > 0 && (trial.rjIndex ?? 0) > 0);
-    if (hasRjData && !completeRj) { setError(`リバウンドジャンプは${rjJumpCount}回すべての跳躍高・接地時間・RJ-indexを入力してください。`); return; }
     const entries = controlTestDefinitions.flatMap((definition) => {
-      const primary = definition.code === "rebound_jump"
-        ? (completeRj ? Math.max(...trials.map((trial) => trial.rjIndex ?? 0)) : null)
-        : numberOrNull(values[primaryKey(definition.code, definition.primaryMetric)] ?? "");
+      const primary = numberOrNull(values[primaryKey(definition.code, definition.primaryMetric)] ?? "");
       return primary !== null && Number.isFinite(primary) && primary > 0 ? [{ definition, primary }] : [];
     });
     if (!entries.length) { setError("1種目以上の測定値を入力してください。"); return; }
@@ -77,22 +65,15 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
         const metrics:Record<string,number>={[definition.primaryMetric]:primary};
         if(definition.code==="acceleration_30m"){const accelerationTime=numberOrNull(values.acceleration_time_0_30m??"");if(accelerationTime)metrics.acceleration_time_0_30m=accelerationTime;}
         if(definition.code==="rebound_jump"){
-          const bestTrial=trials.reduce((best,trial)=>(trial.rjIndex??0)>(best.rjIndex??0)?trial:best,trials[0]);
-          metrics.jump_height_cm=bestTrial.jumpHeightCm??0; metrics.contact_time_ms=bestTrial.contactTimeMs??0; metrics.trial_count=rjJumpCount;
+          metrics.trial_count=rjJumpCount;
         }
         if(definition.code==="speed_endurance_300m"){metrics.distance_m=speedDistance;}
         metrics.protocol_version=3; metrics.attempt_limit=definition.code==="speed_endurance_300m"?1:2;
         if(definition.code==="standing_five_bound")metrics.jump_count=standingJumpCount;
-        return {scan_id:scan.id,user_id:user.id,test_code:definition.code,performance_record_id:recordIdByCategory.get(categoryFor(definition.code)),primary_value:primary,metrics,protocol_version:3,attempt_count:definition.code==="speed_endurance_300m"?1:2,distance_m:definition.code==="speed_endurance_300m"?speedDistance:null,jump_count:jumpCountFor(definition.code),implement_name:equipmentFor(definition.code),implement_weight_kg:definition.code.startsWith("shot_")?Number(values[`${definition.code}_weight`]):null,equipment:equipmentFor(definition.code)};
+        return {scan_id:scan.id,user_id:user.id,test_code:definition.code,performance_record_id:recordIdByCategory.get(categoryFor(definition.code)),primary_value:primary,metrics,protocol_version:3,attempt_count:definition.code==="speed_endurance_300m"?1:2,distance_m:definition.code==="speed_endurance_300m"?speedDistance:null,jump_count:jumpCountFor(definition.code),implement_name:equipmentFor(definition.code),implement_weight_kg:definition.code.startsWith("shot_")?numberOrNull(values[`${definition.code}_weight`]??""):null,equipment:equipmentFor(definition.code)};
       });
-      const {data:savedMeasurements,error:measurementError}=await supabase.from("control_test_measurements").insert(measurementRows).select("id, test_code");
+      const {error:measurementError}=await supabase.from("control_test_measurements").insert(measurementRows);
       if(measurementError){await supabase.from("performance_records").delete().in("id",records.map((row)=>row.id));await supabase.from("control_test_scans").delete().eq("id",scan.id);setError(measurementError.message);return;}
-      const reboundMeasurement=savedMeasurements?.find((item)=>item.test_code==="rebound_jump");
-      if(completeRj&&!reboundMeasurement){await supabase.from("performance_records").delete().in("id",records.map((row)=>row.id));await supabase.from("control_test_scans").delete().eq("id",scan.id);setError("リバウンドジャンプの測定値を保存できませんでした。");return;}
-      if(reboundMeasurement&&completeRj){
-        const {error:trialError}=await supabase.from("control_test_rj_trials").insert(trials.map((trial)=>({measurement_id:reboundMeasurement.id,scan_id:scan.id,user_id:user.id,trial_number:trial.trialNumber,jump_height_cm:trial.jumpHeightCm,contact_time_ms:trial.contactTimeMs,rj_index:trial.rjIndex})));
-        if(trialError){await supabase.from("performance_records").delete().in("id",records.map((row)=>row.id));await supabase.from("control_test_scans").delete().eq("id",scan.id);setError(trialError.message);return;}
-      }
       router.push("/mypage/control-tests");router.refresh();
     } finally { setSaving(false); }
   }
@@ -108,8 +89,9 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
         <p className="text-[10px] font-black tracking-[0.14em] text-orange-400">{definition.abilityEn}</p><h2 className="mt-1 text-xl font-black">{displayName(definition.code,definition.measurement)}</h2><p className="mt-2 text-sm text-white/45">{definition.description}</p>
         {definition.code==="rebound_jump"?<div className="mt-4 space-y-3">
           {isJunior&&<label className="block text-xs font-bold text-white/65">RJ実施回数<select value={rjJumpCount} onChange={(e)=>setRjJumpCount(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-white/15 bg-[#0d0f12] px-4 py-3 text-white"><option value={3}>3回</option><option value={4}>4回</option><option value={5}>5回</option></select></label>}
-          <p className="text-xs text-white/50">{rjJumpCount}回分を入力すると、最も高いRJ-indexを代表値として自動採用します。</p>
-          {Array.from({length:rjJumpCount},(_,index)=><div key={index} className="rounded-xl border border-white/10 p-3"><p className="mb-2 text-xs font-black text-orange-300">{index+1}回目</p><div className="grid gap-2 sm:grid-cols-3"><Metric label="跳躍高" unit="cm" value={values[`rj_${index+1}_height`]??""} onChange={(value)=>set(`rj_${index+1}_height`,value)}/><Metric label="接地時間" unit="ms" value={values[`rj_${index+1}_contact`]??""} onChange={(value)=>set(`rj_${index+1}_contact`,value)}/><Metric label="RJ-index" unit="" value={values[`rj_${index+1}_index`]??""} onChange={(value)=>set(`rj_${index+1}_index`,value)}/></div></div>)}
+          {!isJunior&&<p className="text-xs font-bold text-white/65">RJ実施回数：5回</p>}
+          <p className="text-xs text-white/50">ジャンプマットに表示された最大RJ-indexだけを入力してください。</p>
+          <Metric label="最大RJ-index" unit="" value={values[primaryKey(definition.code,definition.primaryMetric)]??""} onChange={(value)=>set(primaryKey(definition.code,definition.primaryMetric),value)}/>
         </div>:<div className="mt-4 grid gap-3 sm:grid-cols-2">
           <Metric label={definition.code==="acceleration_30m"?"30〜60m計測タイム":definition.code==="speed_endurance_300m"?`${values.speed_endurance_distance_m??"300"}mタイム`:displayName(definition.code,definition.category)} unit={definition.unit} value={values[primaryKey(definition.code,definition.primaryMetric)]??""} onChange={(value)=>set(primaryKey(definition.code,definition.primaryMetric),value)}/>
           {definition.code==="acceleration_30m"&&<Metric label="0〜30m加速区間（任意）" unit="秒" value={values.acceleration_time_0_30m??""} onChange={(value)=>set("acceleration_time_0_30m",value)}/>} {definition.code.startsWith("shot_")&&<Metric label="使用重量" unit="kg" value={values[`${definition.code}_weight`]??""} onChange={(value)=>set(`${definition.code}_weight`,value)}/>} {definition.code==="speed_endurance_300m"&&<Metric label="クラス設定の実施距離" unit="m" value={values.speed_endurance_distance_m??"300"} onChange={(value)=>set("speed_endurance_distance_m",value)} readOnly/>}
@@ -120,4 +102,4 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
     </form></div></main>;
 }
 
-function Metric({label,unit,value,onChange,readOnly=false}:{label:string;unit:string;value:string;onChange:(value:string)=>void;readOnly?:boolean}) { return <label className="block"><span className="text-xs font-bold text-white/65">{label}</span><div className="relative mt-2"><input type="number" inputMode="decimal" min="0" step="any" value={value} readOnly={readOnly} onChange={(e)=>onChange(e.target.value)} className="w-full rounded-xl border border-white/15 bg-[#0d0f12] px-4 py-3 pr-20 text-white outline-none focus:border-orange-500 read-only:cursor-not-allowed read-only:text-white/55"/><span className="pointer-events-none absolute inset-y-0 right-4 grid place-items-center text-xs text-white/35">{unit}</span></div></label>; }
+function Metric({label,unit,value,onChange,readOnly=false}:{label:string;unit:string;value:string;onChange:(value:string)=>void;readOnly?:boolean}) { return <label className="block"><span className="text-xs font-bold text-white/65">{label}</span><div className="relative mt-2"><input type="text" inputMode="decimal" value={value} readOnly={readOnly} onChange={(e)=>onChange(e.target.value)} placeholder="例：3.25" className="w-full rounded-xl border border-white/15 bg-[#0d0f12] px-4 py-3 pr-20 text-white outline-none focus:border-orange-500 read-only:cursor-not-allowed read-only:text-white/55"/><span className="pointer-events-none absolute inset-y-0 right-4 grid place-items-center text-xs text-white/35">{unit}</span></div></label>; }
