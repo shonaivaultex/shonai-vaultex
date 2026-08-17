@@ -73,7 +73,7 @@ const unit = unitMap[category] ?? "";
             {choices.map(({ kind: choiceKind, title, description, icon: Icon }) => (
               <Link
                 key={choiceKind}
-                href={`/performance?kind=${choiceKind}`}
+                href={choiceKind === "control-test" ? "/mypage/control-tests/new" : `/performance?kind=${choiceKind}`}
                 className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-[#111] p-5 transition hover:border-orange-500/70 hover:bg-orange-500/[0.06]"
               >
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-500/15 text-orange-400">
