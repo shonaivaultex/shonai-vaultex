@@ -49,7 +49,7 @@ export const controlTestDefinitions: ControlTestDefinition[] = [
     code: "rebound_jump", category: "リバウンドジャンプ", abilityJa: "反発パフォーマンス", abilityEn: "REACTIVE PERFORMANCE",
     description: "短い接地で地面からの反発を利用し、腕振りを含めて素早く大きな跳躍につなげる能力を見る。", measurement: "リバウンドジャンプ", relation: "腕振りを含む連続跳躍の反発パフォーマンスを実測値で確認する測定です。",
     primaryMetric: "rj_index", unit: "RJ-index", betterDirection: "higher", sortOrder: 6,
-    protocol: { startMethod: "腕振り自由。", attempts: "連続5回。", rest: stationRest, measurementMethod: "できるだけ接地時間を短くしながら高く跳び、5回すべての跳躍高・接地時間・RJ-indexを保存する。", foulConditions: "再試技条件を含め要設定。", adoptedRecord: "5回の中で最も高いRJ-indexを代表値として採用。", equipment: "ジャンプマット", notes: "腕振りを使用するため、純粋な下肢Reactive Strengthのみを測るとは断定しない。" },
+    protocol: { startMethod: "腕振り自由。", attempts: "JUNIORは3〜5回、その他は5回連続。", rest: stationRest, measurementMethod: "ジャンプマットで連続跳躍を測定し、機器に表示された最大RJ-indexを登録する。", foulConditions: "明確な失敗時のみ原則1回まで再試技。", adoptedRecord: "実施回の中で最も高いRJ-indexを代表値として採用。", equipment: "S-CADE等のジャンプマット", notes: "実施回数はSCANに保存する。腕振りを使用するため、純粋な下肢Reactive Strengthのみを測るとは断定しない。" },
   },
   {
     code: "speed_endurance_300m", category: "SPEED ENDURANCE", abilityJa: "スピード持久力", abilityEn: "SPEED ENDURANCE",
