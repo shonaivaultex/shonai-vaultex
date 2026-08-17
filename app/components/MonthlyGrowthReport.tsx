@@ -1,4 +1,5 @@
 import { BarChart3, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
+import Link from "next/link";
 import { unitMap } from "@/lib/performance-events";
 
 export type GrowthRecord = {
@@ -110,8 +111,10 @@ export default function MonthlyGrowthReport({ records, currentMonth, previousMon
           </div>
           {categories.length > summaries.length && <p className="mt-3 text-center text-[11px] text-white/35">記録数の多い3種目を表示しています</p>}
           <p className="mt-4 text-[11px] leading-5 text-white/35">前月比は月ごとの平均記録を比較しています。記録が少ない項目は参考値としてご覧ください。</p>
+          <Link href="/mypage/growth-report" className="mt-5 flex items-center justify-center rounded-xl border border-orange-500/35 bg-orange-500/[0.08] px-4 py-3 text-sm font-black text-orange-300 transition hover:bg-orange-500/[0.14]">全期間の成長レポートを見る</Link>
         </div>
       )}
+      {currentRecords.length === 0 && <div className="border-t border-white/10 px-5 pb-5"><Link href="/mypage/growth-report" className="flex items-center justify-center rounded-xl border border-orange-500/35 bg-orange-500/[0.08] px-4 py-3 text-sm font-black text-orange-300">全期間の成長レポートを見る</Link></div>}
     </section>
   );
 }
