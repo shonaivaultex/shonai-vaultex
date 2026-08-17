@@ -1,4 +1,9 @@
-import { ArrowRight, ScanLine } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, LoaderCircle, ScanLine, Trash2 } from "lucide-react";
+import { createClient } from "@/lib/supabase-browser";
 import { controlTestByCode, performanceCategoryForMeasurement } from "@/lib/control-test";
 
 export type RJTrial = { trial_number: number; jump_height_cm: number | string; contact_time_ms: number | string; rj_index: number | string };
@@ -21,17 +26,40 @@ function isComparable(current: ScanMeasurement, candidate: ScanMeasurement) {
 }
 
 export default function ControlTestScanOverview({ scans }: { scans: ScanRow[] }) {
-  const ordered = [...scans].sort((a, b) => a.scan_number - b.scan_number);
+  const router = useRouter();
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const visibleScans = scans.filter((scan) => !deletedIds.includes(scan.id));
+  const ordered = [...visibleScans].sort((a, b) => a.scan_number - b.scan_number);
+
+  async function deleteScan(scan: ScanRow) {
+    if (!window.confirm(`VAULTEX SCAN #${String(scan.scan_number).padStart(2, "0")}を削除しますか？\n連携している測定記録も削除され、元に戻せません。`)) return;
+    setDeletingId(scan.id);
+    setDeleteError("");
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("delete_control_test_scan", { p_scan_id: scan.id });
+    if (error || data !== true) {
+      setDeleteError(error?.message ?? "SCANを削除できませんでした。再読み込みしてお試しください。");
+      setDeletingId(null);
+      return;
+    }
+    setDeletedIds((current) => [...current, scan.id]);
+    setDeletingId(null);
+    router.refresh();
+  }
+
   return (
     <section className="mt-8">
-      <div className="flex items-end justify-between gap-4"><div><p className="text-[10px] font-black tracking-[0.2em] text-orange-400">SCAN HISTORY</p><h2 className="mt-1 text-2xl font-black">VAULTEX SCAN</h2></div><span className="text-xs text-white/35">{scans.length}回</span></div>
-      {scans.length === 0 ? <div className="mt-4 rounded-2xl border border-dashed border-white/15 p-6 text-center text-sm text-white/45">最初のSCANを登録すると、次回から差分を比較できます。</div> : (
+      <div className="flex items-end justify-between gap-4"><div><p className="text-[10px] font-black tracking-[0.2em] text-orange-400">SCAN HISTORY</p><h2 className="mt-1 text-2xl font-black">VAULTEX SCAN</h2></div><span className="text-xs text-white/35">{visibleScans.length}回</span></div>
+      {deleteError ? <p role="alert" className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{deleteError}</p> : null}
+      {visibleScans.length === 0 ? <div className="mt-4 rounded-2xl border border-dashed border-white/15 p-6 text-center text-sm text-white/45">最初のSCANを登録すると、次回から差分を比較できます。</div> : (
         <div className="mt-4 grid gap-3">
           {[...ordered].reverse().map((scan, reverseIndex) => {
             const index = ordered.length - 1 - reverseIndex;
             const measurements = scan.control_test_measurements ?? [];
             return <details key={scan.id} className="rounded-2xl border border-white/10 bg-[#111] p-5 open:border-orange-500/35">
-              <summary className="flex cursor-pointer list-none items-center gap-4"><span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500/15 text-orange-400"><ScanLine size={21} /></span><span className="min-w-0 flex-1"><strong className="block">VAULTEX SCAN #{String(scan.scan_number).padStart(2,"0")}</strong><span className="mt-1 block text-xs text-white/40">{scan.measured_on}・{measurements.length}測定</span></span><span className="text-xs font-bold text-orange-300">詳しく見る</span></summary>
+              <summary className="flex cursor-pointer list-none items-center gap-4"><span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500/15 text-orange-400"><ScanLine size={21} /></span><span className="min-w-0 flex-1"><strong className="block">VAULTEX SCAN #{String(scan.scan_number).padStart(2,"0")}</strong><span className="mt-1 block text-xs text-white/40">{scan.measured_on}・{measurements.length}測定</span></span><span className="hidden text-xs font-bold text-orange-300 sm:inline">詳しく見る</span><button type="button" aria-label={`VAULTEX SCAN #${String(scan.scan_number).padStart(2,"0")}を削除`} disabled={deletingId === scan.id} onClick={(event) => { event.preventDefault(); event.stopPropagation(); void deleteScan(scan); }} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-red-500/30 text-red-300 transition hover:bg-red-500/10 disabled:cursor-wait disabled:opacity-50">{deletingId === scan.id ? <LoaderCircle size={16} className="animate-spin" /> : <Trash2 size={16} />}</button></summary>
               <div className="mt-5 grid gap-2 border-t border-white/10 pt-4 sm:grid-cols-2">
                 {measurements.sort((a,b)=>(controlTestByCode[a.test_code]?.sortOrder ?? 99)-(controlTestByCode[b.test_code]?.sortOrder ?? 99)).map((measurement) => {
                   const definition = controlTestByCode[measurement.test_code]; if (!definition) return null;
@@ -46,6 +74,7 @@ export default function ControlTestScanOverview({ scans }: { scans: ScanRow[] })
                   return <div key={measurement.test_code} className="rounded-xl bg-white/[0.035] p-3"><div className="flex justify-between gap-3"><span className="text-xs text-white/50">{category}</span><strong>{format(current, definition.unit)}</strong></div><div className="mt-2 flex flex-wrap gap-2 text-[10px] text-white/35">{previousValue !== null && <span>前回差 {format(current-previousValue,definition.unit)}</span>}{firstValue !== null && <span className="inline-flex items-center gap-1"><ArrowRight size={10}/>初回差 {format(current-firstValue,definition.unit)}</span>}</div>{trials.length>0&&<div className="mt-3 grid grid-cols-5 gap-1 border-t border-white/10 pt-2">{trials.map((trial)=><div key={trial.trial_number} className="text-center text-[9px] text-white/40"><span className="block text-white/60">{trial.trial_number}回</span><span className="block">{trial.rj_index} RJ</span><span className="block">{trial.jump_height_cm}cm</span><span className="block">{trial.contact_time_ms}ms</span></div>)}</div>}</div>;
                 })}
               </div>
+              <div className="mt-4 flex justify-end border-t border-white/10 pt-4"><button type="button" disabled={deletingId === scan.id} onClick={() => deleteScan(scan)} className="inline-flex items-center gap-2 rounded-xl border border-red-500/35 px-4 py-2 text-xs font-bold text-red-300 transition hover:bg-red-500/10 disabled:cursor-wait disabled:opacity-50">{deletingId === scan.id ? <LoaderCircle size={15} className="animate-spin" /> : <Trash2 size={15} />}{deletingId === scan.id ? "削除中..." : "このSCANを削除"}</button></div>
             </details>;
           })}
         </div>
