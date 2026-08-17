@@ -3,8 +3,8 @@ import { ArrowLeft, Plus } from "lucide-react";
 import PerformanceEventCard from "@/app/components/PerformanceEventCard";
 import { createClient } from "@/lib/supabase-server";
 import { eventKindMap, type PerformanceKind, unitMap } from "@/lib/performance-events";
-import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
 import SeasonSelector from "@/app/components/SeasonSelector";
+import type { ReactNode } from "react";
 
 type Props = {
   kind: PerformanceKind;
@@ -13,31 +13,55 @@ type Props = {
   description: string;
   selectedYear?: number | null;
   focusRecordId?: number | null;
+  beforeRecords?: ReactNode;
+  addHref?: string;
+  addLabel?: string;
 };
 
 type FeedbackRow = { id: number; record_id: number; coach_id: string; body: string; created_at: string; acknowledged_at: string | null };
 type LeaderboardRow = { ranking_scope: "overall" | "class"; leaderboard_position: number; display_name: string; best_value: number | string; is_current_user: boolean };
 
-export default async function PerformanceRecordsPage({ kind, title, eyebrow, description, selectedYear = null, focusRecordId = null }: Props) {
+export default async function PerformanceRecordsPage({ kind, title, eyebrow, description, selectedYear = null, focusRecordId = null, beforeRecords, addHref, addLabel = "記録を追加" }: Props) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return <div>ログインしてください</div>;
 
-  const { data: records, error } = await supabase
+  const recordsQuery = supabase
     .from("performance_records")
-    .select("*")
+    .select("id, category, value, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path")
     .eq("user_id", user.id)
+    .or(`record_kind.eq.${kind},record_kind.is.null`)
     .order("date", { ascending: false });
+
+  if (selectedYear !== null) {
+    recordsQuery
+      .gte("date", `${selectedYear}-01-01`)
+      .lte("date", `${selectedYear}-12-31`);
+  }
+
+  const [{ data: records, error }, { data: yearRows }, { data: goals, error: goalsError }] = await Promise.all([
+    recordsQuery,
+    supabase
+      .from("performance_records")
+      .select("date, category, record_kind")
+      .eq("user_id", user.id)
+      .or(`record_kind.eq.${kind},record_kind.is.null`)
+      .order("date", { ascending: false }),
+    supabase
+      .from("performance_goals")
+      .select("category, target_value")
+      .eq("user_id", user.id),
+  ]);
 
   if (error) console.error("RECORD ERROR", error);
 
   const recordIds = (records ?? []).map((record) => record.id);
-  const { data: requestRows } = recordIds.length ? await supabase.from("feedback_requests").select("id, record_id, request_type, message, priority, status").in("record_id", recordIds).eq("status", "pending") : { data: [] };
+  const [{ data: requestRows }, { data: feedbackRows }] = recordIds.length ? await Promise.all([
+    supabase.from("feedback_requests").select("id, record_id, request_type, message, priority, status").in("record_id", recordIds).eq("status", "pending"),
+    supabase.from("coach_feedback").select("id, record_id, coach_id, body, created_at, acknowledged_at").in("record_id", recordIds).order("created_at", { ascending: false }),
+  ]) : [{ data: [] }, { data: [] }];
   const requestByRecord = new Map((requestRows ?? []).map((item) => [item.record_id, item]));
-  const { data: feedbackRows } = recordIds.length
-    ? await supabase.from("coach_feedback").select("id, record_id, coach_id, body, created_at, acknowledged_at").in("record_id", recordIds).order("created_at", { ascending: false })
-    : { data: [] };
   const coachIds = [...new Set((feedbackRows ?? []).map((item) => item.coach_id))];
   const { data: coaches } = coachIds.length
     ? await supabase.from("players").select("user_id, name").in("user_id", coachIds)
@@ -48,35 +72,26 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
     return groups;
   }, {});
 
-  const { data: goals, error: goalsError } = await supabase
-    .from("performance_goals")
-    .select("category, target_value")
-    .eq("user_id", user.id);
-
   if (goalsError) console.error("GOAL ERROR", goalsError);
   const goalsByCategory = new Map(
     (goals ?? []).map((goal) => [goal.category, Number(goal.target_value)]),
   );
 
-  const recordsWithVideoUrls = await Promise.all((records ?? []).map(async (record) => {
-    if (!record.video_path) return { ...record, video_url: null, coach_feedback: feedbackByRecord[record.id] ?? [], feedback_request: requestByRecord.get(record.id) ?? null };
-    const { data } = await supabase.storage
-      .from(PERFORMANCE_VIDEO_BUCKET)
-      .createSignedUrl(record.video_path, 60 * 60);
-    return { ...record, video_url: data?.signedUrl ?? null, coach_feedback: feedbackByRecord[record.id] ?? [], feedback_request: requestByRecord.get(record.id) ?? null };
+  const recordsWithDetails = (records ?? []).filter((record) =>
+    (record.record_kind ?? eventKindMap[record.category] ?? "control-test") === kind,
+  ).map((record) => ({
+    ...record,
+    coach_feedback: feedbackByRecord[record.id] ?? [],
+    feedback_request: requestByRecord.get(record.id) ?? null,
   }));
 
-  const recordsForKind = recordsWithVideoUrls.filter((record) =>
+  const availableYears = [...new Set((yearRows ?? []).filter((record) =>
     (record.record_kind ?? eventKindMap[record.category] ?? "control-test") === kind,
-  );
-  const availableYears = [...new Set(recordsForKind.map((record) => new Date(`${record.date}T00:00:00`).getFullYear()))]
+  ).map((record) => new Date(`${record.date}T00:00:00`).getFullYear()))]
     .filter(Number.isFinite)
     .sort((a, b) => b - a);
 
-  const safeRecords = recordsForKind.filter((record) => {
-    const recordYear = new Date(`${record.date}T00:00:00`).getFullYear();
-    return selectedYear === null || recordYear === selectedYear;
-  });
+  const safeRecords = recordsWithDetails;
   const recordsByCategory = safeRecords.reduce<Record<string, typeof safeRecords>>((groups, record) => {
     (groups[record.category] ??= []).push(record);
     return groups;
@@ -134,9 +149,10 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
           <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-5xl">{title}</h1>
           <p className="mt-3 leading-7 text-white/60">{description}</p>
         </header>
+        {beforeRecords}
         <SeasonSelector years={availableYears} selectedYear={selectedYear} />
-        <Link href={`/performance?kind=${kind}`} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-4 text-sm font-black tracking-[0.12em] transition hover:bg-orange-400 lg:ml-auto lg:w-fit lg:min-w-56">
-          <Plus size={18} aria-hidden="true" /> 記録を追加
+        <Link href={addHref ?? `/performance?kind=${kind}`} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-4 text-sm font-black tracking-[0.12em] transition hover:bg-orange-400 lg:ml-auto lg:w-fit lg:min-w-56">
+          <Plus size={18} aria-hidden="true" /> {addLabel}
         </Link>
 
         {eventGroups.length === 0 ? (
@@ -148,8 +164,8 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
           </>
         )}
 
-        <Link href={`/performance?kind=${kind}`} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-4 text-sm font-black tracking-[0.12em] transition hover:bg-orange-400">
-          <Plus size={18} aria-hidden="true" /> 記録を追加
+        <Link href={addHref ?? `/performance?kind=${kind}`} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-4 text-sm font-black tracking-[0.12em] transition hover:bg-orange-400">
+          <Plus size={18} aria-hidden="true" /> {addLabel}
         </Link>
       </div>
     </main>

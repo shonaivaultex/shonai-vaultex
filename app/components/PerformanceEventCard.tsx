@@ -1,4 +1,4 @@
-import PerformanceChart from "@/app/components/PerformanceChart";
+import LazyPerformanceChart from "@/app/components/LazyPerformanceChart";
 import TargetGoalEditor from "@/app/components/TargetGoalEditor";
 import PerformanceHistoryModal from "@/app/components/PerformanceHistoryModal";
 
@@ -63,6 +63,8 @@ export default function PerformanceEventCard({
   const yearlyFirst = yearlyRecords.at(-1);
   const yearlyChange = yearlyLatest && yearlyFirst ? Number(yearlyLatest.value) - Number(yearlyFirst.value) : null;
   const isTimeEvent = unit === "秒" || unit === "分";
+  const latestImproved = latestChange === null ? null : isTimeEvent ? latestChange < 0 : latestChange > 0;
+  const yearlyImproved = yearlyChange === null ? null : isTimeEvent ? yearlyChange < 0 : yearlyChange > 0;
   const bestValue = Number(best.value);
   const initialValue = Number(firstEver.value);
   const remaining = target === null ? null : isTimeEvent ? bestValue - target : target - bestValue;
@@ -134,14 +136,14 @@ export default function PerformanceEventCard({
             {latestChange === null ? (
               <strong className="mt-2 block text-base text-white/35">記録待ち</strong>
             ) : (
-              <strong className={`mt-2 block text-xl ${latestChange > 0 ? "text-emerald-400" : latestChange < 0 ? "text-red-400" : "text-white/50"}`}>
+              <strong className={`mt-2 block text-xl ${latestChange === 0 ? "text-white/50" : latestImproved ? "text-emerald-400" : "text-red-400"}`}>
                 {formatChange(latestChange, unit)}
               </strong>
             )}
           </div>
           <div className="rounded-xl border border-white/10 p-4">
             <p className="m-0 text-[11px] font-bold tracking-[0.08em] text-white/45">年間成長</p>
-            <strong className={`mt-2 block text-xl ${yearlyChange === null || yearlyChange === 0 ? "text-white/50" : yearlyChange > 0 ? "text-emerald-400" : "text-red-400"}`}>
+            <strong className={`mt-2 block text-xl ${yearlyChange === null || yearlyChange === 0 ? "text-white/50" : yearlyImproved ? "text-emerald-400" : "text-red-400"}`}>
               {currentYear} {yearlyChange === null ? "—" : formatChange(yearlyChange, unit)}
             </strong>
           </div>
@@ -169,7 +171,7 @@ export default function PerformanceEventCard({
         )}
 
         <div style={{ marginTop: 24 }}>
-          <PerformanceChart
+          <LazyPerformanceChart
             unit={unit}
             records={records.map((record) => ({
               date: record.date,

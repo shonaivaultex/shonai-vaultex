@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase-browser";
 import { performanceEvents, type PerformanceKind } from "@/lib/performance-events";
 import { createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
 import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
+import { controlTestByCode } from "@/lib/control-test";
 
 export default function EditPerformancePage() {
   const router = useRouter();
@@ -118,6 +119,17 @@ export default function EditPerformancePage() {
       if (newVideo && nextVideoPath) await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([nextVideoPath]);
       alert(error.message);
       return;
+    }
+
+    if (recordKind === "control-test") {
+      const { data: measurement } = await supabase.from("control_test_measurements").select("id, test_code, metrics").eq("performance_record_id", id).maybeSingle();
+      if (measurement) {
+        const definition = controlTestByCode[measurement.test_code];
+        const numericValue = Number(value);
+        if (definition && Number.isFinite(numericValue) && numericValue > 0) {
+          await supabase.from("control_test_measurements").update({ primary_value: numericValue, metrics: { ...(measurement.metrics ?? {}), [definition.primaryMetric]: numericValue } }).eq("id", measurement.id);
+        }
+      }
     }
 
     if (videoPath && videoPath !== nextVideoPath) {

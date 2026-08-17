@@ -15,16 +15,16 @@ const options: Array<{ key: keyof Preferences; title: string; detail: string }> 
 function decodeKey(value: string) { const padding = "=".repeat((4 - value.length % 4) % 4); const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/"); return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0)); }
 
 export default function PushNotificationButton() {
-  const [supported, setSupported] = useState(false); const [enabled, setEnabled] = useState(false); const [saving, setSaving] = useState(false); const [open, setOpen] = useState(false); const [endpoint, setEndpoint] = useState<string | null>(null); const [preferences, setPreferences] = useState(defaults);
+  const [supported] = useState(() => typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window); const [enabled, setEnabled] = useState(false); const [saving, setSaving] = useState(false); const [open, setOpen] = useState(false); const [endpoint, setEndpoint] = useState<string | null>(null); const [preferences, setPreferences] = useState(defaults);
   useEffect(() => {
-    const available = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window; setSupported(available); if (!available) return;
+    if (!supported) return;
     navigator.serviceWorker.ready.then(async (registration) => {
       const subscription = await registration.pushManager.getSubscription(); setEnabled(Boolean(subscription)); setEndpoint(subscription?.endpoint ?? null);
       if (!subscription) return;
       const { data } = await createClient().from("push_subscriptions").select("notify_feedback, notify_important, notify_schedule").eq("endpoint", subscription.endpoint).maybeSingle();
       if (data) setPreferences(data as Preferences);
     }).catch(() => undefined);
-  }, []);
+  }, [supported]);
   if (!supported) return null;
 
   async function enable() {

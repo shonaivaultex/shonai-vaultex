@@ -42,7 +42,10 @@ export default function VideoFeedbackConversation({ requestId, messages, role, d
   const [expanded, setExpanded] = useState(defaultOpen);
 
   useEffect(() => { createClient().auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null)); }, []);
-  useEffect(() => { setConversationMessages(messages); }, [messages]);
+  useEffect(() => {
+    const update = window.setTimeout(() => setConversationMessages(messages), 0);
+    return () => window.clearTimeout(update);
+  }, [messages]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();

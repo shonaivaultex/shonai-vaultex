@@ -6,21 +6,21 @@ import { Play, X } from "lucide-react";
 import DeleteRecordButton from "@/app/components/DeleteRecordButton";
 import { createClient } from "@/lib/supabase-browser";
 import FeedbackRequestButton from "@/app/components/FeedbackRequestButton";
+import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
 
 type CoachFeedback = { id: number; body: string; created_at: string; acknowledged_at?: string | null; coach_name: string };
 type FeedbackRequest = { id: number; request_type: string; message: string | null; priority: string; status: string };
 type RecordItem = { id: number; value: number | string; date: string; awareness_category?: string | null; awareness_categories?: string[] | null; awareness_note?: string | null; video_path?: string | null; video_url?: string | null; coach_feedback?: CoachFeedback[]; feedback_request?: FeedbackRequest | null };
 
 export default function PerformanceHistoryModal({ records, unit, focusRecordId }: { records: RecordItem[]; unit: string; focusRecordId?: number | null }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => Boolean(focusRecordId && records.some((record) => record.id === focusRecordId)));
   const [playingId, setPlayingId] = useState<number | null>(null);
+  const [loadingVideoId, setLoadingVideoId] = useState<number | null>(null);
+  const [videoUrls, setVideoUrls] = useState<Record<number, string>>({});
   const [acknowledgingId, setAcknowledgingId] = useState<number | null>(null);
   const [acknowledgedIds, setAcknowledgedIds] = useState<number[]>([]);
-  const videoCount = records.filter((record) => record.video_url).length;
+  const videoCount = records.filter((record) => record.video_path).length;
   const unreadCount = records.flatMap((record) => record.coach_feedback ?? []).filter((item) => !item.acknowledged_at && !acknowledgedIds.includes(item.id)).length;
-  useEffect(() => {
-    if (focusRecordId && records.some((record) => record.id === focusRecordId)) setOpen(true);
-  }, [focusRecordId, records]);
   useEffect(() => {
     if (!open || !focusRecordId) return;
     const timer = window.setTimeout(() => document.getElementById(`feedback-record-${focusRecordId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
@@ -32,6 +32,28 @@ export default function PerformanceHistoryModal({ records, unit, focusRecordId }
     setAcknowledgingId(null);
     if (error) { alert("確認状態を保存できませんでした：" + error.message); return; }
     setAcknowledgedIds((current) => [...current, feedbackId]);
+  }
+  async function toggleVideo(record: RecordItem) {
+    if (playingId === record.id) {
+      setPlayingId(null);
+      return;
+    }
+    if (!record.video_path) return;
+    if (videoUrls[record.id]) {
+      setPlayingId(record.id);
+      return;
+    }
+    setLoadingVideoId(record.id);
+    const { data, error } = await createClient().storage
+      .from(PERFORMANCE_VIDEO_BUCKET)
+      .createSignedUrl(record.video_path, 60 * 60);
+    setLoadingVideoId(null);
+    if (error || !data?.signedUrl) {
+      alert("動画を読み込めませんでした。時間をおいてもう一度お試しください。");
+      return;
+    }
+    setVideoUrls((current) => ({ ...current, [record.id]: data.signedUrl }));
+    setPlayingId(record.id);
   }
   useEffect(() => {
     if (!open) return;
@@ -50,8 +72,8 @@ export default function PerformanceHistoryModal({ records, unit, focusRecordId }
             <div className="min-w-0"><strong className="text-xl text-white">{record.value}<span className="ml-1 text-sm">{unit}</span></strong><p className="mt-1 text-xs text-white/50">{record.date}</p><div className="mt-2 flex flex-wrap gap-1">{(record.awareness_categories?.length ? record.awareness_categories : record.awareness_category ? [record.awareness_category] : []).map((tag) => <span key={tag} className="inline-flex rounded-full border border-orange-500/35 bg-orange-500/10 px-2.5 py-1 text-xs font-bold text-orange-300">{tag}</span>)}</div>{record.awareness_note && <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-white/70">{record.awareness_note}</p>}</div>
             <div className="flex shrink-0 gap-2"><Link href={`/edit/${record.id}`} className="inline-flex h-9 items-center rounded-lg border border-white/20 px-3 text-sm text-white">編集</Link><DeleteRecordButton recordId={record.id} videoPath={record.video_path} compact /></div>
           </div>
-          {record.video_url && <button type="button" onClick={() => setPlayingId(playingId === record.id ? null : record.id)} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-black text-white transition hover:bg-orange-400"><Play size={15} fill="currentColor" />{playingId === record.id ? "動画を閉じる" : "動画を見る"}</button>}
-          {playingId === record.id && record.video_url && <div className="mt-4 rounded-xl border border-orange-500/30 bg-black p-2"><video key={record.id} autoPlay controls playsInline className="max-h-[58vh] w-full rounded-lg object-contain" src={record.video_url}>お使いのブラウザは動画再生に対応していません。</video></div>}
+          {record.video_path && <button type="button" disabled={loadingVideoId === record.id} onClick={() => toggleVideo(record)} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-black text-white transition hover:bg-orange-400 disabled:opacity-60"><Play size={15} fill="currentColor" />{loadingVideoId === record.id ? "動画を準備中…" : playingId === record.id ? "動画を閉じる" : "動画を見る"}</button>}
+          {playingId === record.id && videoUrls[record.id] && <div className="mt-4 rounded-xl border border-orange-500/30 bg-black p-2"><video key={record.id} autoPlay controls playsInline className="max-h-[58vh] w-full rounded-lg object-contain" src={videoUrls[record.id]}>お使いのブラウザは動画再生に対応していません。</video></div>}
           <FeedbackRequestButton recordId={record.id} initialRequest={record.feedback_request} />
           {(record.coach_feedback ?? []).map((feedback) => {
             const acknowledged = Boolean(feedback.acknowledged_at) || acknowledgedIds.includes(feedback.id);

@@ -18,26 +18,11 @@ export default function EditPage() {
   const [rankingNamePublic, setRankingNamePublic] = useState(false);
 
   useEffect(() => {
-    getProfile();
-  }, []);
-
-  async function getProfile() {
-
-    const {
-      data:{
-        user
-      }
-    } = await supabase.auth.getUser();
-
-
-    const { data } = await supabase
-      .from("players")
-      .select("*")
-      .eq("user_id", user?.id)
-      .single();
-
-
-    if(data){
+    let active = true;
+    async function loadProfile() {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await supabase.from("players").select("*").eq("user_id", user?.id).single();
+      if (!active || !data) return;
       setName(data.name);
       setEvent(data.event);
       setBest(data.personal_best);
@@ -45,7 +30,9 @@ export default function EditPage() {
       setGender(data.gender ?? "");
       setRankingNamePublic(data.ranking_name_public ?? false);
     }
-  }
+    void loadProfile();
+    return () => { active = false; };
+  }, [supabase]);
 
 
   async function saveProfile(){

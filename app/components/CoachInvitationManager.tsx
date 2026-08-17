@@ -31,7 +31,11 @@ export default function CoachInvitationManager() {
     setLoading(true); setMessage(""); const response = await fetch("/api/coach/invitations", { cache: "no-store" }); const data = await response.json(); setLoading(false);
     if (!response.ok) { setMessage(data.error ?? "登録状況を取得できませんでした。"); return; } setItems(data.invitations ?? []);
   }
-  useEffect(() => { if (open && items.length === 0) void load(); }, [open]);
+  useEffect(() => {
+    if (!open || items.length > 0) return;
+    const request = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(request);
+  }, [open, items.length]);
   function update(index: number, key: keyof Draft, value: string) { setDrafts((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value } : item)); }
   async function importCsv(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;

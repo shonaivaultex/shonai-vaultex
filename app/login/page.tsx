@@ -22,7 +22,8 @@ export default function LoginPage() {
     const authType = hash.get("type");
 
     if (params.has("code") || authType === "invite" || authType === "recovery") {
-      setIsPasswordSetup(true);
+      const update = window.setTimeout(() => setIsPasswordSetup(true), 0);
+      return () => window.clearTimeout(update);
     }
   }, []);
 
