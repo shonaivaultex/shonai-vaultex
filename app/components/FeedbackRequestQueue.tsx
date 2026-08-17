@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, LoaderCircle, MessageCircleQuestion } from "lucide-react";
 import { programClasses } from "@/lib/program-classes";
 
@@ -12,13 +12,13 @@ const pageSize = 10;
 export default function FeedbackRequestQueue({ initialItems, initialTotalCount }: { initialItems: FeedbackQueueItem[]; initialTotalCount: number }) {
   const [items, setItems] = useState(initialItems); const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [status, setStatus] = useState("pending"); const [programClass, setProgramClass] = useState("all"); const [priority, setPriority] = useState("all"); const [sort, setSort] = useState("oldest"); const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false); const [firstLoad, setFirstLoad] = useState(true);
+  const [loading, setLoading] = useState(false); const firstLoad = useRef(true);
   useEffect(() => {
-    if (firstLoad && status === "pending" && programClass === "all" && priority === "all" && sort === "oldest" && page === 1) { setFirstLoad(false); return; }
+    if (firstLoad.current) { firstLoad.current = false; return; }
     const controller = new AbortController(); const params = new URLSearchParams({ status, class: programClass, priority, sort, page: String(page) }); setLoading(true);
     fetch(`/api/coach/feedback-queue?${params}`, { signal: controller.signal }).then((response) => response.ok ? response.json() : Promise.reject(new Error("取得に失敗しました"))).then((result) => { setItems(result.items); setTotalCount(result.totalCount); }).catch((error) => { if (error.name !== "AbortError") setItems([]); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [firstLoad, page, priority, programClass, sort, status]);
+  }, [page, priority, programClass, sort, status]);
   const pages = Math.max(1, Math.ceil(totalCount / pageSize)); function change(setter: (value: string) => void, value: string) { setter(value); setPage(1); }
   return <section className="mt-8 rounded-2xl border border-sky-500/25 bg-sky-500/[0.04] p-5"><div className="flex items-center justify-between gap-3"><div><h2 className="flex items-center gap-2 font-black"><MessageCircleQuestion className="text-sky-400" size={19} />フィードバック依頼</h2><p className="mt-1 text-xs text-white/40">必要な10件だけ取得・大会前依頼を優先</p></div><span className="rounded-full bg-sky-500 px-2.5 py-1 text-xs font-black text-black">{status === "pending" ? "未回答" : "回答済み"} {totalCount}件</span></div>
     <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4"><select value={status} onChange={(e) => change(setStatus, e.target.value)} className="rounded-lg border border-white/15 bg-[#111] px-3 py-2 text-xs"><option value="pending">未回答</option><option value="answered">回答済み</option></select><select value={programClass} onChange={(e) => change(setProgramClass, e.target.value)} className="rounded-lg border border-white/15 bg-[#111] px-3 py-2 text-xs"><option value="all">全クラス</option>{programClasses.map((item) => <option key={item}>{item}</option>)}</select><select value={priority} onChange={(e) => change(setPriority, e.target.value)} className="rounded-lg border border-white/15 bg-[#111] px-3 py-2 text-xs"><option value="all">すべての優先度</option><option value="urgent">大会前のみ</option><option value="normal">通常のみ</option></select><select value={sort} onChange={(e) => change(setSort, e.target.value)} className="rounded-lg border border-white/15 bg-[#111] px-3 py-2 text-xs"><option value="oldest">古い順</option><option value="newest">新しい順</option></select></div>
