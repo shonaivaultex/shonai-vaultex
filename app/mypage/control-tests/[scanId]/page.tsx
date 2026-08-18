@@ -7,8 +7,9 @@ import { createClient } from "@/lib/supabase-server";
 
 type Scan = { id:string; scan_number:number; measured_on:string; athlete_standard_version:string|null; profile_snapshot:Record<string,unknown>; control_test_measurements:AthleteMeasurement[]|null };
 
-export default async function AthleteScanPage({params}:{params:Promise<{scanId:string}>}) {
+export default async function AthleteScanPage({params,searchParams}:{params:Promise<{scanId:string}>;searchParams:Promise<{reveal?:string}>}) {
   const {scanId}=await params;
+  const {reveal}=await searchParams;
   const supabase=await createClient();
   const {data:{user}}=await supabase.auth.getUser();
   if(!user) redirect("/mypage/login");
@@ -34,5 +35,5 @@ export default async function AthleteScanPage({params}:{params:Promise<{scanId:s
   const index=evaluated.findIndex((item)=>item.scan.id===current.id);
   const previous=index>0?evaluated[index-1].evaluation:null;
   const first=index>0?evaluated[0].evaluation:null;
-  return <main className="min-h-screen bg-[#090a0c] px-5 pb-24 pt-28 text-white sm:px-8"><div className="mx-auto max-w-6xl"><Link href="/mypage/control-tests" className="mb-7 inline-flex items-center gap-2 text-xs font-bold tracking-[.12em] text-white/55 transition hover:text-orange-400"><ArrowLeft size={16}/>CONTROL TESTへ戻る</Link><AthleteScanResult evaluation={evaluation} comparison={{previous,first}} scanNumber={current.scan_number} measuredOn={current.measured_on} standardLabel={currentSet?.label??"VAULTEX STANDARD Ver.1 / BETA"}/></div></main>;
+  return <main className="min-h-screen bg-[#090a0c] px-5 pb-24 pt-28 text-white sm:px-8"><div className="mx-auto max-w-6xl"><Link href="/mypage/control-tests" className="mb-7 inline-flex items-center gap-2 text-xs font-bold tracking-[.12em] text-white/55 transition hover:text-orange-400"><ArrowLeft size={16}/>CONTROL TESTへ戻る</Link><AthleteScanResult evaluation={evaluation} comparison={{previous,first}} scanNumber={current.scan_number} measuredOn={current.measured_on} standardLabel={currentSet?.label??"VAULTEX STANDARD Ver.1 / BETA"} showReveal={reveal==="1"}/></div></main>;
 }

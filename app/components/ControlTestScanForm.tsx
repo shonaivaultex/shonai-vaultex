@@ -74,7 +74,7 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
       });
       const {error:measurementError}=await supabase.from("control_test_measurements").insert(measurementRows);
       if(measurementError){await supabase.from("performance_records").delete().in("id",records.map((row)=>row.id));await supabase.from("control_test_scans").delete().eq("id",scan.id);setError(measurementError.message);return;}
-      router.push(`/mypage/control-tests/${scan.id}`);router.refresh();
+      router.push(`/mypage/control-tests/${scan.id}?reveal=1`);router.refresh();
     } finally { setSaving(false); }
   }
 
