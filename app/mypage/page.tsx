@@ -96,31 +96,29 @@ export default async function MyPage() {
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
 
   return (
-    <main
-      style={{
-        maxWidth: 600,
-        margin: "80px auto",
-        padding: 20,
-      }}
-    >
-      <h1 className="text-3xl font-black">MY PAGE</h1>
+    <main className="mx-auto my-20 max-w-7xl px-5 pb-12 sm:px-8">
+      <h1 className="text-3xl font-black lg:text-4xl">MY PAGE</h1>
 
       {/* プロフィール */}
-      <div className="mt-6 rounded-2xl border border-white/10 bg-[#111] p-5 text-white">
+      <div className={`mt-6 grid gap-4 ${coachRole ? "lg:grid-cols-2" : ""}`}>
+      <div className="rounded-2xl border border-white/10 bg-[#111] p-5 text-white lg:flex lg:flex-col lg:justify-center lg:px-7">
         <h2 className="text-xl font-black">{player.name}</h2>
         <p className="mt-2 text-sm text-white/50">{player.program_class ?? "クラス未選択"} ・ {player.grade ?? "学年未設定"}</p>
         <p className="mt-1 text-sm text-white/50">{player.event ?? "種目未設定"}</p>
       </div>
 
-      {coachRole && <Link href="/coach/dashboard" prefetch className="mt-4 flex items-center justify-between rounded-2xl border border-emerald-400/60 bg-emerald-500/15 p-5 text-white shadow-[0_0_24px_rgba(16,185,129,0.08)] transition hover:border-emerald-300 hover:bg-emerald-500/20"><span><span className="text-[10px] font-black tracking-[0.18em] text-emerald-400">COACH MENU</span><strong className="mt-1 block text-lg">コーチダッシュボードを開く</strong><span className="mt-1 block text-sm text-white/50">依頼・担当選手</span></span><ChevronRight className="text-emerald-400" /></Link>}
+      {coachRole && <Link href="/coach/dashboard" prefetch className="flex items-center justify-between rounded-2xl border border-emerald-400/60 bg-emerald-500/15 p-5 text-white shadow-[0_0_24px_rgba(16,185,129,0.08)] transition hover:border-emerald-300 hover:bg-emerald-500/20 lg:px-7"><span><span className="text-[10px] font-black tracking-[0.18em] text-emerald-400">COACH MENU</span><strong className="mt-1 block text-lg">コーチダッシュボードを開く</strong><span className="mt-1 block text-sm text-white/50">依頼・担当選手</span></span><ChevronRight className="text-emerald-400" /></Link>}
+      </div>
 
-      <section className="mt-6 overflow-hidden rounded-3xl border border-orange-500/50 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,.2),transparent_42%),#111] p-5 text-white shadow-[0_14px_42px_rgba(0,0,0,.22)]">
+      <div className="mt-6 grid items-stretch gap-5 lg:grid-cols-2">
+      <section className="overflow-hidden rounded-3xl border border-orange-500/50 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,.2),transparent_42%),#111] p-5 text-white shadow-[0_14px_42px_rgba(0,0,0,.22)] lg:p-7">
         <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-orange-500 text-black"><ScanLine size={24}/></span><div className="min-w-0 flex-1"><p className="text-[10px] font-black tracking-[.2em] text-orange-400">VAULTEX ATHLETE SCAN</p><h2 className="mt-1 text-xl font-black">身体能力の現在地を知る</h2><p className="mt-2 text-sm leading-6 text-white/50">CONTROL TESTから6能力・3特性・現在のATHLETE TYPEを確認します。</p></div></div>
         {latestScan ? <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4"><div className="flex items-center justify-between gap-4"><div><p className="text-xs text-white/40">LATEST SCAN #{String(latestScan.scan_number).padStart(2,"0")} ・ {latestScan.measured_on}</p><p className="mt-1 text-lg font-black text-orange-300">{latestAthleteScan?.typeNameJa ?? "評価結果を確認"}</p>{latestAthleteScan?.typeCode ? <p className="mt-0.5 text-[10px] font-black tracking-[.12em] text-white/45">{latestAthleteScan.typeCode}</p> : null}</div><Sparkles className="shrink-0 text-orange-400" size={24}/></div><Link href={`/mypage/control-tests/${latestScan.id}`} className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-black transition hover:bg-orange-400">ATHLETE SCAN結果を見る<ChevronRight size={17}/></Link></div> : <Link href="/mypage/control-tests/new" className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 font-black text-black transition hover:bg-orange-400"><Plus size={18}/>最初のVAULTEX SCANを記録</Link>}
         <Link href="/mypage/control-tests" className="mt-3 flex items-center justify-center gap-1 text-xs font-bold text-white/50 transition hover:text-orange-300">CONTROL TESTの履歴・詳細<ChevronRight size={14}/></Link>
       </section>
 
-      <Link href="/mypage/ai-navigator" prefetch className="mt-6 flex items-center gap-4 rounded-3xl border border-orange-500/35 bg-[linear-gradient(135deg,rgba(249,115,22,.1),rgba(17,17,17,.96))] p-5 text-white transition hover:border-orange-400"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-orange-500/30 bg-orange-500/10 text-orange-400"><Compass size={24}/></span><span className="min-w-0 flex-1"><span className="text-[10px] font-black tracking-[.18em] text-orange-400">VAULTEX AI NAVIGATOR & COMPANION</span><strong className="mt-1 block text-lg">競技のことを一緒に整理する</strong><span className="mt-1 block text-xs leading-5 text-white/45">記録の振り返り、競技の悩み、使い方など何でも相談してください。</span></span><ChevronRight className="shrink-0 text-orange-400"/></Link>
+      <Link href="/mypage/ai-navigator" prefetch className="flex items-center gap-4 rounded-3xl border border-orange-500/35 bg-[linear-gradient(135deg,rgba(249,115,22,.1),rgba(17,17,17,.96))] p-5 text-white transition hover:border-orange-400 lg:p-7"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-orange-500/30 bg-orange-500/10 text-orange-400"><Compass size={24}/></span><span className="min-w-0 flex-1"><span className="text-[10px] font-black tracking-[.18em] text-orange-400">VAULTEX AI NAVIGATOR & COMPANION</span><strong className="mt-1 block text-lg">競技のことを一緒に整理する</strong><span className="mt-1 block text-xs leading-5 text-white/45">記録の振り返り、競技の悩み、使い方など何でも相談してください。</span></span><ChevronRight className="shrink-0 text-orange-400"/></Link>
+      </div>
 
       <section className="mt-6">
         <p className="mb-3 text-xs font-black tracking-[0.16em] text-orange-400">QUICK ACTION</p>
@@ -131,12 +129,12 @@ export default async function MyPage() {
         </div>
       </section>
 
-      <MonthlyGrowthReport records={(growthRecords ?? []) as GrowthRecord[]} currentMonth={currentMonth} previousMonth={previousMonth} />
-
-      <NewsPanel initialItems={newsItems} userId={user.id} />
-      <SchedulePanel items={(schedules ?? []) as ScheduleItem[]} />
+      <div className="mt-7 grid items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]">
+        <MonthlyGrowthReport records={(growthRecords ?? []) as GrowthRecord[]} currentMonth={currentMonth} previousMonth={previousMonth} />
+        <div className="space-y-6"><NewsPanel initialItems={newsItems} userId={user.id} /><SchedulePanel items={(schedules ?? []) as ScheduleItem[]} /></div>
+      </div>
       <h2 style={{ marginTop: 40, marginBottom: 20 }}>PERFORMANCE</h2>
-      <div style={{ display: "grid", gap: 14 }}>
+      <div className="grid gap-3 lg:grid-cols-3">
         <Link href="/mypage/unofficial-athletics" className="group flex items-center gap-4 rounded-2xl border border-orange-500/60 bg-[#111] p-5 text-white no-underline transition hover:border-orange-400">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-500/15 text-orange-400"><Medal aria-hidden="true" /></span>
           <span className="min-w-0 flex-1"><strong className="block text-lg">練習記録</strong><span className="mt-1 block text-sm text-white/50">練習跳躍・練習投擲・実践練習</span></span>
