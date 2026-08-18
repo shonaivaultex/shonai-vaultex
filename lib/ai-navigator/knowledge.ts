@@ -1,5 +1,5 @@
 export type KnowledgeCategory = "philosophy" | "coaching" | "manual" | "control-test" | "athlete-scan" | "sprint" | "jump" | "throw" | "training" | "faq";
-export type CompanionAction = { label: string; href?: string; prompt?: string; tone?: "orange" | "sky" | "neutral" };
+export type CompanionAction = { label: string; href?: string; prompt?: string; tone?: "orange" | "sky" | "neutral"; handoff?: boolean };
 export type CompanionAnswer = { title: string; body: string; question?: string; actions: CompanionAction[]; note?: string; category: KnowledgeCategory; requiresCoach?: boolean };
 export type AthleteContext = {
   name: string | null; programClass: string | null; event: string | null; recordCount: number; recentRecordCount: number; videoCount: number;
@@ -7,6 +7,7 @@ export type AthleteContext = {
   recentRecords: Array<{ category: string; value: number; date: string; kind: string | null }>;
   personalBests: Array<{ category: string; value: number; date: string }>;
   awarenessCounts: Array<{ label: string; count: number }>;
+  highPerformanceAwareness: Array<{ label: string; count: number; total: number }>;
   latestScan: null | { scanNumber: number; measuredOn: string; typeName: string | null; scores: Array<{ label: string; score: number }>; evolution: Array<{ label: string; change: number }> };
 };
 export type CompanionHistoryItem = { role: "user" | "companion"; content: string };
@@ -32,7 +33,8 @@ const includesAny = (value: string, words: string[]) => words.some((word) => val
 function dataSummary(context: AthleteContext) {
   const parts: string[] = [];
   if (context.recentRecordCount) parts.push(`直近30日には${context.recentRecordCount}件の記録があります`);
-  if (context.awarenessCounts[0]) parts.push(`記録で多い意識は「${context.awarenessCounts.slice(0, 2).map((item) => item.label).join("」「")}」です`);
+  if (context.highPerformanceAwareness[0]) { const item = context.highPerformanceAwareness[0]; parts.push(`高記録側の記録${item.total}件では「${item.label}」が${item.count}件含まれています`); }
+  else if (context.awarenessCounts[0]) parts.push(`記録で多い意識は「${context.awarenessCounts.slice(0, 2).map((item) => item.label).join("」「")}」です`);
   if (context.latestScan?.typeName) parts.push(`最新SCANは「${context.latestScan.typeName}」と表示されています`);
   return parts.length ? `${parts.join("。")}。` : "まだ比較材料が少ないので、今の感覚を言葉にするところから始められます。";
 }
@@ -52,14 +54,20 @@ export function answerCompanion(inputRaw: string, history: CompanionHistoryItem[
   const input = inputRaw.trim().toLowerCase();
   const previousUser = [...history].reverse().find((item) => item.role === "user")?.content.toLowerCase() ?? "";
   if (includesAny(input, ["痛い", "痛み", "怪我", "けが", "違和感", "診断"])) return { title: "その状態は無理に決めつけないでおこう", body: "身体の状態や怪我の診断はVAULTEX AIではできません。強い痛みや急な症状がある場合は練習を中断し、コーチや医療専門職へ相談してください。", question: "コーチへ今の状況を伝える？", category: "coaching", requiresCoach: true, actions: [{ label: "コーチへ相談する", href: links.coach, tone: "sky" }] };
-  if (includesAny(input, ["最近記録が出ない", "記録が出ない", "伸びない", "調子悪", "不調"])) return { title: "伸び悩んでいると感じているんだね", body: `まず原因を決めつけず、今の状態を整理してみよう。${dataSummary(context)}`, question: "今の状態に一番近いものはどれ？", category: "coaching", actions: [{ label: "練習では良いが試合で出ない", prompt: "練習では良いが試合で出ない" }, { label: "練習から記録が落ちている", prompt: "練習から記録が落ちている" }, { label: "感覚が分からなくなっている", prompt: "感覚が分からなくなっている" }, { label: "気持ちが乗らない", prompt: "気持ちが乗らない" }] };
+  if (includesAny(input, ["最近記録が出ない", "記録が出ない", "伸びない", "調子悪", "不調"])) return { title: "伸び悩んでいると感じているんだね", body: `まず原因を決めつけず、今の状態を整理してみよう。${dataSummary(context)}`, question: "今の状態に一番近いものはどれ？", category: "coaching", actions: [{ label: "練習では良いが試合で出ない", prompt: "練習では良いが試合で出ない" }, { label: "練習から記録が落ちている", prompt: "練習から記録が落ちている" }, { label: "感覚が分からない", prompt: "感覚が分からない" }, { label: "気持ちが乗らない", prompt: "気持ちが乗らない" }, { label: "原因が分からない", prompt: "原因が分からない" }] };
+  const situationChoices = ["練習では良いが試合で出ない", "練習から記録が落ちている", "感覚が分からない", "気持ちが乗らない", "原因が分からない"];
+  if (includesAny(input, situationChoices)) return { title: "今の状況が少し見えてきたね", body: "次は、今感じていることを一つ選んでみよう。正解を決めるためではなく、相談の焦点を言葉にするためです。", question: "今の感覚に近いものは？", category: "coaching", actions: ["リズム", "力感", "動作", "スタート", "感覚", "気持ち", "その他"].map((label) => ({ label, prompt: `今の感覚：${label}` })) };
+  if (input.startsWith("今の感覚：")) return { title: "感覚も整理できたね", body: `「${inputRaw.replace("今の感覚：", "")}」を手がかりに、次にしたいことを選ぼう。`, question: "今一番したいことは？", category: "coaching", actions: [
+    { label: "原因を整理したい", prompt: "原因を整理したい" }, { label: "過去の良い記録を見たい", href: links.official }, { label: "動画を見たい", href: links.official }, { label: "練習方法を考えたい", prompt: "練習方法を考えたい" }, { label: "コーチに相談したい", handoff: true, tone: "sky" }
+  ] };
+  if (includesAny(input, ["原因を整理したい", "練習方法を考えたい"])) return { title: "次に試すことを一緒に絞ろう", body: `${dataSummary(context)} これは原因の断定ではなく、振り返りの手がかりです。良かった部分を残しながら、確認することを一つ選ぼう。`, question: "データをもう少し見る？ それとも整理した内容をコーチへ送る？", category: "training", actions: [{ label: "記録推移を見る", href: links.official }, { label: "PB時の意識を見る", href: links.official }, { label: "ATHLETE SCANを見る", href: links.scan }, { label: "コーチ相談をまとめる", handoff: true, tone: "sky" }] };
   if (includesAny(input, ["練習では良いが試合で出ない", "試合で出ない"])) return { title: "練習でできている部分は残せそうだね", body: "練習と試合で何が変わったか、記録・意識・気持ちを並べると整理しやすくなります。", question: "まずどの違いから見てみる？", category: "coaching", actions: [{ label: "本番記録と意識を見る", href: links.official }, { label: "練習記録と意識を見る", href: links.practice }, { label: "試合時の動画を相談", href: links.coach, tone: "sky" }] };
   if (includesAny(input, ["練習から記録が落ちている", "練習から落ち"])) return { title: "練習から変化を感じているんだね", body: "一度の結果だけで判断せず、最近の推移と身体能力の測定、今の感覚を並べてみよう。", question: "どこから確認すると整理しやすそう？", category: "training", actions: [{ label: "最近の練習記録", href: links.practice }, { label: "ATHLETE SCANの変化", href: links.scan }, { label: "コーチへ状況を相談", href: links.coach, tone: "sky" }] };
   if (includesAny(input, ["感覚が分からなく", "感覚がわからなく"])) return { title: "感覚を探し直しているところなんだね", body: "今まで積み上げたものを全部変える必要はありません。良かった日の意識や動画から、残したい感覚を一つ探してみよう。", question: "何から思い出してみる？", category: "coaching", actions: [{ label: "PB時の意識・メモ", href: links.official }, { label: "良かった日の動画", href: links.official }, { label: "動きをコーチと確認", href: links.coach, tone: "sky" }] };
   if (includesAny(input, ["気持ちが乗らない", "やる気", "モチベーション"])) return { title: "気持ちが乗らない時もあるよね", body: "無理に前向きな答えを作らなくても大丈夫。今できていることと、負担になっていることを分けてみよう。", question: "今日は小さく振り返る？ それとも誰かに話す？", category: "coaching", actions: [{ label: "最近できたことを見る", href: links.practice }, { label: "目標を確認する", href: links.official }, { label: "コーチへ話す", href: links.coach, tone: "sky" }] };
   if (includesAny(input, ["調子が良かった", "好調", "pb時", "何を意識した時", "俺の場合"])) return { title: "自分の良かった時を一緒に探そう", body: `${dataSummary(context)} これは答えではなく、振り返るための手がかりです。高記録の日のメモや動画と今の感覚を比べてみよう。`, question: "どの材料から確認したい？", category: "coaching", actions: [{ label: "PB時の記録・意識", href: links.official }, { label: "練習時の意識傾向", href: links.practice }, { label: "動画をコーチと確認", href: links.coach, tone: "sky" }] };
   if (includesAny(input, ["踏切", "助走", "最後の3歩", "空中動作"])) return { title: "動きを一つに決めつけず整理してみよう", body: "現在できている部分を残しながら、変化を確認したい部分を切り分けると振り返りやすくなります。動画なしで個別フォームは断定しません。", question: "今、一番気になっているのはどこ？", category: "jump", actions: [{ label: "助走リズム", prompt: "助走リズムが気になる" }, { label: "最後の3歩", prompt: "最後の3歩が気になる" }, { label: "踏切", prompt: "踏切の動きを見てほしい" }, { label: "空中動作", prompt: "空中動作を見てほしい" }, { label: "動画でコーチに相談", href: links.coach, tone: "sky" }] };
-  if (includesAny(input, ["見てほしい", "フォーム", "技術の相談", "大会前", "メニューを組"]) || includesAny(previousUser, ["踏切", "技術"])) return { title: "実際の動きも確認した方が良さそうです", body: "ここで技術変更を断定せず、今の感覚・試したこと・動画をそろえてコーチと確認しよう。", question: "動画を添えて相談する？", category: "coaching", requiresCoach: true, actions: [{ label: "動画を送って相談", href: links.coach, tone: "sky" }, { label: "過去の意識を確認", href: links.practice }] };
+  if (includesAny(input, ["見てほしい", "フォーム", "技術の相談", "大会前", "メニューを組"]) || includesAny(previousUser, ["踏切", "技術"])) return { title: "実際の動きも確認した方が良さそうです", body: "ここで技術変更を断定せず、今の感覚・試したこと・動画候補をそろえてコーチと確認しよう。", question: "ここまでの相談をコーチ向けにまとめる？", category: "coaching", requiresCoach: true, actions: [{ label: "コーチ相談をまとめる", handoff: true, tone: "sky" }, { label: "過去の意識を確認", href: links.practice }] };
   if (includesAny(input, ["scan", "スキャン", "type", "タイプ", "score", "スコア", "profile evolution", "身体能力"])) return { title: "ATHLETE SCANは現在地を見る材料です", body: context.latestScan ? `最新はSCAN #${String(context.latestScan.scanNumber).padStart(2, "0")}（${context.latestScan.measuredOn}）です。${context.latestScan.typeName ? `表示は「${context.latestScan.typeName}」ですが、` : ""}固定された才能や適性の診断ではありません。` : "ATHLETE SCANはCONTROL TESTから現在の身体能力構成を見るもので、固定された才能や適性の診断ではありません。", question: "結果と変化を確認してみる？", category: "athlete-scan", actions: [{ label: "ATHLETE SCANを見る", href: links.scan }, { label: "CONTROL TESTを記録", href: links.newScan }, { label: "コーチへ相談", href: links.coach, tone: "sky" }] };
   const system = systemAnswer(input);
   if (system) return system;

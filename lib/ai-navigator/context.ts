@@ -3,7 +3,7 @@ import { evaluateAthleteScan, type AthleteMeasurement, type AthleteStandard, typ
 import type { AthleteContext } from "@/lib/ai-navigator/knowledge";
 import { unitMap } from "@/lib/performance-events";
 
-type RecordRow = { category: string; value: number | string; date: string; record_kind: string | null; awareness_category: string | null; awareness_categories: string[] | null; awareness_note: string | null; video_path: string | null };
+type RecordRow = { id: number; category: string; value: number | string; date: string; record_kind: string | null; awareness_category: string | null; awareness_categories: string[] | null; awareness_note: string | null; video_path: string | null };
 type ScanRow = { id: string; scan_number: number; measured_on: string; athlete_standard_version: string | null; profile_snapshot: Record<string, unknown>; control_test_measurements: AthleteMeasurement[] | null };
 
 function bestRecords(records: RecordRow[]) {
@@ -25,11 +25,24 @@ function awarenessSummary(records: RecordRow[]) {
   return [...counts.entries()].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count).slice(0, 5);
 }
 
+function highPerformanceAwareness(records: RecordRow[], preferredEvent: string | null) {
+  const preferred = preferredEvent?.split(/[、,]/)[0]?.trim();
+  const candidates = preferred ? records.filter((record) => record.category === preferred) : records;
+  const source = candidates.length >= 2 ? candidates : records;
+  if (!source.length) return [];
+  const category = source.reduce((counts, row) => counts.set(row.category, (counts.get(row.category) ?? 0) + 1), new Map<string, number>());
+  const main = [...category.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const sameTest = source.filter((row) => row.category === main);
+  const lower = ["秒", "分"].includes(unitMap[main]);
+  const top = [...sameTest].sort((a, b) => lower ? Number(a.value) - Number(b.value) : Number(b.value) - Number(a.value)).slice(0, 5);
+  return awarenessSummary(top).map((item) => ({ ...item, total: top.length }));
+}
+
 export async function getAthleteContext(supabase: SupabaseClient, userId: string): Promise<AthleteContext> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
   const [{ data: player }, { data: recordRows }, { data: goals }, { data: scans }, { data: currentSet }] = await Promise.all([
     supabase.from("players").select("name, program_class, event, gender").eq("user_id", userId).maybeSingle(),
-    supabase.from("performance_records").select("category, value, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path").eq("user_id", userId).order("date", { ascending: false }).limit(200),
+    supabase.from("performance_records").select("id, category, value, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path").eq("user_id", userId).order("date", { ascending: false }).limit(200),
     supabase.from("performance_goals").select("category, target_value").eq("user_id", userId),
     supabase.from("control_test_scans").select("id, scan_number, measured_on, athlete_standard_version, profile_snapshot, control_test_measurements(test_code, primary_value, metrics, implement_weight_kg, implement_name, equipment, distance_m, jump_count)").eq("user_id", userId).order("scan_number", { ascending: false }).limit(2),
     supabase.from("athlete_scan_standard_sets").select("version").eq("is_current", true).maybeSingle(),
@@ -71,6 +84,7 @@ export async function getAthleteContext(supabase: SupabaseClient, userId: string
     recentRecords: records.slice(0, 12).map((record) => ({ category: record.category, value: Number(record.value), date: record.date, kind: record.record_kind })),
     personalBests: bestRecords(records),
     awarenessCounts: awarenessSummary(records),
+    highPerformanceAwareness: highPerformanceAwareness(records, player?.event ?? null),
     latestScan,
   };
 }

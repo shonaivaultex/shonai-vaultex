@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const requestedId = new URL(request.url).searchParams.get("conversationId");
   const { data: conversations, error: conversationError } = await supabase
     .from("ai_companion_conversations")
-    .select("id, title, status, last_message_at, created_at")
+    .select("id, title, status, resolution_status, coach_handoff_at, last_message_at, created_at")
     .eq("user_id", user.id)
     .order("last_message_at", { ascending: false })
     .limit(30);
@@ -32,7 +32,9 @@ export async function GET(request: Request) {
     .order("id")
     .limit(100) : { data: [], error: null };
   if (messageError) return NextResponse.json({ error: messageError.message }, { status: 500 });
-  return NextResponse.json({ conversations: conversations ?? [], activeId, messages: (messages ?? []) as MessageRow[] });
+  const activeConversation = conversations?.find((item) => item.id === activeId);
+  const { data: consultation } = activeConversation?.coach_handoff_at ? await supabase.from("ai_coach_consultations").select("id").eq("conversation_id", activeId).maybeSingle() : { data: null };
+  return NextResponse.json({ conversations: conversations ?? [], activeId, messages: (messages ?? []) as MessageRow[], consultationId: consultation?.id ?? null });
 }
 
 export async function POST(request: Request) {
@@ -45,8 +47,9 @@ export async function POST(request: Request) {
   let conversationId = body?.conversationId ?? null;
   let isNew = false;
   if (conversationId) {
-    const { data: owned } = await supabase.from("ai_companion_conversations").select("id").eq("id", conversationId).eq("user_id", user.id).maybeSingle();
+    const { data: owned } = await supabase.from("ai_companion_conversations").select("id, coach_handoff_at").eq("id", conversationId).eq("user_id", user.id).maybeSingle();
     if (!owned) return NextResponse.json({ error: "会話が見つかりません。" }, { status: 404 });
+    if (owned.coach_handoff_at) return NextResponse.json({ error: "この相談はコーチとの直接トークへ移行しました。", handedOff: true }, { status: 409 });
   } else {
     const title = message.replace(/\s+/g, " ").slice(0, 32);
     const { data: created, error } = await supabase.from("ai_companion_conversations").insert({ user_id: user.id, title }).select("id").single();

@@ -8,7 +8,7 @@ export default async function AiNavigatorPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/mypage/ai-navigator");
-  const { data: conversations } = await supabase.from("ai_companion_conversations").select("id, title, status, last_message_at, created_at").eq("user_id", user.id).order("last_message_at", { ascending: false }).limit(30);
+  const { data: conversations } = await supabase.from("ai_companion_conversations").select("id, title, status, resolution_status, coach_handoff_at, last_message_at, created_at").eq("user_id", user.id).order("last_message_at", { ascending: false }).limit(30);
   const activeId = conversations?.[0]?.id ?? null;
   const { data: messages } = activeId ? await supabase.from("ai_companion_messages").select("id, role, content, response_payload, created_at").eq("conversation_id", activeId).eq("user_id", user.id).order("created_at").order("id").limit(100) : { data: [] };
   const initialData = { conversations: conversations ?? [], activeId, messages: messages ?? [] } as CompanionInitialData;
