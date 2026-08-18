@@ -10,6 +10,7 @@ import PushNotificationButton from "@/app/components/PushNotificationButton";
 import BugReportButton from "@/app/components/BugReportButton";
 import MonthlyGrowthReport, { type GrowthRecord } from "@/app/components/MonthlyGrowthReport";
 import { evaluateAthleteScan, type AthleteMeasurement, type AthleteStandard, type TypeSettings } from "@/lib/athlete-scan";
+import MypageTutorial from "@/app/components/MypageTutorial";
 
 function japanMonthKeys() {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
@@ -158,6 +159,7 @@ export default async function MyPage() {
           <PushNotificationButton />
           <a href="/api/performance/export" download className="mt-3 flex w-full items-center justify-between rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-sm text-white/75 transition hover:border-orange-500/40 hover:text-white"><span className="flex items-center gap-2 font-bold"><Download size={17} className="text-orange-400" />記録データをCSVで保存</span><span className="text-xs text-white/35">バックアップ</span></a>
           <a href="/member-manual.pdf" target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center justify-between rounded-xl border border-white/10 px-4 py-3 text-sm text-white/75"><span className="flex items-center gap-2 font-bold"><BookOpen size={17} className="text-orange-400" />使用マニュアル</span><ChevronRight size={16} /></a>
+          <MypageTutorial autoOpen={(player.mypage_tutorial_version ?? 0) < 1} userId={user.id} />
           <BugReportButton />
           <Link href="/edit" className="mt-3 block rounded-xl border border-white/10 px-4 py-3 text-sm font-bold text-white/70">プロフィール編集</Link>
         </div>
