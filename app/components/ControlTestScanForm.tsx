@@ -20,7 +20,7 @@ type InitialSettings = {
   rj_jump_count?: number;
 };
 
-export default function ControlTestScanForm({ initialSettings = {}, programClass = null }: { initialSettings?: InitialSettings; programClass?: string | null }) {
+export default function ControlTestScanForm({ initialSettings = {}, programClass = null, standardVersion = null }: { initialSettings?: InitialSettings; programClass?: string | null; standardVersion?: string | null }) {
   const router = useRouter();
   const isJunior = programClass === "ジュニア";
   const standingJumpCount = initialSettings.standing_bound_jump_count ?? (isJunior ? 3 : 5);
@@ -51,7 +51,7 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
       const {data:{user}}=await supabase.auth.getUser(); if(!user){setError("ログインが必要です。");return;}
       const {data:player}=await supabase.from("players").select("*").eq("user_id",user.id).maybeSingle();
       const profileSnapshot = player ? { program_class: player.program_class ?? null, gender: player.gender ?? null, grade: player.grade ?? null, age: player.age ?? null, birth_date: player.birth_date ?? null, height_cm: player.height_cm ?? null, weight_kg: player.weight_kg ?? null } : {};
-      const {data:scan,error:scanError}=await supabase.from("control_test_scans").insert({user_id:user.id,scan_number:0,measured_on:date,version:3,status:"complete",profile_snapshot:profileSnapshot,notes:notes.trim()||null}).select("id").single();
+      const {data:scan,error:scanError}=await supabase.from("control_test_scans").insert({user_id:user.id,scan_number:0,measured_on:date,version:3,status:"complete",profile_snapshot:profileSnapshot,notes:notes.trim()||null,athlete_standard_version:standardVersion,athlete_evaluated_at:standardVersion?new Date().toISOString():null}).select("id").single();
       if(scanError||!scan){setError(scanError?.message??"SCANを作成できませんでした。");return;}
       const speedDistance = numberOrNull(values.speed_endurance_distance_m ?? "") ?? 300;
       const equipmentFor = (testCode: string) => testCode.startsWith("shot_") ? (isJunior ? "2kgメディシンボール" : "砲丸") : testCode === "rebound_jump" ? "S-CADE等のジャンプマット" : testCode === "acceleration_30m" ? "光電管" : null;
@@ -74,7 +74,7 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
       });
       const {error:measurementError}=await supabase.from("control_test_measurements").insert(measurementRows);
       if(measurementError){await supabase.from("performance_records").delete().in("id",records.map((row)=>row.id));await supabase.from("control_test_scans").delete().eq("id",scan.id);setError(measurementError.message);return;}
-      router.push("/mypage/control-tests");router.refresh();
+      router.push(`/mypage/control-tests/${scan.id}`);router.refresh();
     } finally { setSaving(false); }
   }
 

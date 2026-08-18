@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, LoaderCircle, ScanLine, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
@@ -74,7 +75,7 @@ export default function ControlTestScanOverview({ scans }: { scans: ScanRow[] })
                   return <div key={measurement.test_code} className="rounded-xl bg-white/[0.035] p-3"><div className="flex justify-between gap-3"><span className="text-xs text-white/50">{category}</span><strong>{format(current, definition.unit)}</strong></div><div className="mt-2 flex flex-wrap gap-2 text-[10px] text-white/35">{previousValue !== null && <span>前回差 {format(current-previousValue,definition.unit)}</span>}{firstValue !== null && <span className="inline-flex items-center gap-1"><ArrowRight size={10}/>初回差 {format(current-firstValue,definition.unit)}</span>}</div>{trials.length>0&&<div className="mt-3 grid grid-cols-5 gap-1 border-t border-white/10 pt-2">{trials.map((trial)=><div key={trial.trial_number} className="text-center text-[9px] text-white/40"><span className="block text-white/60">{trial.trial_number}回</span><span className="block">{trial.rj_index} RJ</span><span className="block">{trial.jump_height_cm}cm</span><span className="block">{trial.contact_time_ms}ms</span></div>)}</div>}</div>;
                 })}
               </div>
-              <div className="mt-4 flex justify-end border-t border-white/10 pt-4"><button type="button" disabled={deletingId === scan.id} onClick={() => deleteScan(scan)} className="inline-flex items-center gap-2 rounded-xl border border-red-500/35 px-4 py-2 text-xs font-bold text-red-300 transition hover:bg-red-500/10 disabled:cursor-wait disabled:opacity-50">{deletingId === scan.id ? <LoaderCircle size={15} className="animate-spin" /> : <Trash2 size={15} />}{deletingId === scan.id ? "削除中..." : "このSCANを削除"}</button></div>
+              <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-white/10 pt-4"><Link href={`/mypage/control-tests/${scan.id}`} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-xs font-black text-white transition hover:bg-orange-400">ATHLETE SCAN結果を見る<ArrowRight size={15}/></Link><button type="button" disabled={deletingId === scan.id} onClick={() => deleteScan(scan)} className="inline-flex items-center gap-2 rounded-xl border border-red-500/35 px-4 py-2 text-xs font-bold text-red-300 transition hover:bg-red-500/10 disabled:cursor-wait disabled:opacity-50">{deletingId === scan.id ? <LoaderCircle size={15} className="animate-spin" /> : <Trash2 size={15} />}{deletingId === scan.id ? "削除中..." : "このSCANを削除"}</button></div>
             </details>;
           })}
         </div>

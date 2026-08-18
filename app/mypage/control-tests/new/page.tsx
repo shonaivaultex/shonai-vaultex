@@ -15,12 +15,14 @@ export default async function NewControlTestScanPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return <ControlTestScanForm />;
 
+  const { data: standardSet } = await supabase.from("athlete_scan_standard_sets").select("version").eq("is_current", true).maybeSingle();
+
   const { data: player } = await supabase
     .from("players")
     .select("program_class, gender")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (!player?.program_class) return <ControlTestScanForm />;
+  if (!player?.program_class) return <ControlTestScanForm standardVersion={standardSet?.version ?? null} />;
 
   const { data } = await supabase
     .from("control_test_class_settings")
@@ -33,7 +35,7 @@ export default async function NewControlTestScanPage() {
 
   const classDistance = ["ジュニア", "マスターズ"].includes(player.program_class) ? 150 : 300;
   const officialThrowWeight = player.program_class === "ジュニア" ? 2 : player.gender === "female" ? 3 : player.gender === "male" ? 4 : undefined;
-  return <ControlTestScanForm programClass={player.program_class} initialSettings={{
+  return <ControlTestScanForm programClass={player.program_class} standardVersion={standardSet?.version ?? null} initialSettings={{
     shot_front_throw_weight: pick("shot_front_throw")?.implement_weight_kg ?? officialThrowWeight,
     shot_back_throw_weight: pick("shot_back_throw")?.implement_weight_kg ?? officialThrowWeight,
     speed_endurance_distance_m: pick("speed_endurance_300m")?.alternate_distance_m ?? classDistance,

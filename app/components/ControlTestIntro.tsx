@@ -21,7 +21,7 @@ export default function ControlTestIntro() {
         <div>
           <p className="text-[10px] font-black tracking-[0.22em] text-orange-400">VAULTEX CONTROL TEST Ver.1</p>
           <h2 className="mt-1 text-2xl font-black">身体能力の特徴と変化を知る</h2>
-          <p className="mt-2 text-sm leading-6 text-white/50">同じ測定方法で継続し、実測値・PB・前回／初回SCANとの差を確認するための測定です。独自スコアやATHLETE TYPEはまだ算出しません。</p>
+          <p className="mt-2 text-sm leading-6 text-white/50">同じ測定方法で継続し、実測値・PB・前回／初回SCANとの差に加えて、VAULTEX SCOREと現在の身体能力構成を確認します。医学的診断や競技適性の断定ではありません。</p>
         </div>
       </div>
       <div className="mt-5 rounded-xl border border-orange-500/20 bg-orange-500/[0.06] p-4 text-xs leading-6 text-orange-100/75">
