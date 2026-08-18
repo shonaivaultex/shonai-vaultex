@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-server";
-import { Activity, BookOpen, CalendarDays, ChevronDown, ChevronRight, Download, Medal, Plus, ScanLine, Settings, Sparkles, Trophy, Video } from "lucide-react";
+import { Activity, BookOpen, CalendarDays, ChevronDown, ChevronRight, Compass, Download, Medal, Plus, ScanLine, Settings, Sparkles, Trophy, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import NewsPanel, { type NewsItem } from "@/app/components/NewsPanel";
@@ -119,6 +119,8 @@ export default async function MyPage() {
         {latestScan ? <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4"><div className="flex items-center justify-between gap-4"><div><p className="text-xs text-white/40">LATEST SCAN #{String(latestScan.scan_number).padStart(2,"0")} ・ {latestScan.measured_on}</p><p className="mt-1 text-lg font-black text-orange-300">{latestAthleteScan?.typeNameJa ?? "評価結果を確認"}</p>{latestAthleteScan?.typeCode ? <p className="mt-0.5 text-[10px] font-black tracking-[.12em] text-white/45">{latestAthleteScan.typeCode}</p> : null}</div><Sparkles className="shrink-0 text-orange-400" size={24}/></div><Link href={`/mypage/control-tests/${latestScan.id}`} className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-black transition hover:bg-orange-400">ATHLETE SCAN結果を見る<ChevronRight size={17}/></Link></div> : <Link href="/mypage/control-tests/new" className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 font-black text-black transition hover:bg-orange-400"><Plus size={18}/>最初のVAULTEX SCANを記録</Link>}
         <Link href="/mypage/control-tests" className="mt-3 flex items-center justify-center gap-1 text-xs font-bold text-white/50 transition hover:text-orange-300">CONTROL TESTの履歴・詳細<ChevronRight size={14}/></Link>
       </section>
+
+      <Link href="/mypage/ai-navigator" prefetch className="mt-6 flex items-center gap-4 rounded-3xl border border-orange-500/35 bg-[linear-gradient(135deg,rgba(249,115,22,.1),rgba(17,17,17,.96))] p-5 text-white transition hover:border-orange-400"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-orange-500/30 bg-orange-500/10 text-orange-400"><Compass size={24}/></span><span className="min-w-0 flex-1"><span className="text-[10px] font-black tracking-[.18em] text-orange-400">VAULTEX AI NAVIGATOR</span><strong className="mt-1 block text-lg">次の行動を一緒に選ぶ</strong><span className="mt-1 block text-xs leading-5 text-white/45">困った時、振り返りたい時、必要な機能やコーチ相談へ案内します。</span></span><ChevronRight className="shrink-0 text-orange-400"/></Link>
 
       <section className="mt-6">
         <p className="mb-3 text-xs font-black tracking-[0.16em] text-orange-400">QUICK ACTION</p>
