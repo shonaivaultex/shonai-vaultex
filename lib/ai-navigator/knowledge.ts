@@ -1,157 +1,68 @@
-export type NavigatorAction = { label: string; href?: string; prompt?: string; tone?: "orange" | "sky" };
-export type NavigatorAnswer = { title: string; body: string; actions: NavigatorAction[]; note?: string };
-
-type KnowledgeEntry = {
-  id: string;
-  keywords: string[];
-  answer: NavigatorAnswer;
+export type KnowledgeCategory = "philosophy" | "coaching" | "manual" | "control-test" | "athlete-scan" | "sprint" | "jump" | "throw" | "training" | "faq";
+export type CompanionAction = { label: string; href?: string; prompt?: string; tone?: "orange" | "sky" | "neutral" };
+export type CompanionAnswer = { title: string; body: string; question?: string; actions: CompanionAction[]; note?: string; category: KnowledgeCategory; requiresCoach?: boolean };
+export type AthleteContext = {
+  name: string | null; programClass: string | null; event: string | null; recordCount: number; recentRecordCount: number; videoCount: number;
+  goals: Array<{ category: string; target: number }>;
+  recentRecords: Array<{ category: string; value: number; date: string; kind: string | null }>;
+  personalBests: Array<{ category: string; value: number; date: string }>;
+  awarenessCounts: Array<{ label: string; count: number }>;
+  latestScan: null | { scanNumber: number; measuredOn: string; typeName: string | null; scores: Array<{ label: string; score: number }>; evolution: Array<{ label: string; change: number }> };
 };
+export type CompanionHistoryItem = { role: "user" | "companion"; content: string };
 
-export const navigatorPrinciples = [
-  "選手の感覚と意思を尊重する",
-  "記録・動画・データを振り返りの材料にする",
-  "技術・適性・身体状態を断定しない",
-  "必要な場面ではコーチや医療専門職へつなぐ",
+export const navigatorPrinciples = ["選手の感覚と意思を尊重する", "感覚と記録・動画・データを両方見る", "積み上げてきた良い部分を残す", "技術・適性・身体状態を断定しない"] as const;
+
+export const knowledgeBase = [
+  { category: "philosophy", title: "VAULTEX理念", keywords: ["理念", "考え方"], summary: "選手自身が考え、挑戦し、記録し、振り返る循環を支える。" },
+  { category: "coaching", title: "指導方針", keywords: ["指導", "アドバイス", "コーチ"], summary: "選手主体。感覚と客観情報を両立し、答えを押し付けない。" },
+  { category: "manual", title: "システムマニュアル", keywords: ["ログイン", "プロフィール", "記録", "動画", "意識", "予定", "ランキング"], summary: "マイページの各機能と操作導線。" },
+  { category: "control-test", title: "CONTROL TEST", keywords: ["コントロールテスト", "測定", "scan"], summary: "同じ条件で身体能力の変化を継続測定する。" },
+  { category: "athlete-scan", title: "ATHLETE SCAN", keywords: ["タイプ", "score", "スコア", "profile evolution"], summary: "現在の身体能力構成。才能や適性を固定する診断ではない。" },
+  { category: "sprint", title: "Sprint", keywords: ["走", "スタート", "加速", "疾走", "リズム"], summary: "一般的な用語と振り返り観点。個別フォームは断定しない。" },
+  { category: "jump", title: "Jump", keywords: ["跳", "踏切", "助走", "空中動作"], summary: "助走・踏切・空中動作を切り分けて振り返る。" },
+  { category: "throw", title: "Throw", keywords: ["投", "投てき", "投擲"], summary: "準備・リズム・力の伝達を切り分けて振り返る。" },
+  { category: "training", title: "Training", keywords: ["練習", "メニュー", "トレーニング"], summary: "試すことを一つ選び、記録して次に振り返る。" },
+  { category: "faq", title: "FAQ", keywords: ["方法", "分からない", "どこ"], summary: "よくある操作質問から該当機能へ案内する。" },
 ] as const;
 
-export const navigatorKnowledge: KnowledgeEntry[] = [
-  {
-    id: "video",
-    keywords: ["動画", "ビデオ", "映像", "フォーム", "撮影"],
-    answer: {
-      title: "動画の使い方を選びましょう",
-      body: "動画は「記録と一緒に振り返る方法」と「動画だけコーチへ相談する方法」があります。どちらが今の目的に近いですか？",
-      actions: [
-        { label: "記録に動画を追加する", href: "/performance" },
-        { label: "動画だけ相談する", href: "/mypage/video-feedback", tone: "sky" },
-        { label: "マニュアルを見る", href: "/member-manual.pdf" },
-      ],
-      note: "フォームの細かな判断は、動画を添えてコーチへ相談してください。",
-    },
-  },
-  {
-    id: "slump",
-    keywords: ["調子悪", "伸びない", "記録が落", "不調", "うまくいか", "原因"],
-    answer: {
-      title: "まず、どこから振り返りますか？",
-      body: "すぐに改善方法を決めず、感覚と客観情報を一緒に整理してみましょう。気になる入口を選んでください。",
-      actions: [
-        { label: "最近の記録推移を見る", href: "/mypage/athletics" },
-        { label: "練習記録を見る", href: "/mypage/unofficial-athletics" },
-        { label: "良かった日の動画を見る", prompt: "調子が良かった時を振り返りたい" },
-        { label: "ATHLETE SCANを見る", href: "/mypage/control-tests" },
-        { label: "コーチへ相談する", href: "/mypage/video-feedback", tone: "sky" },
-      ],
-    },
-  },
-  {
-    id: "peak",
-    keywords: ["調子良", "好調", "良かった時", "PB", "ベスト", "何してた", "うまくいった"],
-    answer: {
-      title: "好調時の手がかりを探しましょう",
-      body: "高記録だけでなく、その日に選んだ意識タグ・メモ・動画を一緒に見ると、自分なりの再現条件を考えやすくなります。",
-      actions: [
-        { label: "本番・PB記録を見る", href: "/mypage/athletics" },
-        { label: "練習記録と意識を見る", href: "/mypage/unofficial-athletics" },
-        { label: "動画だけの相談履歴を見る", href: "/mypage/video-feedback" },
-      ],
-      note: "過去と同じことを正解と決めつけず、今回試したいことを一つ選んで記録してみましょう。",
-    },
-  },
-  {
-    id: "scan",
-    keywords: ["SCAN", "scan", "スキャン", "タイプ", "TYPE", "身体能力", "コントロールテスト", "反発", "パワー型", "スピード型"],
-    answer: {
-      title: "ATHLETE SCANを確認しましょう",
-      body: "ATHLETE TYPEは、CONTROL TESTから見た現在の身体能力構成です。固定された才能・適性の診断ではなく、再測定で変化していくプロフィールです。",
-      actions: [
-        { label: "最新のATHLETE SCANを見る", href: "/mypage/control-tests" },
-        { label: "CONTROL TESTを記録する", href: "/mypage/control-tests/new" },
-        { label: "測定結果をコーチに相談する", href: "/mypage/video-feedback", tone: "sky" },
-      ],
-    },
-  },
-  {
-    id: "coach",
-    keywords: ["コーチ", "相談", "アドバイス", "技術", "大会前", "メニュー", "トレーニング"],
-    answer: {
-      title: "コーチへ伝える材料を選びましょう",
-      body: "技術的な修正、大会前の判断、個別メニューはコーチと一緒に決める領域です。動画や記録、今の感覚を添えると相談しやすくなります。",
-      actions: [
-        { label: "動画を添えて相談する", href: "/mypage/video-feedback", tone: "sky" },
-        { label: "相談する記録を選ぶ", href: "/mypage/athletics" },
-        { label: "練習記録から相談する", href: "/mypage/unofficial-athletics" },
-      ],
-    },
-  },
-  {
-    id: "record",
-    keywords: ["記録", "入力", "追加", "意識", "メモ", "練習跳躍", "練習投擲", "大会"],
-    answer: {
-      title: "追加する記録を選んでください",
-      body: "本番記録・練習記録・CONTROL TESTで入口が分かれています。記録には意識タグ、メモ、動画も残せます。",
-      actions: [
-        { label: "記録を追加する", href: "/performance" },
-        { label: "本番記録を見る", href: "/mypage/athletics" },
-        { label: "練習記録を見る", href: "/mypage/unofficial-athletics" },
-        { label: "CONTROL TESTを見る", href: "/mypage/control-tests" },
-      ],
-    },
-  },
-  {
-    id: "schedule",
-    keywords: ["予定", "スケジュール", "練習日", "時間", "場所", "出欠"],
-    answer: { title: "練習予定を確認できます", body: "月間カレンダーから日時・場所・対象クラスを確認し、必要な予定では出欠を回答できます。", actions: [{ label: "スケジュールを見る", href: "/mypage/schedules" }] },
-  },
-  {
-    id: "account",
-    keywords: ["ログイン", "パスワード", "通知", "設定", "プロフィール", "メール"],
-    answer: {
-      title: "アカウント・設定の案内です",
-      body: "目的に合う入口を選んでください。パスワードを忘れた場合は再設定画面から手続きできます。",
-      actions: [
-        { label: "プロフィールを編集する", href: "/edit" },
-        { label: "パスワードを再設定する", href: "/forgot-password" },
-        { label: "使用マニュアルを見る", href: "/member-manual.pdf" },
-      ],
-    },
-  },
-  {
-    id: "body",
-    keywords: ["痛い", "痛み", "怪我", "けが", "違和感", "病気", "診断"],
-    answer: {
-      title: "身体状態の診断はできません",
-      body: "無理に原因を決めず、まず練習を続けてよい状態かをコーチや医療専門職へ相談してください。強い痛みや急な症状がある場合は、練習を中断して適切な医療機関へつながってください。",
-      actions: [{ label: "コーチへ状況を相談する", href: "/mypage/video-feedback", tone: "sky" }],
-    },
-  },
-];
+const links = { official: "/mypage/athletics", practice: "/mypage/unofficial-athletics", addRecord: "/performance", scan: "/mypage/control-tests", newScan: "/mypage/control-tests/new", coach: "/mypage/video-feedback", schedule: "/mypage/schedules", profile: "/edit", resetPassword: "/forgot-password", manual: "/member-manual.pdf" };
+const includesAny = (value: string, words: string[]) => words.some((word) => value.includes(word));
 
-export const initialNavigatorAnswer: NavigatorAnswer = {
-  title: "今日は何を整理したいですか？",
-  body: "答えを決める前に、今の感覚やVAULTEXに残した情報から振り返る入口を一緒に選びます。",
-  actions: [
-    { label: "記録が伸びない", prompt: "最近記録が伸びない" },
-    { label: "好調時を振り返る", prompt: "調子が良かった時って何してた？" },
-    { label: "動画の送り方", prompt: "動画を送る方法が分からない" },
-    { label: "ATHLETE TYPEについて", prompt: "このATHLETE TYPEって何？" },
-  ],
-};
+function dataSummary(context: AthleteContext) {
+  const parts: string[] = [];
+  if (context.recentRecordCount) parts.push(`直近30日には${context.recentRecordCount}件の記録があります`);
+  if (context.awarenessCounts[0]) parts.push(`記録で多い意識は「${context.awarenessCounts.slice(0, 2).map((item) => item.label).join("」「")}」です`);
+  if (context.latestScan?.typeName) parts.push(`最新SCANは「${context.latestScan.typeName}」と表示されています`);
+  return parts.length ? `${parts.join("。")}。` : "まだ比較材料が少ないので、今の感覚を言葉にするところから始められます。";
+}
 
-export function answerNavigator(input: string): NavigatorAnswer {
-  const normalized = input.trim().toLowerCase();
-  if (!normalized) return initialNavigatorAnswer;
-  const ranked = navigatorKnowledge.map((entry) => ({ entry, score: entry.keywords.reduce((score, keyword) => score + (normalized.includes(keyword.toLowerCase()) ? Math.max(1, keyword.length) : 0), 0) })).sort((a, b) => b.score - a.score);
-  if (ranked[0]?.score > 0) return ranked[0].entry.answer;
-  return {
-    title: "もう少し入口を選んでみましょう",
-    body: "今の内容だけで技術的な答えを断定せず、VAULTEXにある情報から整理します。近いものを選んでください。",
-    actions: [
-      { label: "記録・意識を振り返る", href: "/mypage/athletics" },
-      { label: "動画を振り返る", href: "/mypage/video-feedback" },
-      { label: "ATHLETE SCANを見る", href: "/mypage/control-tests" },
-      { label: "コーチへ相談する", href: "/mypage/video-feedback", tone: "sky" },
-      { label: "マニュアルを見る", href: "/member-manual.pdf" },
-    ],
-  };
+function systemAnswer(input: string): CompanionAnswer | null {
+  if (includesAny(input, ["動画", "ビデオ", "映像"])) return { title: "動画の使い方を選ぼう", body: "動画は、記録と一緒に残す方法と、動画だけコーチへ相談する方法があります。", question: "今の目的に近いのはどちら？", category: "manual", actions: [{ label: "記録に動画を追加", href: links.addRecord }, { label: "動画だけ相談", href: links.coach, tone: "sky" }, { label: "マニュアルを見る", href: links.manual }] };
+  if (includesAny(input, ["ログイン", "パスワード", "プロフィール", "設定"])) return { title: "アカウント設定を案内するね", body: "プロフィール変更とパスワード再設定は入口が分かれています。", question: "どちらを確認したい？", category: "manual", actions: [{ label: "プロフィール設定", href: links.profile }, { label: "パスワード再設定", href: links.resetPassword }, { label: "マニュアルを見る", href: links.manual }] };
+  if (includesAny(input, ["予定", "スケジュール", "出欠", "練習日", "場所"])) return { title: "予定を確認しよう", body: "月間予定から日時・場所・対象クラスを確認できます。必要な予定では出欠も回答できます。", category: "manual", actions: [{ label: "スケジュールを見る", href: links.schedule }] };
+  if (includesAny(input, ["ランキング", "順位", "上位何"])) return { title: "現在地を確認してみよう", body: "本番記録の種目カードから、男女別の全体・クラス別ランキングを確認できます。順位は評価ではなく、今の位置を知る一つの材料として見てみよう。", category: "manual", actions: [{ label: "本番記録とランキングを見る", href: links.official }] };
+  if (includesAny(input, ["記録を追加", "記録登録", "意識入力", "意識を入力"])) return { title: "残したい記録を選ぼう", body: "本番記録・練習記録・CONTROL TESTで入口が分かれています。記録には意識タグ、メモ、動画も追加できます。", category: "manual", actions: [{ label: "記録を追加", href: links.addRecord }, { label: "CONTROL TESTを記録", href: links.newScan }, { label: "マニュアルを見る", href: links.manual }] };
+  return null;
+}
+
+export const initialCompanionAnswer: CompanionAnswer = { title: "今日はどんなことを一緒に整理しようか？", body: "競技の悩み、記録の振り返り、VAULTEXの使い方を話してください。すぐに答えを決めず、今の状態に合う入口を一緒に探します。", question: "今の気持ちに近いものを選んでも大丈夫です。", category: "philosophy", actions: [{ label: "最近記録が出ない", prompt: "最近記録が出ない" }, { label: "好調時を振り返りたい", prompt: "調子が良かった時を振り返りたい" }, { label: "技術の相談をしたい", prompt: "技術の相談をしたい" }, { label: "VAULTEXの使い方", prompt: "VAULTEXの使い方を知りたい" }] };
+
+export function answerCompanion(inputRaw: string, history: CompanionHistoryItem[], context: AthleteContext): CompanionAnswer {
+  const input = inputRaw.trim().toLowerCase();
+  const previousUser = [...history].reverse().find((item) => item.role === "user")?.content.toLowerCase() ?? "";
+  if (includesAny(input, ["痛い", "痛み", "怪我", "けが", "違和感", "診断"])) return { title: "その状態は無理に決めつけないでおこう", body: "身体の状態や怪我の診断はVAULTEX AIではできません。強い痛みや急な症状がある場合は練習を中断し、コーチや医療専門職へ相談してください。", question: "コーチへ今の状況を伝える？", category: "coaching", requiresCoach: true, actions: [{ label: "コーチへ相談する", href: links.coach, tone: "sky" }] };
+  if (includesAny(input, ["最近記録が出ない", "記録が出ない", "伸びない", "調子悪", "不調"])) return { title: "伸び悩んでいると感じているんだね", body: `まず原因を決めつけず、今の状態を整理してみよう。${dataSummary(context)}`, question: "今の状態に一番近いものはどれ？", category: "coaching", actions: [{ label: "練習では良いが試合で出ない", prompt: "練習では良いが試合で出ない" }, { label: "練習から記録が落ちている", prompt: "練習から記録が落ちている" }, { label: "感覚が分からなくなっている", prompt: "感覚が分からなくなっている" }, { label: "気持ちが乗らない", prompt: "気持ちが乗らない" }] };
+  if (includesAny(input, ["練習では良いが試合で出ない", "試合で出ない"])) return { title: "練習でできている部分は残せそうだね", body: "練習と試合で何が変わったか、記録・意識・気持ちを並べると整理しやすくなります。", question: "まずどの違いから見てみる？", category: "coaching", actions: [{ label: "本番記録と意識を見る", href: links.official }, { label: "練習記録と意識を見る", href: links.practice }, { label: "試合時の動画を相談", href: links.coach, tone: "sky" }] };
+  if (includesAny(input, ["練習から記録が落ちている", "練習から落ち"])) return { title: "練習から変化を感じているんだね", body: "一度の結果だけで判断せず、最近の推移と身体能力の測定、今の感覚を並べてみよう。", question: "どこから確認すると整理しやすそう？", category: "training", actions: [{ label: "最近の練習記録", href: links.practice }, { label: "ATHLETE SCANの変化", href: links.scan }, { label: "コーチへ状況を相談", href: links.coach, tone: "sky" }] };
+  if (includesAny(input, ["感覚が分からなく", "感覚がわからなく"])) return { title: "感覚を探し直しているところなんだね", body: "今まで積み上げたものを全部変える必要はありません。良かった日の意識や動画から、残したい感覚を一つ探してみよう。", question: "何から思い出してみる？", category: "coaching", actions: [{ label: "PB時の意識・メモ", href: links.official }, { label: "良かった日の動画", href: links.official }, { label: "動きをコーチと確認", href: links.coach, tone: "sky" }] };
+  if (includesAny(input, ["気持ちが乗らない", "やる気", "モチベーション"])) return { title: "気持ちが乗らない時もあるよね", body: "無理に前向きな答えを作らなくても大丈夫。今できていることと、負担になっていることを分けてみよう。", question: "今日は小さく振り返る？ それとも誰かに話す？", category: "coaching", actions: [{ label: "最近できたことを見る", href: links.practice }, { label: "目標を確認する", href: links.official }, { label: "コーチへ話す", href: links.coach, tone: "sky" }] };
+  if (includesAny(input, ["調子が良かった", "好調", "pb時", "何を意識した時", "俺の場合"])) return { title: "自分の良かった時を一緒に探そう", body: `${dataSummary(context)} これは答えではなく、振り返るための手がかりです。高記録の日のメモや動画と今の感覚を比べてみよう。`, question: "どの材料から確認したい？", category: "coaching", actions: [{ label: "PB時の記録・意識", href: links.official }, { label: "練習時の意識傾向", href: links.practice }, { label: "動画をコーチと確認", href: links.coach, tone: "sky" }] };
+  if (includesAny(input, ["踏切", "助走", "最後の3歩", "空中動作"])) return { title: "動きを一つに決めつけず整理してみよう", body: "現在できている部分を残しながら、変化を確認したい部分を切り分けると振り返りやすくなります。動画なしで個別フォームは断定しません。", question: "今、一番気になっているのはどこ？", category: "jump", actions: [{ label: "助走リズム", prompt: "助走リズムが気になる" }, { label: "最後の3歩", prompt: "最後の3歩が気になる" }, { label: "踏切", prompt: "踏切の動きを見てほしい" }, { label: "空中動作", prompt: "空中動作を見てほしい" }, { label: "動画でコーチに相談", href: links.coach, tone: "sky" }] };
+  if (includesAny(input, ["見てほしい", "フォーム", "技術の相談", "大会前", "メニューを組"]) || includesAny(previousUser, ["踏切", "技術"])) return { title: "実際の動きも確認した方が良さそうです", body: "ここで技術変更を断定せず、今の感覚・試したこと・動画をそろえてコーチと確認しよう。", question: "動画を添えて相談する？", category: "coaching", requiresCoach: true, actions: [{ label: "動画を送って相談", href: links.coach, tone: "sky" }, { label: "過去の意識を確認", href: links.practice }] };
+  if (includesAny(input, ["scan", "スキャン", "type", "タイプ", "score", "スコア", "profile evolution", "身体能力"])) return { title: "ATHLETE SCANは現在地を見る材料です", body: context.latestScan ? `最新はSCAN #${String(context.latestScan.scanNumber).padStart(2, "0")}（${context.latestScan.measuredOn}）です。${context.latestScan.typeName ? `表示は「${context.latestScan.typeName}」ですが、` : ""}固定された才能や適性の診断ではありません。` : "ATHLETE SCANはCONTROL TESTから現在の身体能力構成を見るもので、固定された才能や適性の診断ではありません。", question: "結果と変化を確認してみる？", category: "athlete-scan", actions: [{ label: "ATHLETE SCANを見る", href: links.scan }, { label: "CONTROL TESTを記録", href: links.newScan }, { label: "コーチへ相談", href: links.coach, tone: "sky" }] };
+  const system = systemAnswer(input);
+  if (system) return system;
+  if (includesAny(input, ["使い方", "分からない", "どこ", "方法"])) return { title: "使いたい機能を一緒に探そう", body: "VAULTEX内の操作を会話で案内できます。", question: "何をしたい？", category: "manual", actions: [{ label: "記録・意識を追加", prompt: "記録を追加したい" }, { label: "動画を送る", prompt: "動画を送る方法" }, { label: "予定を見る", prompt: "予定を確認したい" }, { label: "ランキングを見る", prompt: "ランキングはどこ？" }, { label: "マニュアルを見る", href: links.manual }] };
+  return { title: "話してくれてありがとう", body: "今の内容だけで答えを決めつけず、感覚とVAULTEXに残した情報を一緒に整理してみよう。", question: "今はどこから振り返ると良さそう？", category: "philosophy", actions: [{ label: "最近の記録", href: links.practice }, { label: "PB・意識", href: links.official }, { label: "ATHLETE SCAN", href: links.scan }, { label: "動画でコーチに相談", href: links.coach, tone: "sky" }] };
 }
