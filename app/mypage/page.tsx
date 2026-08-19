@@ -10,7 +10,7 @@ import PushNotificationButton from "@/app/components/PushNotificationButton";
 import BugReportButton from "@/app/components/BugReportButton";
 import MonthlyGrowthReport, { type GrowthRecord } from "@/app/components/MonthlyGrowthReport";
 import { evaluateAthleteScan, type AthleteMeasurement, type AthleteStandard, type TypeSettings } from "@/lib/athlete-scan";
-import MypageTutorial from "@/app/components/MypageTutorial";
+import MypageTutorial, { MYPAGE_TUTORIAL_VERSION } from "@/app/components/MypageTutorial";
 
 function japanMonthKeys() {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
@@ -99,6 +99,7 @@ export default async function MyPage() {
   return (
     <main className="mx-auto my-20 max-w-7xl px-5 pb-12 sm:px-8">
       <h1 className="text-3xl font-black lg:text-4xl">MY PAGE</h1>
+      <MypageTutorial autoOpen={(player.mypage_tutorial_version ?? 0) < MYPAGE_TUTORIAL_VERSION} userId={user.id} />
 
       {/* プロフィール */}
       <div className={`mt-6 grid gap-4 ${coachRole ? "lg:grid-cols-2" : ""}`}>
@@ -112,21 +113,21 @@ export default async function MyPage() {
       </div>
 
       <div className="mt-6 grid items-stretch gap-5 lg:grid-cols-2">
-      <section className="overflow-hidden rounded-3xl border border-orange-500/50 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,.2),transparent_42%),#111] p-5 text-white shadow-[0_14px_42px_rgba(0,0,0,.22)] lg:p-7">
+      <section data-tutorial="athlete-scan" className="overflow-hidden rounded-3xl border border-orange-500/50 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,.2),transparent_42%),#111] p-5 text-white shadow-[0_14px_42px_rgba(0,0,0,.22)] lg:p-7">
         <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-orange-500 text-black"><ScanLine size={24}/></span><div className="min-w-0 flex-1"><p className="text-[10px] font-black tracking-[.2em] text-orange-400">VAULTEX ATHLETE SCAN</p><h2 className="mt-1 text-xl font-black">身体能力の現在地を知る</h2><p className="mt-2 text-sm leading-6 text-white/50">CONTROL TESTから6能力・3特性・現在のATHLETE TYPEを確認します。</p></div></div>
         {latestScan ? <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4"><div className="flex items-center justify-between gap-4"><div><p className="text-xs text-white/40">LATEST SCAN #{String(latestScan.scan_number).padStart(2,"0")} ・ {latestScan.measured_on}</p><p className="mt-1 text-lg font-black text-orange-300">{latestAthleteScan?.typeNameJa ?? "評価結果を確認"}</p>{latestAthleteScan?.typeCode ? <p className="mt-0.5 text-[10px] font-black tracking-[.12em] text-white/45">{latestAthleteScan.typeCode}</p> : null}</div><Sparkles className="shrink-0 text-orange-400" size={24}/></div><Link href={`/mypage/control-tests/${latestScan.id}`} className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-black transition hover:bg-orange-400">ATHLETE SCAN結果を見る<ChevronRight size={17}/></Link></div> : <Link href="/mypage/control-tests/new" className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 font-black text-black transition hover:bg-orange-400"><Plus size={18}/>最初のVAULTEX SCANを記録</Link>}
         <Link href="/mypage/control-tests" className="mt-3 flex items-center justify-center gap-1 text-xs font-bold text-white/50 transition hover:text-orange-300">CONTROL TESTの履歴・詳細<ChevronRight size={14}/></Link>
       </section>
 
-      <Link href="/mypage/ai-navigator" prefetch className="flex items-center gap-4 rounded-3xl border border-orange-500/35 bg-[linear-gradient(135deg,rgba(249,115,22,.1),rgba(17,17,17,.96))] p-5 text-white transition hover:border-orange-400 lg:p-7"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-orange-500/30 bg-orange-500/10 text-orange-400"><Compass size={24}/></span><span className="min-w-0 flex-1"><span className="text-[10px] font-black tracking-[.18em] text-orange-400">VAULTEX AI NAVIGATOR & COMPANION</span><strong className="mt-1 block text-lg">競技のことを一緒に整理する</strong><span className="mt-1 block text-xs leading-5 text-white/45">記録の振り返り、競技の悩み、使い方など何でも相談してください。</span></span><ChevronRight className="shrink-0 text-orange-400"/></Link>
+      <Link data-tutorial="ai-navigator" href="/mypage/ai-navigator" prefetch className="flex items-center gap-4 rounded-3xl border border-orange-500/35 bg-[linear-gradient(135deg,rgba(249,115,22,.1),rgba(17,17,17,.96))] p-5 text-white transition hover:border-orange-400 lg:p-7"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-orange-500/30 bg-orange-500/10 text-orange-400"><Compass size={24}/></span><span className="min-w-0 flex-1"><span className="text-[10px] font-black tracking-[.18em] text-orange-400">VAULTEX AI NAVIGATOR & COMPANION</span><strong className="mt-1 block text-lg">競技のことを一緒に整理する</strong><span className="mt-1 block text-xs leading-5 text-white/45">記録の振り返り、競技の悩み、使い方など何でも相談してください。</span></span><ChevronRight className="shrink-0 text-orange-400"/></Link>
       </div>
 
       <section className="mt-6">
         <p className="mb-3 text-xs font-black tracking-[0.16em] text-orange-400">QUICK ACTION</p>
         <div className="grid gap-3 sm:grid-cols-3">
-          <Link href="/performance" className="flex items-center gap-3 rounded-2xl bg-orange-500 p-4 font-black text-black transition hover:bg-orange-400 sm:flex-col sm:justify-center sm:text-center"><Plus size={22} /><span>記録を追加</span></Link>
-          <Link href="/mypage/video-feedback" className="flex items-center gap-3 rounded-2xl border border-sky-500/45 bg-sky-500/[0.09] p-4 font-black text-white transition hover:border-sky-400 sm:flex-col sm:justify-center sm:text-center"><Video size={22} className="text-sky-400" /><span>動画を送る</span></Link>
-          <Link href="/mypage/schedules" className="flex items-center gap-3 rounded-2xl border border-white/15 bg-[#111] p-4 font-black text-white transition hover:border-orange-500/50 sm:flex-col sm:justify-center sm:text-center"><CalendarDays size={22} className="text-orange-400" /><span>予定を見る</span></Link>
+          <Link data-tutorial="record-action" href="/performance" className="flex items-center gap-3 rounded-2xl bg-orange-500 p-4 font-black text-black transition hover:bg-orange-400 sm:flex-col sm:justify-center sm:text-center"><Plus size={22} /><span>記録を追加</span></Link>
+          <Link data-tutorial="video-action" href="/mypage/video-feedback" className="flex items-center gap-3 rounded-2xl border border-sky-500/45 bg-sky-500/[0.09] p-4 font-black text-white transition hover:border-sky-400 sm:flex-col sm:justify-center sm:text-center"><Video size={22} className="text-sky-400" /><span>動画を送る</span></Link>
+          <Link data-tutorial="schedule-action" href="/mypage/schedules" className="flex items-center gap-3 rounded-2xl border border-white/15 bg-[#111] p-4 font-black text-white transition hover:border-orange-500/50 sm:flex-col sm:justify-center sm:text-center"><CalendarDays size={22} className="text-orange-400" /><span>予定を見る</span></Link>
         </div>
       </section>
 
@@ -134,6 +135,7 @@ export default async function MyPage() {
         <MonthlyGrowthReport records={(growthRecords ?? []) as GrowthRecord[]} currentMonth={currentMonth} previousMonth={previousMonth} />
         <div className="space-y-6"><NewsPanel initialItems={newsItems} userId={user.id} /><SchedulePanel items={(schedules ?? []) as ScheduleItem[]} /></div>
       </div>
+      <div data-tutorial="performance">
       <h2 style={{ marginTop: 40, marginBottom: 20 }}>PERFORMANCE</h2>
       <div className="grid gap-3 lg:grid-cols-3">
         <Link href="/mypage/unofficial-athletics" className="group flex items-center gap-4 rounded-2xl border border-orange-500/60 bg-[#111] p-5 text-white no-underline transition hover:border-orange-400">
@@ -152,14 +154,14 @@ export default async function MyPage() {
           <ChevronRight className="text-orange-400 transition group-hover:translate-x-1" aria-hidden="true" />
         </Link>
       </div>
+      </div>
 
-      <details className="group mt-8 overflow-hidden rounded-2xl border border-white/10 bg-[#111] text-white open:border-orange-500/35">
+      <details data-tutorial="settings" className="group mt-8 overflow-hidden rounded-2xl border border-white/10 bg-[#111] text-white open:border-orange-500/35">
         <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-4 marker:hidden"><Settings size={19} className="text-white/45" /><strong>その他</strong><span className="text-xs text-white/35">設定・保存・ヘルプ</span><ChevronDown size={18} className="ml-auto text-white/40 transition group-open:rotate-180" /></summary>
         <div className="border-t border-white/10 p-4">
           <PushNotificationButton />
           <a href="/api/performance/export" download className="mt-3 flex w-full items-center justify-between rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-sm text-white/75 transition hover:border-orange-500/40 hover:text-white"><span className="flex items-center gap-2 font-bold"><Download size={17} className="text-orange-400" />記録データをCSVで保存</span><span className="text-xs text-white/35">バックアップ</span></a>
           <a href="/member-manual.pdf" target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center justify-between rounded-xl border border-white/10 px-4 py-3 text-sm text-white/75"><span className="flex items-center gap-2 font-bold"><BookOpen size={17} className="text-orange-400" />使用マニュアル</span><ChevronRight size={16} /></a>
-          <MypageTutorial autoOpen={(player.mypage_tutorial_version ?? 0) < 1} userId={user.id} />
           <BugReportButton />
           <Link href="/edit" className="mt-3 block rounded-xl border border-white/10 px-4 py-3 text-sm font-bold text-white/70">プロフィール編集</Link>
         </div>
