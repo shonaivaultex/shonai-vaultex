@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Activity, ArrowLeft, ArrowRight, Bot, CalendarDays, Check, Compass, Play, Plus, ScanLine, Settings, Sparkles, X } from "lucide-react";
+import { Activity, ArrowLeft, ArrowRight, Bell, Bot, CalendarDays, Check, Compass, Play, Plus, ScanLine, Settings, Share, Smartphone, Sparkles, X } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 
-export const MYPAGE_TUTORIAL_VERSION = 2;
+export const MYPAGE_TUTORIAL_VERSION = 3;
 
 type TutorialRect = { top: number; left: number; right: number; bottom: number; width: number; height: number };
 
 const steps = [
+  { eyebrow: "START HERE", title: "まずホーム画面に追加しよう", body: "VAULTEXをアプリのようにすぐ開けます。予定変更やフィードバックのプッシュ通知を受け取るためにも、最初にホーム画面への追加をおすすめします。", icon: Smartphone, target: null, install: true },
   { eyebrow: "WELCOME TO SHONAI VAULTEX", title: "マイページを一緒に見てみよう", body: "これから実際の画面を1つずつ照らしながら説明します。いつでも「あとで見る」で閉じられます。", icon: Sparkles, target: null },
   { eyebrow: "STEP 1 / ATHLETE SCAN", title: "身体能力の現在地を確認", body: "CONTROL TESTをまとめて記録すると、身体能力の特徴と変化をATHLETE SCANで振り返れます。初めて測定するときもここから始められます。", icon: ScanLine, target: "athlete-scan" },
   { eyebrow: "STEP 2 / RECORD", title: "練習や大会の記録を追加", body: "ここから練習記録・本番記録・CONTROL TESTを選んで登録します。記録はPB、グラフ、成長レポートへ自動で反映されます。", icon: Plus, target: "record-action" },
@@ -29,6 +30,15 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [targetRect, setTargetRect] = useState<TutorialRect | null>(null);
+  const [installState] = useState<"ios" | "android" | "desktop" | "installed">(() => {
+    if (typeof window === "undefined") return "desktop";
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+    if (standalone) return "installed";
+    const userAgent = navigator.userAgent.toLowerCase();
+    if (/iphone|ipad|ipod/.test(userAgent)) return "ios";
+    if (/android/.test(userAgent)) return "android";
+    return "desktop";
+  });
   const current = steps[step];
   const Icon = current.icon;
   const last = step === steps.length - 1;
@@ -109,6 +119,15 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
           <div className="px-5 pb-5 pt-7 sm:px-7 sm:pb-7">
             <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-orange-500/15 text-orange-400"><Icon size={24} /></span><div className="min-w-0 pr-8"><p className="text-[10px] font-black tracking-[.18em] text-orange-400">{current.eyebrow}</p><h2 id="mypage-tutorial-title" className="mt-1 text-xl font-black leading-tight sm:text-2xl">{current.title}</h2></div></div>
             <p className="mt-4 text-sm leading-6 text-white/65">{current.body}</p>
+            {"install" in current && current.install ? <div className="mt-4 rounded-2xl border border-orange-500/25 bg-orange-500/[0.07] p-4">
+              {installState === "installed" ? <div className="flex items-center gap-3 text-sm font-bold text-emerald-300"><Check size={19} />ホーム画面への追加は完了しています</div> : <>
+                <p className="flex items-center gap-2 text-sm font-black text-white"><Share size={17} className="text-orange-400" />{installState === "ios" ? "iPhone / iPadでの追加方法" : installState === "android" ? "Androidでの追加方法" : "スマホでこのページを開いて追加"}</p>
+                <ol className="mt-3 space-y-2 text-xs leading-5 text-white/65">
+                  {installState === "ios" ? <><li><b className="text-white">1.</b> Safari下部の共有ボタンを押す</li><li><b className="text-white">2.</b> 「ホーム画面に追加」を選ぶ</li><li><b className="text-white">3.</b> 右上の「追加」を押す</li></> : installState === "android" ? <><li><b className="text-white">1.</b> Chrome右上のメニューを押す</li><li><b className="text-white">2.</b> 「アプリをインストール」または「ホーム画面に追加」を選ぶ</li><li><b className="text-white">3.</b> 確認画面で追加する</li></> : <li>この案内はスマホで開くと、iPhone／Androidに合わせた手順に切り替わります。</li>}
+                </ol>
+              </>}
+              <p className="mt-3 flex items-start gap-2 border-t border-white/10 pt-3 text-[11px] leading-5 text-white/45"><Bell size={15} className="mt-0.5 shrink-0 text-orange-400" />追加後、マイページの「通知設定」から通知をONにしてください。ホーム画面へ追加するだけでは通知はまだ有効になりません。</p>
+            </div> : null}
             <div className="mt-4 flex items-center justify-center gap-1.5" aria-label={`${step + 1}/${steps.length}`}>{steps.map((item, index) => <span key={item.eyebrow} className={`h-1.5 rounded-full transition-all ${index === step ? "w-6 bg-orange-500" : "w-1.5 bg-white/20"}`} />)}</div>
             <div className="mt-5 flex items-center gap-3">
               {step > 0 ? <button type="button" aria-label="前へ" onClick={() => setStep((value) => value - 1)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/15 text-white/65 hover:text-white"><ArrowLeft size={18} /></button> : null}
