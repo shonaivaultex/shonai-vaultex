@@ -9,16 +9,16 @@ import type { SchedulePeriod } from "@/lib/schedule-periods";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export default function SchedulePeriodManager({ initialPeriods, userId, initialEditingId }: { initialPeriods: SchedulePeriod[]; userId: string; initialEditingId?: number | null }) {
+export default function SchedulePeriodManager({ initialPeriods, userId, initialEditingId, initialDate }: { initialPeriods: SchedulePeriod[]; userId: string; initialEditingId?: number | null; initialDate?: string }) {
   const router = useRouter();
   const [periods, setPeriods] = useState(initialPeriods);
   const initialEditing = initialPeriods.find((period) => period.id === initialEditingId);
-  const [open, setOpen] = useState(Boolean(initialEditing));
+  const [open, setOpen] = useState(Boolean(initialEditing || initialDate));
   const [editingId, setEditingId] = useState<number | null>(initialEditing?.id ?? null);
   const [phase, setPhase] = useState(initialEditing?.phase ?? "build");
   const [label, setLabel] = useState(initialEditing?.label ?? "");
-  const [startsOn, setStartsOn] = useState(initialEditing?.starts_on ?? today());
-  const [endsOn, setEndsOn] = useState(initialEditing?.ends_on ?? today());
+  const [startsOn, setStartsOn] = useState(initialEditing?.starts_on ?? initialDate ?? today());
+  const [endsOn, setEndsOn] = useState(initialEditing?.ends_on ?? initialDate ?? today());
   const [saving, setSaving] = useState(false);
 
   function reset() {
