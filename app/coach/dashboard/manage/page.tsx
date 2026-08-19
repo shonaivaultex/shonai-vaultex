@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, BookOpen, ChevronRight, ScanLine } from "lucide-react";
 import { createClient } from "@/lib/supabase-server";
 import CoachAnnouncementForm from "@/app/components/CoachAnnouncementForm";
-import CoachScheduleManager, { type ScheduleTemplate } from "@/app/components/CoachScheduleManager";
+import CoachScheduleManager, { type CompetitionApplicant, type ScheduleTemplate } from "@/app/components/CoachScheduleManager";
 import type { ScheduleItem } from "@/app/components/SchedulePanel";
 import MemberManagement from "@/app/components/MemberManagement";
 import BugReportManager, { type BugReportItem } from "@/app/components/BugReportManager";
@@ -27,8 +27,12 @@ export default async function CoachManagementPage() {
     supabase.from("bug_reports").select("id, user_id, category, detail, page_url, user_agent, status, created_at").order("created_at", { ascending: false }).limit(50),
   ]);
   const scheduleIds = (schedules ?? []).map((item) => item.id);
-  const { data: attendance } = scheduleIds.length ? await supabase.from("schedule_attendance").select("schedule_id, status").in("schedule_id", scheduleIds) : { data: [] };
+  const [{ data: attendance }, { data: competitionApplications }] = scheduleIds.length ? await Promise.all([
+    supabase.from("schedule_attendance").select("schedule_id, status").in("schedule_id", scheduleIds),
+    supabase.from("competition_applications").select("id,schedule_id,user_id,events,note,status,created_at").in("schedule_id", scheduleIds).order("created_at"),
+  ]) : [{ data: [] }, { data: [] }];
   const memberNames = new Map((allAthletes ?? []).map((athlete) => [athlete.user_id, athlete.name]));
+  const competitionApplicants: CompetitionApplicant[] = (competitionApplications ?? []).map((application) => ({ ...application, player_name: memberNames.get(application.user_id) ?? "会員" }));
   const bugReportItems: BugReportItem[] = (bugReports ?? []).map((item) => ({ id: item.id, memberName: memberNames.get(item.user_id) ?? "会員", category: item.category, detail: item.detail, pageUrl: item.page_url, userAgent: item.user_agent, status: item.status, createdAt: item.created_at }));
 
   return <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8"><div className="mx-auto max-w-5xl">
@@ -39,7 +43,7 @@ export default async function CoachManagementPage() {
     <CoachInvitationManager />
     <MemberManagement members={(allAthletes ?? []).map((athlete) => ({ ...athlete, member_status: athlete.member_status ?? "active" }))} />
     <CoachAnnouncementForm />
-    <CoachScheduleManager initialItems={(schedules ?? []) as ScheduleItem[]} initialTemplates={(scheduleTemplates ?? []) as ScheduleTemplate[]} initialAttendance={attendance ?? []} />
+    <CoachScheduleManager initialItems={(schedules ?? []) as ScheduleItem[]} initialTemplates={(scheduleTemplates ?? []) as ScheduleTemplate[]} initialAttendance={attendance ?? []} competitionApplicants={competitionApplicants} />
     <BugReportManager initialItems={bugReportItems} />
   </div></main>;
 }
