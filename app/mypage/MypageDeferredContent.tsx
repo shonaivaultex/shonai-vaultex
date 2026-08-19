@@ -1,0 +1,158 @@
+import Link from "next/link";
+import { ChevronRight, Plus, ScanLine, Sparkles } from "lucide-react";
+import { createClient } from "@/lib/supabase-server";
+import { eventKindMap } from "@/lib/performance-events";
+import { evaluateAthleteScan, type AthleteMeasurement, type AthleteStandard, type TypeSettings } from "@/lib/athlete-scan";
+import MonthlyGrowthReport, { type GrowthRecord } from "@/app/components/MonthlyGrowthReport";
+import NewsPanel, { type NewsItem } from "@/app/components/NewsPanel";
+import SchedulePanel, { type ScheduleItem } from "@/app/components/SchedulePanel";
+
+type DeferredData = {
+  currentMonthRecordCount: number;
+  unreadCount: number;
+  growthRecords: GrowthRecord[];
+  newsItems: NewsItem[];
+  latestScan: {
+    id: number;
+    scan_number: number;
+    measured_on: string;
+    athlete_standard_version: string | null;
+    control_test_measurements: AthleteMeasurement[] | null;
+  } | null;
+  latestAthleteScan: ReturnType<typeof evaluateAthleteScan> | null;
+};
+
+export async function loadMypageDeferredData({
+  userId,
+  gender,
+  currentMonth,
+  previousMonthStart,
+}: {
+  userId: string;
+  gender: string | null | Promise<string | null>;
+  currentMonth: string;
+  previousMonthStart: string;
+}): Promise<DeferredData> {
+  const supabase = await createClient();
+  const [
+    { data: announcements },
+    { data: ownRecords },
+    { data: videoRequests },
+    { data: growthRecords },
+    { data: latestScan },
+    { data: currentStandard },
+    { data: videoMessageReads },
+  ] = await Promise.all([
+    supabase.from("announcements").select("id, title, body, priority, created_at").order("created_at", { ascending: false }).limit(10),
+    supabase.from("performance_records").select("id, category, record_kind").eq("user_id", userId),
+    supabase.from("video_feedback_requests").select("id, event_name").eq("user_id", userId),
+    supabase.from("performance_records").select("id, category, value, date, awareness_category, awareness_categories").eq("user_id", userId).gte("date", previousMonthStart).order("date", { ascending: false }),
+    supabase.from("control_test_scans").select("id, scan_number, measured_on, athlete_standard_version, control_test_measurements(test_code, primary_value, metrics, implement_weight_kg, implement_name, equipment, distance_m, jump_count)").eq("user_id", userId).order("scan_number", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("athlete_scan_standard_sets").select("version, label").eq("is_current", true).maybeSingle(),
+    supabase.from("video_feedback_message_reads").select("message_id").eq("user_id", userId).limit(1000),
+  ]);
+
+  const resolvedGender = await gender;
+  const announcementIds = (announcements ?? []).map((item) => item.id);
+  const ownRecordIds = (ownRecords ?? []).map((item) => item.id);
+  const videoRequestIds = (videoRequests ?? []).map((item) => item.id);
+  const scanVersion = latestScan?.athlete_standard_version ?? currentStandard?.version ?? null;
+
+  const [
+    { data: readRows },
+    { data: unreadFeedback },
+    { data: videoMessages },
+    { data: athleteStandards },
+    { data: athleteTypeSettings },
+  ] = await Promise.all([
+    announcementIds.length
+      ? supabase.from("announcement_reads").select("announcement_id").eq("user_id", userId).in("announcement_id", announcementIds)
+      : Promise.resolve({ data: [] }),
+    ownRecordIds.length
+      ? supabase.from("coach_feedback").select("id, record_id, body, created_at").in("record_id", ownRecordIds).is("acknowledged_at", null).order("created_at", { ascending: false }).limit(10)
+      : Promise.resolve({ data: [] }),
+    videoRequestIds.length
+      ? supabase.from("video_feedback_messages").select("id, request_id, body, created_at").in("request_id", videoRequestIds).eq("sender_role", "coach").order("created_at", { ascending: false }).limit(10)
+      : Promise.resolve({ data: [] }),
+    latestScan && scanVersion && resolvedGender
+      ? supabase.from("athlete_scan_standards").select("standard_version, gender, test_code, equipment, weight_kg, distance_m, jump_count, score_100_value, score_0_value, higher_is_better, status, notes").eq("standard_version", scanVersion).eq("gender", resolvedGender)
+      : Promise.resolve({ data: [] }),
+    latestScan && scanVersion && resolvedGender
+      ? supabase.from("athlete_scan_type_settings").select("balanced_max_spread, composite_max_gap, type_descriptions").eq("standard_version", scanVersion).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const readIds = new Set((readRows ?? []).map((item) => item.announcement_id));
+  const readVideoMessageIds = new Set((videoMessageReads ?? []).map((item) => item.message_id));
+  const videoRequestMap = new Map((videoRequests ?? []).map((item) => [item.id, item]));
+  const recordById = new Map((ownRecords ?? []).map((record) => [record.id, record]));
+  const newsItems: NewsItem[] = [
+    ...(announcements ?? []).map((item) => ({ id: `announcement-${item.id}`, kind: "announcement" as const, title: item.title, body: item.body, date: item.created_at, important: item.priority === "important", unread: !readIds.has(item.id), announcementId: item.id })),
+    ...(unreadFeedback ?? []).map((item) => {
+      const record = recordById.get(item.record_id);
+      const kind = record?.record_kind ?? (record ? eventKindMap[record.category] : "control-test");
+      const baseHref = kind === "athletics" ? "/mypage/athletics" : kind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests";
+      return { id: `feedback-${item.id}`, kind: "feedback" as const, title: `${record?.category ?? "記録"}にフィードバックが届きました`, body: item.body, date: item.created_at, href: `${baseHref}?feedback=${item.record_id}`, unread: true };
+    }),
+    ...(videoMessages ?? []).map((item) => ({ id: `video-message-${item.id}`, kind: "feedback" as const, title: `${videoRequestMap.get(item.request_id)?.event_name ?? "動画"}に返信が届きました`, body: item.body, date: item.created_at, href: "/mypage/video-feedback", unread: !readVideoMessageIds.has(item.id), videoMessageId: item.id })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
+
+  const latestAthleteScan = latestScan && athleteTypeSettings
+    ? evaluateAthleteScan((latestScan.control_test_measurements ?? []) as AthleteMeasurement[], (athleteStandards ?? []) as AthleteStandard[], athleteTypeSettings as TypeSettings)
+    : null;
+
+  return {
+    currentMonthRecordCount: (growthRecords ?? []).filter((record) => record.date.startsWith(currentMonth)).length,
+    unreadCount: newsItems.filter((item) => item.unread).length,
+    growthRecords: (growthRecords ?? []) as GrowthRecord[],
+    newsItems,
+    latestScan: latestScan as DeferredData["latestScan"],
+    latestAthleteScan,
+  };
+}
+
+export async function MypageStats({ dataPromise }: { dataPromise: Promise<DeferredData> }) {
+  const data = await dataPromise;
+  return <>
+    <Link href="/mypage/growth-report" className="border-r border-white/10 p-5 transition hover:bg-white/[.035] sm:p-7"><p className="text-[10px] font-black tracking-[.14em] text-white/30">THIS MONTH</p><strong className="mt-2 block text-3xl tracking-[-.04em]">{data.currentMonthRecordCount}<small className="ml-1 text-xs text-white/35">RECORDS</small></strong></Link>
+    <a href="#news" className="p-5 transition hover:bg-white/[.035] sm:p-7"><p className="text-[10px] font-black tracking-[.14em] text-white/30">TO CHECK</p><strong className={`mt-2 block text-3xl tracking-[-.04em] ${data.unreadCount ? "text-orange-400" : ""}`}>{data.unreadCount}<small className="ml-1 text-xs text-white/35">ITEMS</small></strong></a>
+  </>;
+}
+
+export function MypageStatsSkeleton() {
+  return <>{[0, 1].map((item) => <div key={item} className={`${item === 0 ? "border-r" : ""} border-white/10 p-5 sm:p-7`}><div className="h-2.5 w-20 animate-pulse rounded bg-white/10"/><div className="mt-3 h-8 w-14 animate-pulse rounded bg-white/10"/></div>)}</>;
+}
+
+export function MypageDeferredSkeleton() {
+  return <div className="mt-5 space-y-6" aria-label="成長情報を読み込んでいます"><div className="h-52 animate-pulse rounded-3xl border border-orange-500/20 bg-[#111]"/><div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]"><div className="h-64 animate-pulse rounded-2xl bg-[#111]"/><div className="h-64 animate-pulse rounded-2xl bg-[#111]"/></div></div>;
+}
+
+export default async function MypageDeferredContent({
+  dataPromise,
+  userId,
+  schedules,
+  currentMonth,
+  previousMonth,
+}: {
+  dataPromise: Promise<DeferredData>;
+  userId: string;
+  schedules: ScheduleItem[];
+  currentMonth: string;
+  previousMonth: string;
+}) {
+  const data = await dataPromise;
+  const { latestScan, latestAthleteScan } = data;
+  return <>
+    <div className="mt-5">
+      <section data-tutorial="athlete-scan" className="overflow-hidden rounded-3xl border border-orange-500/50 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,.2),transparent_42%),#111] p-5 text-white shadow-[0_14px_42px_rgba(0,0,0,.22)] lg:p-7">
+        <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-orange-500 text-black"><ScanLine size={24}/></span><div className="min-w-0 flex-1"><p className="text-[10px] font-black tracking-[.2em] text-orange-400">VAULTEX ATHLETE SCAN</p><h2 className="mt-1 text-xl font-black">身体能力の現在地を知る</h2><p className="mt-2 text-sm leading-6 text-white/50">CONTROL TESTから6能力・3特性・現在のATHLETE TYPEを確認します。</p></div></div>
+        {latestScan ? <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4"><div className="flex items-center justify-between gap-4"><div><p className="text-xs text-white/40">LATEST SCAN #{String(latestScan.scan_number).padStart(2,"0")} ・ {latestScan.measured_on}</p><p className="mt-1 text-lg font-black text-orange-300">{latestAthleteScan?.typeNameJa ?? "評価結果を確認"}</p>{latestAthleteScan?.typeCode ? <p className="mt-0.5 text-[10px] font-black tracking-[.12em] text-white/45">{latestAthleteScan.typeCode}</p> : null}</div><Sparkles className="shrink-0 text-orange-400" size={24}/></div><Link href={`/mypage/control-tests/${latestScan.id}`} className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-black transition hover:bg-orange-400">ATHLETE SCAN結果を見る<ChevronRight size={17}/></Link></div> : <Link href="/mypage/control-tests/new" className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 font-black text-black transition hover:bg-orange-400"><Plus size={18}/>最初のVAULTEX SCANを記録</Link>}
+        <Link href="/mypage/control-tests" className="mt-3 flex items-center justify-center gap-1 text-xs font-bold text-white/50 transition hover:text-orange-300">CONTROL TESTの履歴・詳細<ChevronRight size={14}/></Link>
+      </section>
+    </div>
+    <div className="mt-7 grid items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]">
+      <MonthlyGrowthReport records={data.growthRecords} currentMonth={currentMonth} previousMonth={previousMonth}/>
+      <div id="news" className="space-y-6"><NewsPanel initialItems={data.newsItems} userId={userId}/><SchedulePanel items={schedules}/></div>
+    </div>
+  </>;
+}

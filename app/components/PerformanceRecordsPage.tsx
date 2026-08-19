@@ -4,7 +4,8 @@ import PerformanceEventCard from "@/app/components/PerformanceEventCard";
 import { createClient } from "@/lib/supabase-server";
 import { eventKindMap, type PerformanceKind, unitMap } from "@/lib/performance-events";
 import SeasonSelector from "@/app/components/SeasonSelector";
-import type { ReactNode } from "react";
+import PerformanceRankingPanel, { PerformanceRankingSkeleton } from "@/app/components/PerformanceRankingPanel";
+import { Suspense, type ReactNode } from "react";
 
 type Props = {
   kind: PerformanceKind;
@@ -19,8 +20,6 @@ type Props = {
 };
 
 type FeedbackRow = { id: number; record_id: number; coach_id: string; body: string; created_at: string; acknowledged_at: string | null };
-type LeaderboardRow = { ranking_scope: "overall" | "class"; leaderboard_position: number; display_name: string; best_value: number | string; is_current_user: boolean };
-
 export default async function PerformanceRecordsPage({ kind, title, eyebrow, description, selectedYear = null, focusRecordId = null, beforeRecords, addHref, addLabel = "記録を追加" }: Props) {
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getClaims();
@@ -98,32 +97,20 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
     return groups;
   }, {});
 
-  const eventGroups = await Promise.all(Object.entries(recordsByCategory).map(async ([category, categoryRecords]) => {
+  const eventGroups = Object.entries(recordsByCategory).map(([category, categoryRecords]) => {
     const isTimeEvent = ["秒", "分"].includes(unitMap[category]);
     const best = categoryRecords.reduce((currentBest, record) => {
       const value = Number(record.value);
       const bestValue = Number(currentBest.value);
       return isTimeEvent ? (value < bestValue ? record : currentBest) : (value > bestValue ? record : currentBest);
     });
-    const { data: ranking } = await supabase.rpc("get_performance_rankings", {
-      p_category: category,
-      p_record_kind: kind,
-      p_year: selectedYear,
-    }).maybeSingle();
-    const { data: leaderboard } = await supabase.rpc("get_performance_leaderboard", {
-      p_category: category,
-      p_record_kind: kind,
-      p_year: selectedYear,
-    });
     return {
       category,
       records: categoryRecords,
       best,
-      ranking: ranking as { overall_rank: number; overall_total: number; overall_top_percent: number; class_rank: number | null; class_total: number | null; class_top_percent: number | null; program_class: string | null; gender: "male" | "female" } | null,
-      leaderboard: (leaderboard ?? []) as LeaderboardRow[],
     };
-  }));
-  const renderEventCard = ({ category, records: eventRecords, best, ranking, leaderboard }: (typeof eventGroups)[number]) => (
+  });
+  const renderEventCard = ({ category, records: eventRecords, best }: (typeof eventGroups)[number]) => (
     <PerformanceEventCard
       key={category}
       category={category}
@@ -133,8 +120,7 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
       target={goalsByCategory.get(category) ?? null}
       userId={userId}
       scopeLabel={selectedYear === null ? "PB" : "SB"}
-      ranking={ranking}
-      leaderboard={leaderboard}
+      rankingContent={<Suspense fallback={<PerformanceRankingSkeleton/>}><PerformanceRankingPanel category={category} kind={kind} selectedYear={selectedYear} bestValue={Number(best.value)} unit={unitMap[category] ?? ""}/></Suspense>}
       focusRecordId={focusRecordId}
     />
   );
