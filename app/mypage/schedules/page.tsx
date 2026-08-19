@@ -6,6 +6,8 @@ import type { ScheduleItem } from "@/app/components/SchedulePanel";
 import ScheduleCalendar from "@/app/components/ScheduleCalendar";
 import type { CompetitionApplicationItem } from "@/app/components/CompetitionApplication";
 import CoachScheduleManager, { type CompetitionApplicant, type ScheduleTemplate } from "@/app/components/CoachScheduleManager";
+import SchedulePeriodManager from "@/app/components/SchedulePeriodManager";
+import type { SchedulePeriod } from "@/lib/schedule-periods";
 
 export default async function SchedulesPage({ searchParams }: { searchParams: Promise<{ newDate?: string; edit?: string }> }) {
   const query = await searchParams;
@@ -15,14 +17,17 @@ export default async function SchedulesPage({ searchParams }: { searchParams: Pr
   const now = new Date();
   const rangeStart = new Date(now.getFullYear() - 1, 0, 1).toISOString();
   const rangeEnd = new Date(now.getFullYear() + 2, 0, 1).toISOString();
-  const [{ data }, { data: applications }, { data: coachRole }] = await Promise.all([
+  const [{ data }, { data: periodRows }, { data: applications }, { data: coachRole }] = await Promise.all([
     supabase.from("schedules").select("*").gte("starts_at", rangeStart).lt("starts_at", rangeEnd).order("starts_at").limit(500),
+    supabase.from("schedule_periods").select("*").lte("starts_on", rangeEnd.slice(0, 10)).gte("ends_on", rangeStart.slice(0, 10)).order("starts_on").limit(500),
     supabase.from("competition_applications").select("id,schedule_id,events,note,status").eq("user_id", user.id),
     supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "coach").maybeSingle(),
   ]);
   const items = (data ?? []) as ScheduleItem[];
+  const periods = (periodRows ?? []) as SchedulePeriod[];
   const isCoach = Boolean(coachRole);
   const ownedItems = items.filter((item) => item.author_id === user.id);
+  const ownedPeriods = periods.filter((item) => item.author_id === user.id);
   let templates: ScheduleTemplate[] = [];
   let attendance: Array<{ schedule_id: number; status: string }> = [];
   let competitionApplicants: CompetitionApplicant[] = [];
@@ -44,5 +49,5 @@ export default async function SchedulesPage({ searchParams }: { searchParams: Pr
   const initialDate = query.newDate && /^\d{4}-\d{2}-\d{2}$/.test(query.newDate) ? query.newDate : undefined;
   const editingItem = initialEditingId ? ownedItems.find((item) => item.id === initialEditingId) : undefined;
   const selectedDate = initialDate ?? (editingItem ? editingItem.starts_at.slice(0, 10) : undefined);
-  return <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8"><div className={`mx-auto ${isCoach ? "max-w-7xl" : "max-w-3xl"}`}><Link href="/mypage" className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-white/60"><ArrowLeft size={16} />MY PAGE</Link><header className="mt-10 border-l-2 border-orange-500 pl-5"><p className="text-xs font-black tracking-[0.22em] text-orange-400">SCHEDULE</p><h1 className="mt-3 text-4xl font-black">スケジュール</h1><p className="mt-3 text-white/55">{isCoach ? "カレンダーを確認しながら、予定を直接追加・編集できます。" : "全体予定と所属クラスの予定を月ごとに確認できます。"}</p></header>{isCoach ? <div className="mt-8 grid items-start gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(420px,.85fr)]"><div><ScheduleCalendar key={selectedDate ?? "today"} items={items} applications={(applications ?? []) as CompetitionApplicationItem[]} currentTime={new Date().toISOString()} canManage coachId={user.id} initialSelectedDate={selectedDate}/></div><div id="schedule-management" className="xl:sticky xl:top-20"><CoachScheduleManager key={`${initialEditingId ?? "new"}-${initialDate ?? "none"}`} initialItems={ownedItems} initialTemplates={templates} initialAttendance={attendance} competitionApplicants={competitionApplicants} initialDate={initialDate} initialEditingId={initialEditingId}/></div></div> : <ScheduleCalendar items={items} applications={(applications ?? []) as CompetitionApplicationItem[]} currentTime={new Date().toISOString()} />}</div></main>;
+  return <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8"><div className={`mx-auto ${isCoach ? "max-w-7xl" : "max-w-3xl"}`}><Link href="/mypage" className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-white/60"><ArrowLeft size={16} />MY PAGE</Link><header className="mt-10 border-l-2 border-orange-500 pl-5"><p className="text-xs font-black tracking-[0.22em] text-orange-400">SCHEDULE</p><h1 className="mt-3 text-4xl font-black">スケジュール</h1><p className="mt-3 text-white/55">{isCoach ? "カレンダーを確認しながら、予定を直接追加・編集できます。" : "全体予定と所属クラスの予定を月ごとに確認できます。"}</p></header>{isCoach ? <div className="mt-8 grid items-start gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(420px,.85fr)]"><div><ScheduleCalendar key={selectedDate ?? "today"} items={items} periods={periods} applications={(applications ?? []) as CompetitionApplicationItem[]} currentTime={new Date().toISOString()} canManage coachId={user.id} initialSelectedDate={selectedDate}/></div><div id="schedule-management" className="space-y-6 xl:sticky xl:top-20"><SchedulePeriodManager initialPeriods={ownedPeriods} coachId={user.id}/><CoachScheduleManager key={`${initialEditingId ?? "new"}-${initialDate ?? "none"}`} initialItems={ownedItems} initialTemplates={templates} initialAttendance={attendance} competitionApplicants={competitionApplicants} initialDate={initialDate} initialEditingId={initialEditingId}/></div></div> : <ScheduleCalendar items={items} periods={periods} applications={(applications ?? []) as CompetitionApplicationItem[]} currentTime={new Date().toISOString()} />}</div></main>;
 }
