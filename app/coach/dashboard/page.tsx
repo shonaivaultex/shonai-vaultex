@@ -7,11 +7,12 @@ import AthletesByClass, { type AthleteClassCount } from "@/app/components/Athlet
 
 export default async function CoachDashboardPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/coach/dashboard");
+  const { data: authData } = await supabase.auth.getClaims();
+  const userId = authData?.claims.sub;
+  if (!userId) redirect("/login?next=/coach/dashboard");
   const [{ data: role }, { data: assignments }, { data: classCounts }, { data: queueRows }, { data: aiConsultations }] = await Promise.all([
-    supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "coach").maybeSingle(),
-    supabase.from("coach_class_assignments").select("program_class").eq("coach_id", user.id),
+    supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "coach").maybeSingle(),
+    supabase.from("coach_class_assignments").select("program_class").eq("coach_id", userId),
     supabase.rpc("coach_athlete_class_counts"),
     supabase.rpc("coach_feedback_queue", { p_status: "pending", p_program_class: null, p_priority: null, p_sort: "oldest", p_limit: 10, p_offset: 0 }),
     supabase.from("ai_coach_consultations").select("id,user_id,event_name,consultation_summary,current_feeling,status,created_at").neq("status", "resolved").order("created_at", { ascending: true }).limit(10),

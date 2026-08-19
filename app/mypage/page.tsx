@@ -27,11 +27,10 @@ function japanMonthKeys() {
 export default async function MyPage() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: authData } = await supabase.auth.getClaims();
+  const userId = authData?.claims.sub;
 
-  if (!user) {
+  if (!userId) {
     redirect("/login?next=/mypage");
   }
 
@@ -48,14 +47,14 @@ export default async function MyPage() {
     { data: latestScan },
     { data: currentStandard },
   ] = await Promise.all([
-    supabase.from("players").select("*").eq("user_id", user.id).single(),
-    supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "coach").maybeSingle(),
+    supabase.from("players").select("*").eq("user_id", userId).single(),
+    supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "coach").maybeSingle(),
     supabase.from("schedules").select("*").gte("starts_at", new Date().toISOString()).order("starts_at").limit(2),
     supabase.from("announcements").select("id, title, body, priority, created_at").order("created_at", { ascending: false }).limit(10),
-    supabase.from("performance_records").select("id, category, record_kind").eq("user_id", user.id),
-    supabase.from("video_feedback_requests").select("id, event_name").eq("user_id", user.id),
-    supabase.from("performance_records").select("id, category, value, date, awareness_category, awareness_categories").eq("user_id", user.id).gte("date", previousMonthStart).order("date", { ascending: false }),
-    supabase.from("control_test_scans").select("id, scan_number, measured_on, athlete_standard_version, control_test_measurements(test_code, primary_value, metrics, implement_weight_kg, implement_name, equipment, distance_m, jump_count)").eq("user_id", user.id).order("scan_number", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("performance_records").select("id, category, record_kind").eq("user_id", userId),
+    supabase.from("video_feedback_requests").select("id, event_name").eq("user_id", userId),
+    supabase.from("performance_records").select("id, category, value, date, awareness_category, awareness_categories").eq("user_id", userId).gte("date", previousMonthStart).order("date", { ascending: false }),
+    supabase.from("control_test_scans").select("id, scan_number, measured_on, athlete_standard_version, control_test_measurements(test_code, primary_value, metrics, implement_weight_kg, implement_name, equipment, distance_m, jump_count)").eq("user_id", userId).order("scan_number", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("athlete_scan_standard_sets").select("version, label").eq("is_current", true).maybeSingle(),
   ]);
 
@@ -75,7 +74,7 @@ export default async function MyPage() {
   const videoRequestIds = (videoRequests ?? []).map((item) => item.id);
   const [{ data: readRows }, { data: unreadFeedback }, { data: videoMessages }] = await Promise.all([
     announcementIds.length
-      ? supabase.from("announcement_reads").select("announcement_id").eq("user_id", user.id).in("announcement_id", announcementIds)
+      ? supabase.from("announcement_reads").select("announcement_id").eq("user_id", userId).in("announcement_id", announcementIds)
       : Promise.resolve({ data: [] }),
     ownRecordIds.length
       ? supabase.from("coach_feedback").select("id, record_id, body, created_at").in("record_id", ownRecordIds).is("acknowledged_at", null).order("created_at", { ascending: false }).limit(10)
@@ -86,7 +85,7 @@ export default async function MyPage() {
   ]);
   const readIds = new Set((readRows ?? []).map((item) => item.announcement_id));
   const videoMessageIds = (videoMessages ?? []).map((item) => item.id);
-  const { data: videoMessageReads } = videoMessageIds.length ? await supabase.from("video_feedback_message_reads").select("message_id").eq("user_id", user.id).in("message_id", videoMessageIds) : { data: [] };
+  const { data: videoMessageReads } = videoMessageIds.length ? await supabase.from("video_feedback_message_reads").select("message_id").eq("user_id", userId).in("message_id", videoMessageIds) : { data: [] };
   const readVideoMessageIds = new Set((videoMessageReads ?? []).map((item) => item.message_id));
   const videoRequestMap = new Map((videoRequests ?? []).map((item) => [item.id, item]));
   const recordById = new Map((ownRecords ?? []).map((record) => [record.id, record]));
@@ -106,7 +105,7 @@ export default async function MyPage() {
         <div><p className="text-[10px] font-black tracking-[.28em] text-orange-400">ATHLETE DASHBOARD</p><h1 className="mt-1 text-3xl font-black tracking-[-.04em] lg:text-5xl">MY PAGE</h1></div>
         <span className="hidden text-xs font-bold tracking-[.16em] text-white/25 sm:block">SHONAI VAULTEX</span>
       </div>
-      <MypageTutorial autoOpen={(player.mypage_tutorial_version ?? 0) < MYPAGE_TUTORIAL_VERSION} userId={user.id} />
+      <MypageTutorial autoOpen={(player.mypage_tutorial_version ?? 0) < MYPAGE_TUTORIAL_VERSION} userId={userId} />
 
       <section className="relative mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_85%_10%,rgba(249,115,22,.16),transparent_28%),linear-gradient(145deg,#151515,#0d0d0d_65%)] text-white shadow-[0_28px_90px_rgba(0,0,0,.28)]">
         <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-orange-400 via-orange-600 to-transparent" />
@@ -145,7 +144,7 @@ export default async function MyPage() {
 
       <div className="mt-7 grid items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]">
         <MonthlyGrowthReport records={(growthRecords ?? []) as GrowthRecord[]} currentMonth={currentMonth} previousMonth={previousMonth} />
-        <div id="news" className="space-y-6"><NewsPanel initialItems={newsItems} userId={user.id} /><SchedulePanel items={(schedules ?? []) as ScheduleItem[]} /></div>
+        <div id="news" className="space-y-6"><NewsPanel initialItems={newsItems} userId={userId} /><SchedulePanel items={(schedules ?? []) as ScheduleItem[]} /></div>
       </div>
       <div data-tutorial="performance">
       <div className="mb-4 mt-12 flex items-end justify-between"><div><p className="text-[10px] font-black tracking-[.22em] text-orange-400">PERFORMANCE</p><h2 className="mt-1 text-2xl font-black tracking-[-.03em]">記録を振り返る</h2></div><span className="hidden text-xs text-white/25 sm:block">記録・動画・意識</span></div>

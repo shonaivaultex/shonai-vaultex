@@ -20,16 +20,17 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: authData } = await supabase.auth.getClaims();
+  const userId = authData?.claims.sub;
 
-  if (!user) {
+  if (!userId) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 
-  const { data: player } = await supabase.from("players").select("member_status").eq("user_id", user.id).maybeSingle();
+  const { data: player } = await supabase.from("players").select("member_status").eq("user_id", userId).maybeSingle();
   if (player && player.member_status && player.member_status !== "active") {
     const inactiveUrl = request.nextUrl.clone(); inactiveUrl.pathname = "/account-inactive"; inactiveUrl.search = "";
     return NextResponse.redirect(inactiveUrl);

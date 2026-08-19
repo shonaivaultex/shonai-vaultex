@@ -11,19 +11,20 @@ import CoachInvitationManager from "@/app/components/CoachInvitationManager";
 
 export default async function CoachManagementPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/coach/dashboard/manage");
+  const { data: authData } = await supabase.auth.getClaims();
+  const userId = authData?.claims.sub;
+  if (!userId) redirect("/login?next=/coach/dashboard/manage");
   const [{ data: role }, { data: adminRole }, { data: assignments }] = await Promise.all([
-    supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "coach").maybeSingle(),
-    supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle(),
-    supabase.from("coach_class_assignments").select("program_class").eq("coach_id", user.id),
+    supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "coach").maybeSingle(),
+    supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle(),
+    supabase.from("coach_class_assignments").select("program_class").eq("coach_id", userId),
   ]);
   if (!role) redirect("/mypage");
   const classes = (assignments ?? []).map((item) => item.program_class);
   const [{ data: allAthletes }, { data: schedules }, { data: scheduleTemplates }, { data: bugReports }] = await Promise.all([
     classes.length ? supabase.from("players").select("user_id, name, grade, event, program_class, member_status").in("program_class", classes).order("program_class").order("name") : Promise.resolve({ data: [] }),
-    supabase.from("schedules").select("*").eq("author_id", user.id).gte("starts_at", new Date().toISOString()).order("starts_at").limit(20),
-    supabase.from("schedule_templates").select("*").eq("author_id", user.id).order("name"),
+    supabase.from("schedules").select("*").eq("author_id", userId).gte("starts_at", new Date().toISOString()).order("starts_at").limit(20),
+    supabase.from("schedule_templates").select("*").eq("author_id", userId).order("name"),
     supabase.from("bug_reports").select("id, user_id, category, detail, page_url, user_agent, status, created_at").order("created_at", { ascending: false }).limit(50),
   ]);
   const scheduleIds = (schedules ?? []).map((item) => item.id);

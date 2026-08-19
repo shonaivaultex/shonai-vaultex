@@ -23,14 +23,15 @@ type LeaderboardRow = { ranking_scope: "overall" | "class"; leaderboard_position
 
 export default async function PerformanceRecordsPage({ kind, title, eyebrow, description, selectedYear = null, focusRecordId = null, beforeRecords, addHref, addLabel = "記録を追加" }: Props) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: authData } = await supabase.auth.getClaims();
+  const userId = authData?.claims.sub;
 
-  if (!user) return <div>ログインしてください</div>;
+  if (!userId) return <div>ログインしてください</div>;
 
   const recordsQuery = supabase
     .from("performance_records")
     .select("id, category, value, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .or(`record_kind.eq.${kind},record_kind.is.null`)
     .order("date", { ascending: false });
 
@@ -45,13 +46,13 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
     supabase
       .from("performance_records")
       .select("date, category, record_kind")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .or(`record_kind.eq.${kind},record_kind.is.null`)
       .order("date", { ascending: false }),
     supabase
       .from("performance_goals")
       .select("category, target_value")
-      .eq("user_id", user.id),
+      .eq("user_id", userId),
   ]);
 
   if (error) console.error("RECORD ERROR", error);
@@ -130,7 +131,7 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
       best={best}
       records={eventRecords}
       target={goalsByCategory.get(category) ?? null}
-      userId={user.id}
+      userId={userId}
       scopeLabel={selectedYear === null ? "PB" : "SB"}
       ranking={ranking}
       leaderboard={leaderboard}
@@ -158,10 +159,7 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
         {eventGroups.length === 0 ? (
           <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.035] p-8 text-center text-white/55">まだ記録がありません</div>
         ) : (
-          <>
-            <div className="mt-10 lg:hidden">{eventGroups.map(renderEventCard)}</div>
-            <div className="mt-10 hidden gap-5 lg:grid lg:grid-cols-3">{eventGroups.map(renderEventCard)}</div>
-          </>
+          <div className="mt-10 grid gap-5 lg:grid-cols-3">{eventGroups.map(renderEventCard)}</div>
         )}
 
         <Link href={addHref ?? `/performance?kind=${kind}`} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-4 text-sm font-black tracking-[0.12em] transition hover:bg-orange-400">

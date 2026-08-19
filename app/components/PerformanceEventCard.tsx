@@ -85,6 +85,7 @@ export default function PerformanceEventCard({
     : null;
   return (
     <article
+      className="[content-visibility:auto] [contain-intrinsic-size:auto_900px]"
       style={{
         display: "flex",
         flexDirection: "column",
