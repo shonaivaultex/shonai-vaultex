@@ -11,13 +11,28 @@ const labels: Record<string, string> = { all: "すべて", practice: "練習", c
 const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
 function dateKey(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
 function startOfMonth(date: Date) { return new Date(date.getFullYear(), date.getMonth(), 1); }
+function scheduleDateKeys(item: ScheduleItem) {
+  const start = new Date(item.starts_at);
+  const end = item.ends_at ? new Date(item.ends_at) : start;
+  const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const last = end >= start ? new Date(end.getFullYear(), end.getMonth(), end.getDate()) : cursor;
+  const keys: string[] = [];
+  while (cursor <= last && keys.length < 370) {
+    keys.push(dateKey(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return keys;
+}
 
 export default function ScheduleCalendar({ items, applications, currentTime, canManage = false, coachId, initialSelectedDate }: { items: ScheduleItem[]; applications: CompetitionApplicationItem[]; currentTime: string; canManage?: boolean; coachId?: string; initialSelectedDate?: string }) {
   const today = new Date();
   const initialDay = initialSelectedDate ? new Date(`${initialSelectedDate}T00:00:00`) : today;
   const [month, setMonth] = useState(startOfMonth(initialDay)); const [selectedDate, setSelectedDate] = useState(dateKey(initialDay)); const [type, setType] = useState("all"); const [audience, setAudience] = useState("both");
   const filtered = useMemo(() => items.filter((item) => (type === "all" || item.schedule_type === type) && (audience === "both" || item.audience === audience)), [items, type, audience]);
-  const byDate = useMemo(() => filtered.reduce<Record<string, ScheduleItem[]>>((groups, item) => { const key = dateKey(new Date(item.starts_at)); (groups[key] ??= []).push(item); return groups; }, {}), [filtered]);
+  const byDate = useMemo(() => filtered.reduce<Record<string, ScheduleItem[]>>((groups, item) => {
+    scheduleDateKeys(item).forEach((key) => { (groups[key] ??= []).push(item); });
+    return groups;
+  }, {}), [filtered]);
   const firstGridDate = new Date(month.getFullYear(), month.getMonth(), 1 - month.getDay());
   const days = Array.from({ length: 42 }, (_, index) => new Date(firstGridDate.getFullYear(), firstGridDate.getMonth(), firstGridDate.getDate() + index));
   const selectedItems = byDate[selectedDate] ?? [];
