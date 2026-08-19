@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-server";
-import { Activity, ArrowUpRight, BookOpen, CalendarDays, ChevronDown, ChevronRight, Compass, Download, Medal, MessageCircle, Plus, ScanLine, Settings, Sparkles, Trophy, Video } from "lucide-react";
+import { Activity, ArrowUpRight, BookOpen, CalendarDays, ChevronDown, ChevronRight, Download, Medal, MessageCircle, Plus, ScanLine, Settings, Sparkles, Trophy, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import NewsPanel, { type NewsItem } from "@/app/components/NewsPanel";
@@ -131,18 +131,16 @@ export default async function MyPage() {
         <div className="grid gap-2.5 sm:grid-cols-3">
           <Link data-tutorial="record-action" href="/performance" className="group flex min-h-20 items-center justify-between rounded-2xl bg-orange-500 px-5 font-black text-black transition hover:bg-orange-400"><span className="flex items-center gap-3"><Plus size={22}/><span>記録を追加</span></span><ArrowUpRight size={18} className="transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5"/></Link>
           <Link data-tutorial="video-action" href="/mypage/video-feedback" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-sky-400/50"><span className="flex items-center gap-3"><Video size={21} className="text-sky-400"/><span>動画を送る</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
-          <Link href="/mypage/ai-navigator" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-orange-400/50"><span className="flex items-center gap-3"><MessageCircle size={21} className="text-orange-400"/><span>AIに相談</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
+          <Link data-tutorial="ai-navigator" href="/mypage/ai-navigator" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-orange-400/50"><span className="flex items-center gap-3"><MessageCircle size={21} className="text-orange-400"/><span>AIに相談</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
         </div>
       </section>
 
-      <div className="mt-5 grid items-stretch gap-5 lg:grid-cols-[1.25fr_.75fr]">
+      <div className="mt-5">
       <section data-tutorial="athlete-scan" className="overflow-hidden rounded-3xl border border-orange-500/50 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,.2),transparent_42%),#111] p-5 text-white shadow-[0_14px_42px_rgba(0,0,0,.22)] lg:p-7">
         <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-orange-500 text-black"><ScanLine size={24}/></span><div className="min-w-0 flex-1"><p className="text-[10px] font-black tracking-[.2em] text-orange-400">VAULTEX ATHLETE SCAN</p><h2 className="mt-1 text-xl font-black">身体能力の現在地を知る</h2><p className="mt-2 text-sm leading-6 text-white/50">CONTROL TESTから6能力・3特性・現在のATHLETE TYPEを確認します。</p></div></div>
         {latestScan ? <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4"><div className="flex items-center justify-between gap-4"><div><p className="text-xs text-white/40">LATEST SCAN #{String(latestScan.scan_number).padStart(2,"0")} ・ {latestScan.measured_on}</p><p className="mt-1 text-lg font-black text-orange-300">{latestAthleteScan?.typeNameJa ?? "評価結果を確認"}</p>{latestAthleteScan?.typeCode ? <p className="mt-0.5 text-[10px] font-black tracking-[.12em] text-white/45">{latestAthleteScan.typeCode}</p> : null}</div><Sparkles className="shrink-0 text-orange-400" size={24}/></div><Link href={`/mypage/control-tests/${latestScan.id}`} className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-black transition hover:bg-orange-400">ATHLETE SCAN結果を見る<ChevronRight size={17}/></Link></div> : <Link href="/mypage/control-tests/new" className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 font-black text-black transition hover:bg-orange-400"><Plus size={18}/>最初のVAULTEX SCANを記録</Link>}
         <Link href="/mypage/control-tests" className="mt-3 flex items-center justify-center gap-1 text-xs font-bold text-white/50 transition hover:text-orange-300">CONTROL TESTの履歴・詳細<ChevronRight size={14}/></Link>
       </section>
-
-      <Link data-tutorial="ai-navigator" href="/mypage/ai-navigator" prefetch className="flex items-center gap-4 rounded-3xl border border-orange-500/35 bg-[linear-gradient(135deg,rgba(249,115,22,.1),rgba(17,17,17,.96))] p-5 text-white transition hover:border-orange-400 lg:p-7"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-orange-500/30 bg-orange-500/10 text-orange-400"><Compass size={24}/></span><span className="min-w-0 flex-1"><span className="text-[10px] font-black tracking-[.18em] text-orange-400">VAULTEX AI NAVIGATOR & COMPANION</span><strong className="mt-1 block text-lg">競技のことを一緒に整理する</strong><span className="mt-1 block text-xs leading-5 text-white/45">記録の振り返り、競技の悩み、使い方など何でも相談してください。</span></span><ChevronRight className="shrink-0 text-orange-400"/></Link>
       </div>
 
       <div className="mt-7 grid items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]">
