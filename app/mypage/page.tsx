@@ -35,15 +35,20 @@ export default async function MyPage() {
 
   const playerPromise = Promise.resolve(supabase.from("players").select("*").eq("user_id", userId).single());
   const coachRolePromise = Promise.resolve(supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "coach").maybeSingle());
-  const schedulesPromise = Promise.resolve(supabase.from("schedules").select("id, title, details, location, starts_at, ends_at, all_day, training_phase, schedule_type, audience, program_class, registration_enabled, registration_opens_at, registration_deadline").gte("starts_at", new Date().toISOString()).order("starts_at").limit(2));
+  const schedulesPromise = Promise.resolve(supabase.from("schedules").select("id, title, details, location, starts_at, ends_at, all_day, training_phase, schedule_type, audience, program_class, registration_enabled, registration_opens_at, registration_deadline").gte("starts_at", new Date().toISOString()).order("starts_at").limit(20));
+  const competitionApplicationsPromise = Promise.resolve(supabase.from("competition_applications").select("schedule_id").eq("user_id", userId).eq("status", "submitted"));
   const deferredDataPromise = loadMypageDeferredData({ userId, gender: playerPromise.then(({ data }) => data?.gender ?? null), currentMonth, previousMonthStart });
-  const [{ data: player }, { data: coachRole }, { data: schedules }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise]);
+  const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise]);
 
   if (!player) {
     redirect("/profile/create");
   }
 
-  const nextSchedule = (schedules ?? [])[0] as ScheduleItem | undefined;
+  const appliedCompetitionIds = new Set((competitionApplications ?? []).map((application) => application.schedule_id));
+  const nextSchedules = ((schedules ?? []) as ScheduleItem[])
+    .filter((schedule) => schedule.schedule_type !== "competition" || appliedCompetitionIds.has(schedule.id))
+    .slice(0, 2);
+  const nextSchedule = nextSchedules[0];
   const nextScheduleDate = nextSchedule ? new Date(nextSchedule.starts_at) : null;
 
   return (
@@ -80,7 +85,7 @@ export default async function MyPage() {
         </div>
       </section>
 
-      <Suspense fallback={<MypageDeferredSkeleton/>}><MypageDeferredContent dataPromise={deferredDataPromise} userId={userId} schedules={(schedules ?? []) as ScheduleItem[]} currentMonth={currentMonth} previousMonth={previousMonth}/></Suspense>
+      <Suspense fallback={<MypageDeferredSkeleton/>}><MypageDeferredContent dataPromise={deferredDataPromise} userId={userId} schedules={nextSchedules} currentMonth={currentMonth} previousMonth={previousMonth}/></Suspense>
       <div data-tutorial="performance">
       <div className="mb-4 mt-12 flex items-end justify-between"><div><p className="text-[10px] font-black tracking-[.22em] text-orange-400">PERFORMANCE</p><h2 className="mt-1 text-2xl font-black tracking-[-.03em]">記録を振り返る</h2></div><span className="hidden text-xs text-white/25 sm:block">記録・動画・意識</span></div>
       <div className="grid gap-3 lg:grid-cols-3">
