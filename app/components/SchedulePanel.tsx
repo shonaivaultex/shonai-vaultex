@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CalendarDays, ChevronRight, MapPin } from "lucide-react";
 import ScheduleAttendance from "@/app/components/ScheduleAttendance";
 
-export type ScheduleItem = { id: number; title: string; details: string | null; location: string | null; starts_at: string; ends_at: string | null; schedule_type: string; audience: string; program_class: string | null; registration_enabled: boolean; registration_opens_at: string | null; registration_deadline: string | null };
+export type ScheduleItem = { id: number; author_id?: string; title: string; details: string | null; location: string | null; starts_at: string; ends_at: string | null; schedule_type: string; audience: string; program_class: string | null; registration_enabled: boolean; registration_opens_at: string | null; registration_deadline: string | null };
 
 const typeLabels: Record<string, string> = { practice: "練習", competition: "試合・大会", measurement: "測定", other: "その他" };
 const japanTimeZone = "Asia/Tokyo";
