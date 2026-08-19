@@ -1,6 +1,6 @@
 import LazyPerformanceChart from "@/app/components/LazyPerformanceChart";
 import TargetGoalEditor from "@/app/components/TargetGoalEditor";
-import PerformanceHistoryModal from "@/app/components/PerformanceHistoryModal";
+import LazyPerformanceHistory from "@/app/components/LazyPerformanceHistory";
 import type { ReactNode } from "react";
 
 type PerformanceRecord = {
@@ -156,7 +156,7 @@ export default function PerformanceEventCard({
         </div>
       </div>
 
-      <PerformanceHistoryModal records={records} unit={unit} focusRecordId={focusRecordId} />
+      <LazyPerformanceHistory records={records} unit={unit} focusRecordId={focusRecordId} />
     </article>
   );
 }

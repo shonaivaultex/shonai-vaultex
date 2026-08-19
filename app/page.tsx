@@ -1,9 +1,5 @@
-"use client";
-
 import { ClipboardCheck, Dumbbell, Mail, MapPin, MessageCircle, Phone, RefreshCw, Target, Trophy, Users } from "lucide-react";
 import Hero from "./components/Hero";
-import LoadingScreen from "./components/LoadingScreen";
-import { useEffect, useState } from "react";
 import { ProgramCard } from "./components/ProgramCard";
 import { programs } from "./components/program-data";
 import { ContactLine } from "./components/ui/ContactLine";
@@ -43,19 +39,7 @@ const news = [
 ] as const;
 
 export default function HomePage() {
-  const [loading, setLoading] = useState(true);
-
-useEffect(() => {
-  const timer = setTimeout(() => {
-    setLoading(false);
-  }, 2200);
-
-  return () => clearTimeout(timer);
-}, []);
   return (
-    <>
-   <LoadingScreen loading={loading} />
-
     <main className="overflow-x-hidden bg-[#090a0c] text-white">
       <Hero />
 
@@ -140,7 +124,6 @@ useEffect(() => {
 準備中
 </ContactLine></div></div></div></section>
         </main>
-  </>
   
 );
 }

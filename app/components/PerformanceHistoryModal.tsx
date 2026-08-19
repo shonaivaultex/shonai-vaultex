@@ -12,8 +12,8 @@ type CoachFeedback = { id: number; body: string; created_at: string; acknowledge
 type FeedbackRequest = { id: number; request_type: string; message: string | null; priority: string; status: string };
 type RecordItem = { id: number; value: number | string; date: string; awareness_category?: string | null; awareness_categories?: string[] | null; awareness_note?: string | null; video_path?: string | null; video_url?: string | null; coach_feedback?: CoachFeedback[]; feedback_request?: FeedbackRequest | null };
 
-export default function PerformanceHistoryModal({ records, unit, focusRecordId }: { records: RecordItem[]; unit: string; focusRecordId?: number | null }) {
-  const [open, setOpen] = useState(() => Boolean(focusRecordId && records.some((record) => record.id === focusRecordId)));
+export default function PerformanceHistoryModal({ records, unit, focusRecordId, initialOpen = false }: { records: RecordItem[]; unit: string; focusRecordId?: number | null; initialOpen?: boolean }) {
+  const [open, setOpen] = useState(() => initialOpen || Boolean(focusRecordId && records.some((record) => record.id === focusRecordId)));
   const [playingId, setPlayingId] = useState<number | null>(null);
   const [loadingVideoId, setLoadingVideoId] = useState<number | null>(null);
   const [videoUrls, setVideoUrls] = useState<Record<number, string>>({});
