@@ -1,7 +1,7 @@
 export const siteNavigation = [
   { label: "HOME", href: "/" },
   { label: "ABOUT", href: "/about" },
-  { label: "FEATURE", href: "/#feature" },
+  { label: "FEATURE", href: "/#weapons" },
   { label: "PROGRAM", href: "/program" },
   { label: "NEWS", href: "/#news" },
   { label: "CONTACT", href: "/#contact" },

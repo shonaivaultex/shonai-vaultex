@@ -28,6 +28,22 @@ const values = [
   },
 ];
 
+const sessions = [
+  { label: "SMALL GROUP SESSION", title: "3〜5名程度の少人数予約制", text: "本人の目的・感覚・考えを確認しながら進める、VAULTEXの中心となる指導です。" },
+  { label: "VAULTEX CLASS", title: "仲間と学ぶ全体教室", text: "複数人で一つのテーマを学び、試し、陸上を楽しみます。月2回程度を想定しています。" },
+  { label: "PERSONAL SESSION", title: "必要に応じた1対1指導", text: "個別の技術確認や相談など、目標に応じて活用する構想です。" },
+  { label: "CONTROL TEST / SCAN", title: "現在地と成長を確認", text: "定期的に身体能力を測定し、同じ条件で変化を振り返ります。" },
+] as const;
+
+const supportTools = [
+  ["COACHING", "本人の考えや感覚を聞き、成長方法を一緒に考える"],
+  ["PERFORMANCE LOG", "記録・意識・感覚・動画を残し、良かった自分を忘れない"],
+  ["ATHLETE SCAN", "CONTROL TESTから現在の身体能力プロフィールを知る"],
+  ["VAULTEX AI", "振り返りを整理し、次に見るものや行動を一緒に考える"],
+  ["COACH FEEDBACK", "一人で整理できない時に、記録や動画と一緒に相談する"],
+  ["MY CALENDAR", "次の目標と日々の予定をつなげ、自分の成長を管理する"],
+] as const;
+
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
   visible: { opacity: 1, y: 0 },
@@ -144,6 +160,55 @@ export default function AboutPage() {
               地域から日本で活躍するアスリートを育成し、スポーツが人とまちを前に進める力になることを信じています。庄内に、新しい挑戦の文化を根づかせます。
             </p>
           </div>
+        </motion.div>
+      </section>
+
+      <section id="philosophy" className="bg-[#0d0f12] py-24 sm:py-32">
+        <motion.div {...reveal} className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-12">
+          <SectionLabel>COACHING PHILOSOPHY</SectionLabel>
+          <div className="mt-10 grid gap-5 lg:grid-cols-2">
+            <article className="rounded-3xl border border-white/10 bg-black/20 p-7 sm:p-10">
+              <p className="text-xs font-black tracking-[0.22em] text-orange-500">ATHLETE FIRST</p>
+              <h2 className="mt-8 text-4xl font-black tracking-[-0.05em] sm:text-5xl">答えを、<br />押し付けない。</h2>
+              <p className="mt-6 text-sm leading-8 text-white/60">VAULTEXが大切にするのは「あなたはどうしたい？」という問いです。本人の感覚・考え・目標を理解し、今できている良い部分を残しながら、成長方法を一緒に考えます。</p>
+            </article>
+            <article className="rounded-3xl border border-orange-500/30 bg-orange-500/[.05] p-7 sm:p-10">
+              <p className="text-xs font-black tracking-[0.22em] text-orange-500">FEELING & DATA</p>
+              <h2 className="mt-8 text-4xl font-black tracking-[-0.05em] sm:text-5xl">感覚 <span className="text-orange-500">×</span><br />データ。</h2>
+              <p className="mt-6 text-sm leading-8 text-white/60">競技で最後に頼るのは自分自身の感覚です。そこへ記録・動画・測定データという客観的な情報を結びつけ、自分自身を理解し、自分で選択する力を育てます。</p>
+            </article>
+          </div>
+        </motion.div>
+      </section>
+
+      <section id="training" className="border-y border-white/10 py-24 sm:py-32">
+        <motion.div {...reveal} className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-12">
+          <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-7">
+              <SectionLabel>HOW TO TRAIN</SectionLabel>
+              <h2 className="mt-7 text-4xl font-black tracking-[-0.055em] sm:text-6xl">クラスに合わせる前に、<br /><span className="text-orange-500">目標から選ぶ。</span></h2>
+            </div>
+            <p className="max-w-md text-sm leading-8 text-white/60 lg:col-span-4 lg:col-start-9">全員に同じ練習を当てはめるのではなく、目標や今の状態に合う関わり方を選びます。</p>
+          </div>
+          <div className="mt-12 grid gap-4 md:grid-cols-2">
+            {sessions.map((item) => <article key={item.label} className="rounded-2xl border border-white/10 bg-[#101216] p-6 sm:p-7"><p className="text-[10px] font-black tracking-[.2em] text-orange-400">{item.label}</p><h3 className="mt-3 text-xl font-black">{item.title}</h3><p className="mt-4 text-sm leading-7 text-white/55">{item.text}</p></article>)}
+          </div>
+          <div className="mt-8 rounded-2xl border border-white/10 p-6 sm:p-8">
+            <p className="text-[10px] font-black tracking-[.2em] text-white/35">ATHLETE CATEGORY</p>
+            <h3 className="mt-2 text-xl font-black">年代カテゴリーは、所属先ではなく安全な運用のため。</h3>
+            <p className="mt-3 max-w-4xl text-sm leading-7 text-white/55">JUNIOR / YOUTH / ELITE / MASTERSは、CONTROL TESTの測定条件・安全管理・ランキング等に使用します。上位クラスへ昇格する制度ではありません。</p>
+            <CtaLink href="/program" variant="outline" className="mt-6">年代カテゴリーを見る</CtaLink>
+          </div>
+          <div className="mt-5 rounded-2xl border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-transparent p-6 sm:p-8"><p className="text-[10px] font-black tracking-[.2em] text-orange-400">FOR JUNIOR</p><h3 className="mt-2 text-2xl font-black">楽しいことを、最優先に。</h3><p className="mt-3 max-w-3xl text-sm leading-7 text-white/60">楽しさの中で、仲間を尊重すること、ルールを守ること、片付けや道具を大切にすることも学びます。楽しさと節度の両立を大切にします。</p></div>
+        </motion.div>
+      </section>
+
+      <section className="bg-[#0d0f12] py-24 sm:py-32">
+        <motion.div {...reveal} className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-12">
+          <SectionLabel>SUPPORT TOOLS</SectionLabel>
+          <div className="mt-7 grid gap-8 lg:grid-cols-12"><h2 className="text-4xl font-black tracking-[-0.055em] sm:text-6xl lg:col-span-7">目標に必要な武器を、<br /><span className="text-orange-500">自分で選ぶ。</span></h2><p className="max-w-md text-sm leading-8 text-white/60 lg:col-span-4 lg:col-start-9">機能を使うことが目的ではありません。必要な時に必要なものだけを使える設計です。</p></div>
+          <div className="mt-12 grid gap-3 md:grid-cols-2">{supportTools.map(([label, text], index) => <div key={label} className="flex gap-5 rounded-2xl border border-white/10 bg-black/20 p-5 sm:p-6"><span className="text-xs font-black text-orange-500">0{index + 1}</span><div><p className="text-xs font-black tracking-[.16em] text-orange-400">{label}</p><p className="mt-2 text-sm leading-7 text-white/60">{text}</p></div></div>)}</div>
+          <p className="mt-8 border-l-2 border-orange-500 pl-5 text-lg font-black">全部使う必要はありません。今の自分に必要なものから始められます。</p>
         </motion.div>
       </section>
 
