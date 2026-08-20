@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronRight, Plus, ScanLine, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase-server";
-import { eventKindMap } from "@/lib/performance-events";
+import { eventKindMap, unitMap } from "@/lib/performance-events";
 import { evaluateAthleteScan, type AthleteMeasurement, type AthleteStandard, type TypeSettings } from "@/lib/athlete-scan";
 import MonthlyGrowthReport, { type GrowthRecord } from "@/app/components/MonthlyGrowthReport";
 import NewsPanel, { type NewsItem } from "@/app/components/NewsPanel";
@@ -10,6 +10,7 @@ type DeferredData = {
   currentMonthRecordCount: number;
   unreadCount: number;
   growthRecords: GrowthRecord[];
+  personalBests: Record<string, number>;
   newsItems: NewsItem[];
   latestScan: {
     id: number;
@@ -43,7 +44,7 @@ export async function loadMypageDeferredData({
     { data: videoMessageReads },
   ] = await Promise.all([
     supabase.from("announcements").select("id, title, body, priority, created_at").order("created_at", { ascending: false }).limit(10),
-    supabase.from("performance_records").select("id, category, record_kind").eq("user_id", userId),
+    supabase.from("performance_records").select("id, category, record_kind, value").eq("user_id", userId),
     supabase.from("video_feedback_requests").select("id, event_name").eq("user_id", userId),
     supabase.from("performance_records").select("id, category, value, date, awareness_category, awareness_categories").eq("user_id", userId).gte("date", previousMonthStart).order("date", { ascending: false }),
     supabase.from("control_test_scans").select("id, scan_number, measured_on, athlete_standard_version, control_test_measurements(test_code, primary_value, metrics, implement_weight_kg, implement_name, equipment, distance_m, jump_count)").eq("user_id", userId).order("scan_number", { ascending: false }).limit(1).maybeSingle(),
@@ -99,11 +100,20 @@ export async function loadMypageDeferredData({
   const latestAthleteScan = latestScan && athleteTypeSettings
     ? evaluateAthleteScan((latestScan.control_test_measurements ?? []) as AthleteMeasurement[], (athleteStandards ?? []) as AthleteStandard[], athleteTypeSettings as TypeSettings)
     : null;
+  const personalBests = (ownRecords ?? []).reduce<Record<string, number>>((bests, record) => {
+    const value = Number(record.value);
+    if (!Number.isFinite(value)) return bests;
+    const current = bests[record.category];
+    const lowerIsBetter = unitMap[record.category] === "秒" || unitMap[record.category] === "分";
+    if (current === undefined || (lowerIsBetter ? value < current : value > current)) bests[record.category] = value;
+    return bests;
+  }, {});
 
   return {
     currentMonthRecordCount: (growthRecords ?? []).filter((record) => record.date.startsWith(currentMonth)).length,
     unreadCount: newsItems.filter((item) => item.unread).length,
     growthRecords: (growthRecords ?? []) as GrowthRecord[],
+    personalBests,
     newsItems,
     latestScan: latestScan as DeferredData["latestScan"],
     latestAthleteScan,
@@ -148,7 +158,7 @@ export default async function MypageDeferredContent({
       </section>
     </div>
     <div className="mt-7 grid items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]">
-      <MonthlyGrowthReport records={data.growthRecords} currentMonth={currentMonth} previousMonth={previousMonth}/>
+      <MonthlyGrowthReport records={data.growthRecords} personalBests={data.personalBests} currentMonth={currentMonth} previousMonth={previousMonth}/>
       <div id="news"><NewsPanel initialItems={data.newsItems} userId={userId}/></div>
     </div>
   </>;
