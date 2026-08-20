@@ -17,12 +17,15 @@ function PerformanceForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedKind = searchParams.get("kind");
+  const requestedDate = searchParams.get("date");
+  const initialDate = requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) ? requestedDate : today();
+  const fromCalendar = searchParams.get("from") === "calendar";
   const hasSelectedKind = requestedKind === "athletics" || requestedKind === "unofficial-athletics" || requestedKind === "control-test";
   const kind: PerformanceKind = hasSelectedKind ? requestedKind : "control-test";
   const eventOptions = eventNamesByKind(kind);
   const [category, setCategory] = useState(eventOptions[0]);
   const [value, setValue] = useState("");
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(initialDate);
   const [awarenessTags, setAwarenessTags] = useState<string[]>([]);
   const [awarenessNote, setAwarenessNote] = useState("");
   const [video, setVideo] = useState<File | null>(null);
@@ -155,7 +158,7 @@ const unit = unitMap[category] ?? "";
         return;
       }
 
-      router.push(kind === "athletics" ? "/mypage/athletics" : kind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests");
+      router.push(fromCalendar ? `/mypage/my-calendar?date=${date}` : kind === "athletics" ? "/mypage/athletics" : kind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests");
       router.refresh();
     } finally {
       setIsSaving(false);
@@ -166,7 +169,7 @@ const unit = unitMap[category] ?? "";
     <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 sm:px-8">
       <div className="mx-auto max-w-xl">
         <Link
-          href={kind === "athletics" ? "/mypage/athletics" : kind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests"}
+          href={fromCalendar ? `/mypage/my-calendar?date=${date}` : kind === "athletics" ? "/mypage/athletics" : kind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests"}
           className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-white/60 transition hover:text-orange-400"
         >
           <ArrowLeft size={16} aria-hidden="true" />
