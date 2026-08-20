@@ -118,7 +118,7 @@ export default function HomePage() {
           <div className="mt-14 grid gap-px bg-white/10 md:grid-cols-3">{features.map(({ icon: Icon, title, text }, index) => <article key={title} className="group bg-[#101216] p-7 sm:p-9"><div className="flex items-start justify-between"><Icon aria-hidden="true" size={30} strokeWidth={1.5} className="text-orange-500" /><span className="text-xs font-bold text-white/35">0{index + 1}</span></div><h3 className="mt-16 text-lg font-black tracking-wide">{title}</h3><p className="mt-4 text-sm leading-7 text-white/60">{text}</p><div className="mt-8 h-px w-10 bg-orange-500 transition-all duration-300 group-hover:w-full" /></article>)}</div>
           <div className="mt-8 flex flex-wrap gap-4">
             <CtaLink href="/program">プログラムを詳しく見る</CtaLink>
-            <CtaLink href="/mypage" variant="outline">マイページの成長レポートを見る</CtaLink>
+            <CtaLink href="/mypage-sample" variant="outline">マイページのサンプルを見る</CtaLink>
           </div>
           <div className="mt-12 rounded-2xl border border-white/10 bg-[#0c0d10] p-6 sm:p-10">
             <SectionLabel index="02-2">HOW TO START</SectionLabel>
