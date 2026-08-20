@@ -91,9 +91,8 @@ export default async function CoachManagementPage() {
     },
   ];
 
-  return <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-20 text-white sm:px-8"><div className="mx-auto max-w-5xl">
-    <Link href="/coach/dashboard" className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-white/60 hover:text-orange-400"><ArrowLeft size={16} />コーチダッシュボード</Link>
-    <section className="sticky top-20 z-10 mt-4 rounded-2xl border border-white/10 bg-[#101216]/92 p-5 backdrop-blur">
+  return <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-8 text-white sm:px-8"><div className="mx-auto max-w-5xl">
+    <section id="management-menu" className="sticky top-0 z-20 mt-0 rounded-2xl border border-white/10 bg-[#101216]/95 p-5 backdrop-blur">
       <p className="text-xs font-black tracking-[0.18em] text-orange-300">START HERE</p>
       <h2 className="mt-2 text-lg font-black">管理作業ガイド</h2>
       <p className="mt-2 text-sm text-white/65">クリックで移動。各見出しの「番号」を確認すると、今いる場所がすぐわかります。</p>
@@ -114,6 +113,7 @@ export default async function CoachManagementPage() {
         ))}
       </div>
     </section>
+    <Link href="/coach/dashboard" className="mt-8 inline-flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-white/60 hover:text-orange-400"><ArrowLeft size={16} />コーチダッシュボード</Link>
     <header className="mt-8 border-l-4 border-orange-400 pl-5"><p className="text-xs font-black tracking-[0.22em] text-orange-400">COACH MANAGEMENT</p><h1 className="mt-3 text-4xl font-black">管理メニュー</h1><p className="mt-3 text-white/55">このページの見出しから、まず今やるべき作業を選べます。</p></header>
 
     <section id="schedule" className="mt-8 rounded-2xl border border-white/10 bg-[#101216] p-5">
