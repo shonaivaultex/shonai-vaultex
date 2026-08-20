@@ -18,7 +18,7 @@ export const programs: Program[] = [
   {
     slug: "junior", number: "01", name: "JUNIOR", englishTitle: "Junior Athlete", audience: "小学4〜6年生対象",
     heroTitle: "走ることが、\n好きになる。", lead: "からだを動かす楽しさから、\n自分を信じる力へ。",
-    description: "基礎的な走・跳・投の動きを、遊びや仲間との挑戦を通して身につけるクラスです。記録だけを追うのではなく、挑戦する楽しさとスポーツを好きになる気持ちを育てます。",
+    description: "基礎的な走・跳・投の動きを、遊びや仲間との挑戦を通して身につける年代カテゴリーです。所属先を分けるためではなく、安全に楽しみながら挑戦するための目安として使用します。",
     highlights: [
       { title: "FUNDAMENTALS", description: "走る・跳ぶ・投げる。すべてのスポーツにつながる基礎運動能力を、楽しく伸ばします。" },
       { title: "CONFIDENCE", description: "できなかったことができるようになる体験を重ね、自分で一歩を踏み出す力を育てます。" },
@@ -46,7 +46,7 @@ export const programs: Program[] = [
   {
     slug: "youth", number: "02", name: "YOUTH", englishTitle: "Performance", audience: "中学生〜高校生対象",
     heroTitle: "伸びる瞬間を、\nつかみにいく。", lead: "自分の可能性に向き合い、\n次のステージへ。",
-    description: "成長期のからだと向き合いながら、競技に必要な技術・体力・考え方を磨くクラスです。カウンセリングをもとに、コーチと一緒に自分に合った練習方針を考え、自分で成長をつくる力を育てます。",
+    description: "成長期のからだと向き合いながら、競技に必要な技術・体力・考え方を磨く年代カテゴリーです。カウンセリングをもとに、コーチと一緒に自分に合った練習方針を考えます。",
     highlights: [
       { title: "TECHNIQUE", description: "専門性を意識したドリルと反復で、競技につながる技術の土台をつくります。" },
       { title: "CONDITIONING", description: "成長段階に合わせて、けがを防ぎながら動けるからだを育てます。" },
@@ -74,7 +74,7 @@ export const programs: Program[] = [
   {
     slug: "elite", number: "03", name: "ELITE", englishTitle: "Elite Performance", audience: "大学生・一般競技者対象",
     heroTitle: "記録の先へ、\n限界の先へ。", lead: "競技人生を、自分の力で\n切り拓く。",
-    description: "より高いレベルを目指す競技者のためのパフォーマンスクラスです。選手自身の考えを軸に、カウンセリングとデータを用いてコーチと個別方針を設計し、技術・フィジカル・コンディショニングを統合します。",
+    description: "大学生・一般競技者の測定や安全管理に用いる年代カテゴリーです。選手自身の考えを軸に、カウンセリングとデータを用いてコーチと個別方針を設計します。名称は競技レベルの上下や昇格を意味しません。",
     highlights: [
       { title: "INDIVIDUAL PLAN", description: "選手が考える目標と課題をもとに、コーチとトレーニングの道筋を設計します。" },
       { title: "HIGH PERFORMANCE", description: "技術とフィジカルをつなげ、試合で発揮できるパフォーマンスを追求します。" },
@@ -102,7 +102,7 @@ export const programs: Program[] = [
   {
     slug: "masters", number: "04", name: "MASTERS", englishTitle: "Masters Athlete", audience: "一般・マスターズ対象",
     heroTitle: "何歳からでも、\n自己ベストへ。", lead: "挑戦を続けるから、\n毎日はもっと面白い。",
-    description: "健康づくりから競技復帰、マスターズ大会への挑戦まで。生活リズムや体調、目標をカウンセリングで共有し、自分に無理なく続けられる練習方針をコーチと一緒につくるクラスです。",
+    description: "健康づくりから競技復帰、マスターズ大会への挑戦までを支える年代カテゴリーです。生活リズムや体調、目標を共有し、無理なく続けられる練習方針をコーチと一緒につくります。",
     highlights: [
       { title: "MOVE WELL", description: "日常を軽やかに過ごすための、動きやすいからだづくりを大切にします。" },
       { title: "PERSONAL GOALS", description: "健康、仲間づくり、記録更新。それぞれの目標に合わせて取り組めます。" },

@@ -68,7 +68,7 @@ export function ProgramCard({
 
         <div className="mt-8 flex items-center justify-between">
           <span className="translate-y-3 text-sm font-bold tracking-[0.18em] text-orange-500 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-            VIEW PROGRAM
+            VIEW CATEGORY
           </span>
 
           <ArrowRight
