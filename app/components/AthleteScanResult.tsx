@@ -37,7 +37,7 @@ const shownScore=(value:number|null)=>value==null?"—":String(Math.round(value)
 
 export default function AthleteScanResult({evaluation,comparison,scanNumber,measuredOn,standardLabel,showReveal=false}:{evaluation:AthleteScanEvaluation;comparison:Comparison;scanNumber:number;measuredOn:string;standardLabel:string;showReveal?:boolean}) {
   const [analyzing,setAnalyzing]=useState(showReveal);
-  useEffect(()=>{if(!showReveal)return;const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;const timer=window.setTimeout(()=>setAnalyzing(false),reducedMotion?0:1500);return()=>window.clearTimeout(timer);},[showReveal]);
+  useEffect(()=>{if(!showReveal)return;const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;const timer=window.setTimeout(()=>setAnalyzing(false),reducedMotion?0:3900);return()=>window.clearTimeout(timer);},[showReveal]);
   if(analyzing)return <ScanReveal/>;
   const chart=axes.map((axis)=>({axis,value:evaluation.axes[axis]??0}));
   const chartMax=Math.max(100,Math.ceil(Math.max(...chart.map((item)=>item.value),100)/20)*20);
@@ -50,7 +50,7 @@ export default function AthleteScanResult({evaluation,comparison,scanNumber,meas
   const abilityGrowths=comparison.previous?abilityKeys.flatMap((key)=>{const before=comparison.previous?.abilities[key].score;const after=evaluation.abilities[key].score;return before!=null&&after!=null?[{label:evaluation.abilities[key].nameJa,diff:after-before}]:[]}):[];
   const biggest=[...axisGrowths,...abilityGrowths].sort((a,b)=>b.diff-a.diff)[0]??null;
   const previousType=comparison.previous?.typeNameJa;
-  return <div className="space-y-7">
+  return <div className="scan-result-enter space-y-7">
     <section className="overflow-hidden rounded-3xl border border-orange-500/45 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,.2),transparent_38%),#111] p-5 sm:p-8">
       <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-black tracking-[.24em] text-orange-400">SHONAI VAULTEX</p><h1 className="mt-1 text-2xl font-black sm:text-4xl">ATHLETE SCAN</h1><p className="mt-1 text-xs text-white/40">SCAN #{String(scanNumber).padStart(2,"0")} ・ {measuredOn}</p></div><span className="rounded-full border border-orange-500/35 bg-orange-500/10 px-3 py-2 text-[9px] font-black tracking-[.12em] text-orange-300">VER.1 BETA</span></div>
       <div className="mt-6 border-t border-white/10 pt-5"><p className="text-[10px] font-black tracking-[.18em] text-white/45">CURRENT ATHLETE TYPE</p><p className="mt-1 text-xs text-white/35">現在の身体特性</p>{evaluation.typeCode?<><p className="mt-3 break-words text-3xl font-black leading-tight text-orange-400 sm:text-5xl">{evaluation.typeCode}</p><h2 className="mt-1 text-xl font-black sm:text-2xl">{evaluation.typeNameJa}</h2><p className="mt-3 max-w-3xl text-sm leading-6 text-white/60">{typeCopy[evaluation.typeCode]??evaluation.typeDescription}</p></>:<><h2 className="mt-3 text-2xl font-black">PROFILE ANALYZING</h2><p className="mt-2 text-sm leading-6 text-white/50">タイプ確定に必要な測定値またはSTANDARDが不足しています。未測定は0点として扱いません。</p></>}</div>
@@ -67,7 +67,29 @@ export default function AthleteScanResult({evaluation,comparison,scanNumber,meas
   </div>;
 }
 
-function ScanReveal(){return <section role="status" aria-live="polite" className="flex min-h-[65vh] items-center justify-center rounded-3xl border border-orange-500/35 bg-[radial-gradient(circle,rgba(249,115,22,.15),transparent_50%),#0d0f12] p-6 text-center"><div className="w-full max-w-sm"><div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-orange-500/40 bg-orange-500/10 text-orange-400 motion-safe:animate-pulse"><ScanLine size={31}/></div><p className="mt-6 text-[10px] font-black tracking-[.24em] text-orange-400">VAULTEX ATHLETE SCAN</p><h1 className="mt-2 text-2xl font-black">ANALYZING PERFORMANCE...</h1><div className="mt-6 grid gap-2 text-left text-xs text-white/55">{["MAX SPEED","POWER","BOUNCE","REACTIVE"].map((label)=><p key={label} className="flex items-center justify-between rounded-lg bg-white/[.035] px-4 py-3"><span>{label}</span><Check size={15} className="text-orange-400"/></p>)}</div><p className="mt-5 text-xs font-black tracking-[.18em] text-white/65">SCAN COMPLETE</p></div></section>}
+function ScanReveal(){
+  const [stage,setStage]=useState(0);
+  useEffect(()=>{const timers=[520,1100,1750,2450,3000].map((delay,index)=>window.setTimeout(()=>setStage(index+1),delay));return()=>timers.forEach(window.clearTimeout);},[]);
+  const phases=["SYSTEM INITIALIZING","MEASUREMENT DATA ACQUIRED","MAPPING 6 ABILITIES","BUILDING ATHLETE PROFILE","SCAN COMPLETE"];
+  const progress=[8,26,52,78,94,100][stage]??100;
+  return <section role="status" aria-live="polite" className="scan-stage relative flex min-h-[72vh] overflow-hidden rounded-3xl border border-orange-500/45 bg-[#090b0e] p-5 text-center sm:p-8">
+    <div className="scan-stage-grid absolute inset-0"/><div className="scan-stage-beam absolute inset-x-0 top-0 h-px bg-orange-400"/>
+    <span className="absolute left-5 top-5 text-[9px] font-black tracking-[.2em] text-orange-400/55">VAULTEX SYSTEM / 01</span><span className="absolute right-5 top-5 text-[9px] font-black tracking-[.2em] text-white/25">LIVE ANALYSIS</span>
+    <div className="relative z-10 m-auto w-full max-w-xl">
+      <div className="scan-core relative mx-auto h-52 w-52 sm:h-64 sm:w-64">
+        <div className="scan-orbit scan-orbit-outer absolute inset-0 rounded-full border border-orange-500/25"/><div className="scan-orbit scan-orbit-inner absolute inset-7 rounded-full border border-dashed border-orange-400/45"/>
+        <div className="scan-sweep absolute inset-12 rounded-full"/>
+        <div className="absolute inset-[4.5rem] grid place-items-center rounded-full border border-orange-400/60 bg-orange-500/10 text-orange-300 shadow-[0_0_55px_rgba(249,115,22,.3)] sm:inset-24"><ScanLine size={38}/></div>
+        {["SPEED","POWER","BOUNCE","REACTIVE"].map((label,index)=><span key={label} className={`scan-node scan-node-${index+1} absolute rounded-full border px-2 py-1 text-[8px] font-black tracking-wider ${stage>index?"border-orange-400/60 bg-orange-500/15 text-orange-200":"border-white/10 bg-black/70 text-white/25"}`}>{label}</span>)}
+      </div>
+      <p className="mt-4 text-[10px] font-black tracking-[.28em] text-orange-400">VAULTEX ATHLETE SCAN</p>
+      <h1 className={`mt-2 text-2xl font-black tracking-[-.03em] sm:text-4xl ${stage===5?"text-orange-300":"text-white"}`}>{phases[Math.min(stage,4)]}</h1>
+      <p className="mt-2 text-xs font-bold tracking-[.14em] text-white/35">PHYSICAL PERFORMANCE PROFILING</p>
+      <div className="mx-auto mt-7 max-w-md"><div className="h-1 overflow-hidden rounded-full bg-white/10"><span className="block h-full rounded-full bg-gradient-to-r from-orange-700 via-orange-400 to-amber-200 shadow-[0_0_18px_rgba(249,115,22,.7)] transition-[width] duration-500" style={{width:`${progress}%`}}/></div><div className="mt-2 flex items-center justify-between text-[9px] font-black tracking-[.16em] text-white/30"><span>ANALYSIS</span><span className="text-orange-300">{progress}%</span></div></div>
+      <div className="mt-6 flex items-center justify-center gap-2 text-[10px] font-black tracking-[.16em] text-white/45">{stage===5?<><Check size={15} className="text-orange-400"/>PROFILE READY</>:<><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-orange-400"/>DO NOT CLOSE</>}</div>
+    </div>
+  </section>;
+}
 function Baseline(){return <section className="rounded-2xl border border-cyan-400/30 bg-cyan-400/[.06] p-5"><p className="text-[10px] font-black tracking-[.18em] text-cyan-300">YOUR BASELINE HAS BEEN CREATED.</p><h2 className="mt-2 text-xl font-black">あなたの最初の身体能力プロフィールが完成しました。</h2><p className="mt-2 text-sm leading-6 text-white/55">ここが、VAULTEXで身体能力の変化を記録していくスタート地点です。</p></section>}
 function ProfileFocus({eyebrow,title,text,icon,color}:{eyebrow:string;title:string;text:string;icon:ReactNode;color:"orange"|"cyan"}){const classes=color==="orange"?"border-orange-500/30 bg-orange-500/[.055] text-orange-300":"border-cyan-400/25 bg-cyan-400/[.045] text-cyan-300";return <article className={`rounded-2xl border p-5 ${classes}`}><p className="flex items-center gap-2 text-[10px] font-black tracking-[.16em]">{icon}{eyebrow}</p><h2 className="mt-3 text-xl font-black text-white">{title}</h2><p className="mt-2 text-sm leading-6 text-white/55">{text}</p></article>}
 function ScoreExplanation(){return <details className="group mt-4 rounded-xl border border-white/10 bg-[#111] p-4"><summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-bold text-white/65"><HelpCircle size={17} className="text-orange-400"/>VAULTEX SCOREとは？<ChevronDown size={16} className="ml-auto transition group-open:rotate-180"/></summary><p className="mt-3 border-t border-white/10 pt-3 text-xs leading-6 text-white/45">100点満点の評価ではありません。100はVAULTEXが設定した「VAULTEX 100 STANDARD」への到達を表します。年齢に関係なく共通の基準で、身体能力の現在地と成長を確認するためのスコアです。100を超えることもあります。</p></details>}

@@ -60,6 +60,29 @@ button:not(:disabled):active, a[href]:active {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes scan-orbit-clockwise { to { transform: rotate(360deg); } }
+@keyframes scan-orbit-counter { to { transform: rotate(-360deg); } }
+@keyframes scan-beam { 0% { transform: translateY(-10px); opacity: 0; } 15%, 85% { opacity: .85; } 100% { transform: translateY(72vh); opacity: 0; } }
+@keyframes scan-grid-pulse { 0%, 100% { opacity: .22; } 50% { opacity: .5; } }
+@keyframes scan-result-enter { from { opacity: 0; transform: translateY(18px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.scan-stage-grid {
+  background-image: linear-gradient(rgba(249,115,22,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(249,115,22,.07) 1px, transparent 1px), radial-gradient(circle at center, rgba(249,115,22,.15), transparent 55%);
+  background-size: 34px 34px, 34px 34px, 100% 100%;
+  mask-image: linear-gradient(to bottom, transparent, black 18%, black 82%, transparent);
+  animation: scan-grid-pulse 1.8s ease-in-out infinite;
+}
+.scan-stage-beam { box-shadow: 0 0 18px 4px rgba(249,115,22,.5); animation: scan-beam 2.1s linear infinite; }
+.scan-orbit-outer { animation: scan-orbit-clockwise 8s linear infinite; }
+.scan-orbit-inner { animation: scan-orbit-counter 4s linear infinite; }
+.scan-orbit-outer::before, .scan-orbit-outer::after { content: ""; position: absolute; width: 8px; height: 8px; border-radius: 999px; background: #fb923c; box-shadow: 0 0 18px #f97316; }
+.scan-orbit-outer::before { left: 50%; top: -4px; }.scan-orbit-outer::after { bottom: 14%; right: 10%; }
+.scan-sweep { background: conic-gradient(from 0deg, transparent 0 72%, rgba(249,115,22,.32) 92%, rgba(251,146,60,.8) 100%); animation: scan-orbit-clockwise 1.6s linear infinite; filter: blur(.2px); }
+.scan-node { transition: color .35s ease, border-color .35s ease, background-color .35s ease, box-shadow .35s ease; }
+.scan-node-1 { left: -2%; top: 46%; }.scan-node-2 { right: -5%; top: 24%; }.scan-node-3 { bottom: 3%; left: 14%; }.scan-node-4 { bottom: 8%; right: 3%; }
+.scan-result-enter { animation: scan-result-enter .55s cubic-bezier(.2,.8,.2,1) both; }
+
 @media (prefers-reduced-motion: reduce) {
   .navigation-progress { animation-duration: 2s; }
+  .scan-stage-grid, .scan-stage-beam, .scan-orbit, .scan-sweep, .scan-result-enter { animation: none; }
 }
