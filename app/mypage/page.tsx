@@ -36,6 +36,12 @@ function todayScheduleTime(schedule: ScheduleItem) {
   return new Date(schedule.starts_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
 }
 
+function addTokyoDays(key: string, days: number) {
+  const date = new Date(`${key}T12:00:00+09:00`);
+  date.setDate(date.getDate() + days);
+  return date.toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
+}
+
 export default async function MyPage() {
   const supabase = await createClient();
 
@@ -78,6 +84,17 @@ export default async function MyPage() {
   const nextScheduleDate = nextSchedule ? new Date(nextSchedule.starts_at) : null;
   const todayTrainingItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && occursOnDate(schedule, todayKey))])
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+  const visibleClubSchedules = ((schedules ?? []) as ScheduleItem[]).filter((schedule) => schedule.audience === "all" || schedule.program_class === player.program_class);
+  const weekSchedule = Array.from({ length: 7 }, (_, index) => {
+    const dateKey = addTokyoDays(todayKey, index);
+    const date = new Date(`${dateKey}T12:00:00+09:00`);
+    return {
+      dateKey,
+      day: date.toLocaleDateString("ja-JP", { day: "numeric", timeZone: "Asia/Tokyo" }),
+      weekday: date.toLocaleDateString("ja-JP", { weekday: "short", timeZone: "Asia/Tokyo" }),
+      items: visibleClubSchedules.filter((schedule) => occursOnDate(schedule, dateKey)),
+    };
+  });
 
   return (
     <main className="mx-auto my-16 max-w-[1480px] px-4 pb-16 sm:px-7 lg:my-20 xl:px-10">
@@ -90,11 +107,27 @@ export default async function MyPage() {
       <section className="relative mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_85%_10%,rgba(249,115,22,.16),transparent_28%),linear-gradient(145deg,#151515,#0d0d0d_65%)] text-white shadow-[0_28px_90px_rgba(0,0,0,.28)]">
         <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-orange-400 via-orange-600 to-transparent" />
         <div className="grid lg:grid-cols-[1.15fr_1fr]">
-          <div className="p-6 sm:p-8 lg:p-10">
+          <div className="p-6 sm:p-8 lg:flex lg:min-h-[590px] lg:flex-col lg:p-10">
             <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-orange-500/35 bg-orange-500/10 px-3 py-1 text-[10px] font-black tracking-[.16em] text-orange-300">{player.program_class ?? "CLASS未設定"}</span><span className="text-xs text-white/35">{player.grade ?? "学年未設定"}</span></div>
             <h2 className="mt-5 text-3xl font-black tracking-[-.04em] sm:text-4xl lg:text-5xl">{player.name}</h2>
             <p className="mt-2 text-sm font-bold text-white/40">{player.event ?? "種目未設定"}</p>
             {coachRole ? <Link href="/coach/dashboard" prefetch className="mt-7 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-300 transition hover:bg-emerald-400/15">COACH DASHBOARD <ArrowUpRight size={15}/></Link> : null}
+            <div className="mt-auto hidden pt-10 lg:block">
+              <div className="flex items-end justify-between gap-4">
+                <div><p className="text-[10px] font-black tracking-[.2em] text-orange-300">CLUB SCHEDULE</p><strong className="mt-1 block text-sm">これから1週間</strong></div>
+                <Link href="/mypage/schedules" className="inline-flex items-center gap-1 text-[10px] font-black text-white/35 transition hover:text-white">全体を見る<ChevronRight size={13}/></Link>
+              </div>
+              <div className="mt-4 grid grid-cols-7 gap-1.5">
+                {weekSchedule.map((date) => {
+                  const firstItem = date.items[0];
+                  return <Link key={date.dateKey} href={`/mypage/schedules?date=${date.dateKey}`} className={`min-w-0 rounded-xl border px-2 py-3 transition ${date.dateKey === todayKey ? "border-orange-400/45 bg-orange-400/10" : "border-white/[.07] bg-black/15 hover:border-white/20"}`}>
+                    <span className={`block text-[9px] font-black ${date.weekday === "日" ? "text-rose-300" : date.weekday === "土" ? "text-sky-300" : "text-white/30"}`}>{date.weekday}</span>
+                    <strong className="mt-0.5 block text-base leading-none">{date.day}</strong>
+                    {firstItem ? <><span className={`mt-3 block h-1.5 w-1.5 rounded-full ${firstItem.schedule_type === "competition" ? "bg-orange-400" : "bg-emerald-400"}`}/><span className="mt-1.5 block truncate text-[9px] font-bold text-white/65">{firstItem.title}</span>{date.items.length > 1 ? <span className="mt-1 block text-[8px] text-white/30">ほか{date.items.length - 1}件</span> : null}</> : <span className="mt-3 block text-[9px] text-white/20">予定なし</span>}
+                  </Link>;
+                })}
+              </div>
+            </div>
           </div>
           <div className="grid grid-cols-2 border-t border-white/10 lg:border-l lg:border-t-0">
             <div data-tutorial="schedule-action" className="col-span-2 border-b border-white/10 p-5 sm:p-7">
