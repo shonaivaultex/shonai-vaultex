@@ -1,6 +1,7 @@
 import PerformanceChart from "@/app/components/PerformanceChart";
 import TargetGoalEditor from "@/app/components/TargetGoalEditor";
 import PerformanceHistoryModal from "@/app/components/PerformanceHistoryModal";
+import type { ReactNode } from "react";
 
 type PerformanceRecord = {
   id: number;
@@ -20,6 +21,7 @@ type PerformanceEventCardProps = {
   target: number | null;
   userId: string;
   scopeLabel?: "PB" | "SB";
+  rankingContent?: ReactNode;
   ranking?: { overall_rank: number; overall_total: number; overall_top_percent: number; class_rank: number | null; class_total: number | null; class_top_percent: number | null; program_class: string | null; gender: "male" | "female" } | null;
   leaderboard?: Array<{ ranking_scope: "overall" | "class"; leaderboard_position: number; display_name: string; best_value: number | string; is_current_user: boolean }>;
   focusRecordId?: number | null;
@@ -61,6 +63,7 @@ export default function PerformanceEventCard({
   target,
   userId,
   scopeLabel = "PB",
+  rankingContent,
   ranking,
   leaderboard = [],
   focusRecordId,
@@ -175,7 +178,7 @@ export default function PerformanceEventCard({
           </div>
         </div>
 
-        {ranking && (
+        {rankingContent ?? (ranking && (
           <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.025] p-4">
             <p className="m-0 text-[11px] font-bold tracking-[0.08em] text-white/45">VAULTEX {ranking.gender === "female" ? "女子" : "男子"}ランキング</p>
             <div className="mt-3 grid grid-cols-2 gap-3">
@@ -194,7 +197,7 @@ export default function PerformanceEventCard({
               </p>
             )}
           </div>
-        )}
+        ))}
 
         <div style={{ marginTop: 24 }}>
           <PerformanceChart
