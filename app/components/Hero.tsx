@@ -1,12 +1,39 @@
+"use client";
+
 import Image from "next/image";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { CtaLink } from "./ui/CtaLink";
 
+// hero3/hero4 are intentionally excluded here because their source resolution is
+// too small for a full-width desktop hero and makes the slideshow look blurred.
+const heroImages = ["/hero.jpg", "/hero2.jpg"] as const;
+
 export default function Hero() {
+  const reduceMotion = useReducedMotion();
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const timer = window.setInterval(() => setCurrentSlide((current) => (current + 1) % heroImages.length), 6000);
+    return () => window.clearInterval(timer);
+  }, [reduceMotion]);
+
   return (
     <section className="relative flex min-h-[44rem] items-end overflow-hidden sm:min-h-[52rem]">
-      <div className="absolute inset-0 motion-safe:animate-[hero-zoom_14s_ease-out_both]">
-        <Image src="/hero.jpg" alt="SHONAI VAULTEX" fill priority quality={78} sizes="100vw" className="object-cover object-center brightness-60"/>
-      </div>
+      <AnimatePresence initial={false} mode="sync">
+        <motion.div
+          key={heroImages[currentSlide]}
+          initial={reduceMotion ? false : { opacity: 0, scale: 1.035 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={reduceMotion ? undefined : { opacity: 0 }}
+          transition={{ opacity: { duration: 1 }, scale: { duration: 6, ease: "linear" } }}
+          className="absolute inset-0"
+        >
+          <Image src={heroImages[currentSlide]} alt="SHONAI VAULTEXの活動風景" fill priority={currentSlide === 0} quality={90} sizes="100vw" className="object-cover object-center brightness-60"/>
+          <motion.div initial={reduceMotion ? false : { x: "-45%", opacity: 0 }} animate={reduceMotion ? undefined : { x: "125%", opacity: [0, 0.14, 0] }} transition={{ duration: 6, ease: "linear" }} className="absolute inset-y-0 left-0 w-[40%] bg-orange-500 blur-[140px]"/>
+        </motion.div>
+      </AnimatePresence>
 
       <div className="absolute inset-0 bg-gradient-to-r from-[#090a0c]/95 via-[#090a0c]/55 to-[#090a0c]/10" />
       <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-[#090a0c] to-transparent" />
@@ -52,7 +79,7 @@ export default function Hero() {
 </div>
 <div className="absolute bottom-10 left-8 hidden lg:block">
   <p className="text-sm font-bold text-white/60">
-    01 / 01
+    {String(currentSlide + 1).padStart(2, "0")} / {String(heroImages.length).padStart(2, "0")}
   </p>
 </div>
     </section>
