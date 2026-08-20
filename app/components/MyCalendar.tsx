@@ -33,6 +33,7 @@ export default function MyCalendar({ userId, initialEntries, schedules, activeSc
   const [entries, setEntries] = useState(initialEntries); const [editing, setEditing] = useState<Entry | null>(null); const [linkedSchedule, setLinkedSchedule] = useState<ClubSchedule | null>(null); const [open, setOpen] = useState(false);
   const [performanceRecords, setPerformanceRecords] = useState(records);
   const [goal, setGoal] = useState<CalendarGoal | null>(initialGoal); const [goalOpen, setGoalOpen] = useState(false); const [reviewOpen, setReviewOpen] = useState(false);
+  const [mobileCalendarView, setMobileCalendarView] = useState<"week" | "month">("week");
   const activeIds = useMemo(() => new Set(activeScheduleIds), [activeScheduleIds]);
   const displayItems = useMemo(() => {
     const result: DisplayItem[] = entries.filter((entry) => !entry.schedule_id).map((entry) => ({ key: `entry-${entry.id}`, date: entry.entry_date, title: entry.title, color: entry.color, entry, active: true }));
@@ -75,7 +76,11 @@ export default function MyCalendar({ userId, initialEntries, schedules, activeSc
     <section className="rounded-[26px] border border-white/10 bg-[#111] p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-xl font-black"><CalendarDays className="text-orange-400"/>マイカレンダー</h2><button onClick={startNew} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-black"><Plus size={17}/>個人予定を追加</button></div>
       <div className="mt-6 flex items-center justify-between"><button onClick={() => moveMonth(-1)} className="p-2 text-white/55" aria-label="前月"><ChevronLeft/></button><strong>{month.getFullYear()}年 {month.getMonth() + 1}月</strong><button onClick={() => moveMonth(1)} className="p-2 text-white/55" aria-label="翌月"><ChevronRight/></button></div>
-      <div className="mt-4 lg:hidden">
+      <div className="mt-3 grid grid-cols-2 rounded-xl border border-white/10 bg-black/25 p-1 lg:hidden">
+        <button type="button" onClick={() => setMobileCalendarView("week")} className={`rounded-lg px-3 py-2 text-xs font-black transition ${mobileCalendarView === "week" ? "bg-orange-500 text-black" : "text-white/45"}`}>週間</button>
+        <button type="button" onClick={() => setMobileCalendarView("month")} className={`rounded-lg px-3 py-2 text-xs font-black transition ${mobileCalendarView === "month" ? "bg-orange-500 text-black" : "text-white/45"}`}>1ヶ月</button>
+      </div>
+      {mobileCalendarView === "week" ? <div className="mt-4 lg:hidden">
         <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/25 px-2 py-2">
           <button type="button" onClick={() => moveWeek(-1)} aria-label="前の週" className="rounded-lg p-2 text-white/55"><ChevronLeft size={19}/></button>
           <div className="text-center">
@@ -114,7 +119,29 @@ export default function MyCalendar({ userId, initialEntries, schedules, activeSc
             </button>;
           })}
         </div>
-      </div>
+      </div> : <div className="mt-4 lg:hidden">
+        <div className="grid grid-cols-7 text-center text-[9px] font-black text-white/35">{weekdays.map((day, index) => <span key={day} className={index === 0 ? "text-red-300/70" : index === 6 ? "text-sky-300/70" : ""}>{day}</span>)}</div>
+        <div className="mt-2 grid grid-cols-7 gap-1">{days.map((day) => {
+          const key = dateKey(day);
+          const items = byDate[key] ?? [];
+          const period = periodForDate(key);
+          const theme = schedulePhase(period?.phase);
+          const current = day.getMonth() === month.getMonth();
+          const goalDay = goal?.target_date === key;
+          const selected = key === selectedDate;
+          return <button
+            type="button"
+            key={key}
+            onClick={() => startNewForDate(key)}
+            aria-label={`${day.getMonth() + 1}月${day.getDate()}日の予定・練習記録を表示`}
+            className={`h-[68px] min-w-0 overflow-hidden rounded-lg border p-1 text-left ${goalDay ? "border-orange-400 bg-orange-500/15 ring-1 ring-orange-400" : selected ? "border-white/45 ring-1 ring-white/25" : "border-white/[.07]"} ${theme.day} ${current ? "text-white" : "text-white/20"}`}
+          >
+            <span className="flex items-center justify-between"><strong className="text-[10px]">{day.getDate()}</strong>{goalDay ? <Flag size={8} className="fill-orange-400 text-orange-400"/> : period ? <i className={`h-1.5 w-1.5 rounded-full ${theme.dot}`}/> : null}</span>
+            {goalDay ? <span className="mt-1 block truncate text-[7px] font-black text-orange-300">目標日</span> : period ? <span className="mt-1 block truncate text-[7px] font-bold opacity-70">{period.label || theme.label}</span> : null}
+            {items.slice(0, 2).map((item) => <span key={item.key} className="mt-1 flex min-w-0 items-center gap-1"><i className={`h-1 w-1 shrink-0 rounded-full ${colors[item.color]?.dot}`}/><span className="truncate text-[7px] text-white/55">{item.title}</span></span>)}
+          </button>;
+        })}</div>
+      </div>}
       <div className="mt-4 hidden grid-cols-7 text-center text-[10px] font-black text-white/35 lg:grid">{weekdays.map((day) => <span key={day}>{day}</span>)}</div>
       <div className="mt-2 hidden grid-cols-7 gap-1 lg:grid">{days.map((day) => { const key = dateKey(day); const items = byDate[key] ?? []; const period = periodForDate(key); const theme = schedulePhase(period?.phase); const current = day.getMonth() === month.getMonth(); const goalDay = goal?.target_date === key; return <button key={key} onClick={() => startNewForDate(key)} aria-label={`${day.getMonth() + 1}月${day.getDate()}日の予定・練習記録を表示`} className={`h-24 overflow-hidden rounded-lg border p-1.5 text-left transition hover:border-orange-400/70 ${goalDay ? "border-orange-400 bg-orange-500/15 ring-1 ring-orange-400" : key === selectedDate ? "border-white/40 ring-1 ring-white/25" : "border-white/[.07]"} ${theme.day} ${current ? "text-white" : "text-white/20"}`}><span className="flex items-center justify-between"><span className="text-xs font-bold">{day.getDate()}</span>{goalDay ? <Flag size={12} className="fill-orange-400 text-orange-400"/> : period ? <i className={`h-1.5 w-1.5 rounded-full ${theme.dot}`}/> : null}</span>{goalDay ? <span className="mt-1 block truncate text-[8px] font-black text-orange-300">目標：{goal.title}</span> : period ? <span className="mt-0.5 block truncate text-[8px] font-bold opacity-70">{period.label || theme.label}</span> : null}<span className="mt-1 block space-y-1">{items.slice(0, goalDay ? 2 : 3).map((item) => <span key={item.key} className="flex min-w-0 items-center gap-1"><i className={`h-1.5 w-1.5 shrink-0 rounded-full ${colors[item.color]?.dot}`}/><span className="truncate text-[9px] text-white/55">{item.title}</span></span>)}</span></button>; })}</div>
       <p className="mt-3 text-center text-[11px] font-bold text-orange-300/80">日付をタップすると、その日の予定・練習記録を確認できます</p>
