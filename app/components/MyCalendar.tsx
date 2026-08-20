@@ -31,14 +31,15 @@ export default function MyCalendar({ userId, initialEntries, schedules, activeSc
   const selectedDateValue = initialSelectedDate ? new Date(`${initialSelectedDate}T00:00:00`) : today;
   const [month, setMonth] = useState(new Date(selectedDateValue.getFullYear(), selectedDateValue.getMonth(), 1)); const [selectedDate, setSelectedDate] = useState(initialSelectedDate ?? localDate());
   const [entries, setEntries] = useState(initialEntries); const [editing, setEditing] = useState<Entry | null>(null); const [linkedSchedule, setLinkedSchedule] = useState<ClubSchedule | null>(null); const [open, setOpen] = useState(false);
+  const [performanceRecords, setPerformanceRecords] = useState(records);
   const [goal, setGoal] = useState<CalendarGoal | null>(initialGoal); const [goalOpen, setGoalOpen] = useState(false); const [reviewOpen, setReviewOpen] = useState(false);
   const activeIds = useMemo(() => new Set(activeScheduleIds), [activeScheduleIds]);
   const displayItems = useMemo(() => {
     const result: DisplayItem[] = entries.filter((entry) => !entry.schedule_id).map((entry) => ({ key: `entry-${entry.id}`, date: entry.entry_date, title: entry.title, color: entry.color, entry, active: true }));
     schedules.forEach((schedule) => { const entry = entries.find((item) => item.schedule_id === schedule.id); const active = activeIds.has(schedule.id); if (!active && !entry?.journal && !entry?.video_path && !entry?.record_value && !entry?.performance_record_id) return; scheduleDates(schedule).forEach((date) => result.push({ key: `schedule-${schedule.id}-${date}`, date, title: schedule.title, color: active ? "orange" : "slate", entry, schedule, active })); });
-    records.forEach((performance) => result.push({ key: `performance-${performance.id}`, date: performance.date, title: performance.category, color: performance.record_kind === "athletics" ? "violet" : performance.record_kind === "control-test" ? "sky" : "emerald", performance, active: true }));
+    performanceRecords.forEach((performance) => result.push({ key: `performance-${performance.id}`, date: performance.date, title: performance.category, color: performance.record_kind === "athletics" ? "violet" : performance.record_kind === "control-test" ? "sky" : "emerald", performance, active: true }));
     return result;
-  }, [entries, schedules, activeIds, records]);
+  }, [entries, schedules, activeIds, performanceRecords]);
   const byDate = useMemo(() => displayItems.reduce<Record<string, DisplayItem[]>>((all, item) => { (all[item.date] ??= []).push(item); return all; }, {}), [displayItems]);
   const periodForDate = (key: string) => periods.find((period) => period.starts_on <= key && period.ends_on >= key);
   const first = new Date(month.getFullYear(), month.getMonth(), 1 - month.getDay()); const days = Array.from({ length: 42 }, (_, index) => new Date(first.getFullYear(), first.getMonth(), first.getDate() + index));
@@ -48,6 +49,18 @@ export default function MyCalendar({ userId, initialEntries, schedules, activeSc
   function editItem(item: DisplayItem) { setEditing(item.entry ?? null); setLinkedSchedule(item.schedule ?? null); setOpen(true); }
   function close() { setOpen(false); setEditing(null); setLinkedSchedule(null); }
   async function remove(entry: Entry) { if (!confirm(entry.schedule_id ? "この予定の日誌・動画・個人記録を削除しますか？\nクラブ予定と参加登録は残ります。" : `「${entry.title}」を削除しますか？`)) return; const supabase = createClient(); const { error } = await supabase.from("personal_calendar_entries").delete().eq("id", entry.id).eq("user_id", userId); if (error) return alert(error.message); if (entry.video_path) await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([entry.video_path]); setEntries((items) => items.filter((item) => item.id !== entry.id)); }
+  async function removePerformance(record: PerformanceRecord) {
+    if (!confirm(`「${record.category} ${record.value}${unitMap[record.category] ?? ""}」を削除しますか？\nこの操作は元に戻せません。`)) return;
+    const supabase = createClient();
+    const { error } = await supabase.from("performance_records").delete().eq("id", record.id).eq("user_id", userId);
+    if (error) return alert(`記録を削除できませんでした：${error.message}`);
+    setPerformanceRecords((items) => items.filter((item) => item.id !== record.id));
+    if (record.video_path) {
+      const { error: storageError } = await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([record.video_path]);
+      if (storageError) alert("記録は削除しましたが、動画ファイルの削除に失敗しました。管理者へお知らせください。");
+    }
+    router.refresh();
+  }
   async function removePeriod(period: SchedulePeriod) { if (!confirm(`「${period.label || schedulePhase(period.phase).label}」の期間カラーを削除しますか？`)) return; const { error } = await createClient().from("schedule_periods").delete().eq("id", period.id).eq("author_id", userId); if (error) return alert(error.message); router.refresh(); }
   const goalDays = goal ? Math.ceil((new Date(`${goal.target_date}T00:00:00`).getTime() - new Date(`${localDate()}T00:00:00`).getTime()) / 86400000) : null;
   return <div className="mt-8 grid items-start gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,.75fr)]">
@@ -65,14 +78,14 @@ export default function MyCalendar({ userId, initialEntries, schedules, activeSc
     <section className="rounded-[26px] border border-white/10 bg-[#111] p-5 sm:p-6 xl:sticky xl:top-20">
       <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-black tracking-[.18em] text-orange-400">DAILY LOG</p><h2 className="mt-1 text-xl font-black">{new Date(`${selectedDate}T00:00:00`).toLocaleDateString("ja-JP", { month: "long", day: "numeric", weekday: "long" })}</h2></div><div className="flex flex-wrap gap-2"><Link href={`/performance?kind=unofficial-athletics&date=${selectedDate}&from=calendar`} className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-black text-black"><Plus size={15}/>練習記録を追加</Link><Link href={`/mypage/my-calendar?periodDate=${selectedDate}#period-management`} className="rounded-lg border border-sky-500/35 p-2 text-sky-300" aria-label="この日から期間カラーを追加"><CalendarDays size={18}/></Link><button onClick={startNew} className="rounded-lg border border-orange-500/35 p-2 text-orange-300" aria-label="個人予定を追加"><Plus size={18}/></button></div></div>
       {(() => { const period = periodForDate(selectedDate); if (!period) return null; const theme = schedulePhase(period.phase); return <div className={`mt-4 rounded-xl border px-4 py-3 ${theme.badge}`}><div className="flex items-center justify-between gap-3"><div><strong className="text-sm">{period.label || theme.label}</strong><p className="mt-1 text-[10px] opacity-65">{period.starts_on.replaceAll("-", "/")}〜{period.ends_on.replaceAll("-", "/")}</p></div><div className="flex gap-2"><Link href={`/mypage/my-calendar?period=${period.id}#period-management`} className="rounded-lg border border-current/30 p-2" aria-label="期間カラーを編集"><Pencil size={14}/></Link><button onClick={() => void removePeriod(period)} className="rounded-lg border border-red-400/30 p-2 text-red-300" aria-label="期間カラーを削除"><Trash2 size={14}/></button></div></div></div>; })()}
-      {selectedItems.length ? <div className="mt-5 space-y-3">{selectedItems.map((item) => <DailyItemCard key={item.key} item={item} onEdit={() => editItem(item)} onRemove={remove}/>)}</div> : <div className="mt-8 rounded-2xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-white/35"><p>この日の予定・練習記録はありません</p><Link href={`/performance?kind=unofficial-athletics&date=${selectedDate}&from=calendar`} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 px-4 py-3 font-black text-emerald-300"><Plus size={15}/>この日の練習記録を追加</Link></div>}
+      {selectedItems.length ? <div className="mt-5 space-y-3">{selectedItems.map((item) => <DailyItemCard key={item.key} item={item} onEdit={() => editItem(item)} onRemove={remove} onRemovePerformance={removePerformance}/>)}</div> : <div className="mt-8 rounded-2xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-white/35"><p>この日の予定・練習記録はありません</p><Link href={`/performance?kind=unofficial-athletics&date=${selectedDate}&from=calendar`} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 px-4 py-3 font-black text-emerald-300"><Plus size={15}/>この日の練習記録を追加</Link></div>}
     </section>
     {open && <EntryEditor
       userId={userId}
       date={selectedDate}
       entry={editing}
       schedule={linkedSchedule}
-      records={records}
+      records={performanceRecords}
       calendarItems={displayItems}
       onClose={close}
       onSaved={(entry) => { setEntries((items) => [...items.filter((item) => item.id !== entry.id), entry]); close(); router.refresh(); }}
@@ -94,7 +107,7 @@ export default function MyCalendar({ userId, initialEntries, schedules, activeSc
   </div>;
 }
 
-function DailyItemCard({ item, onEdit, onRemove }: { item: DisplayItem; onEdit: () => void; onRemove: (entry: Entry) => Promise<void> }) {
+function DailyItemCard({ item, onEdit, onRemove, onRemovePerformance }: { item: DisplayItem; onEdit: () => void; onRemove: (entry: Entry) => Promise<void>; onRemovePerformance: (record: PerformanceRecord) => Promise<void> }) {
   const record = item.performance;
   const tags = record?.awareness_categories ?? item.entry?.awareness_categories ?? [];
   const videoUrl = record?.video_url ?? item.entry?.video_url ?? null;
@@ -106,7 +119,7 @@ function DailyItemCard({ item, onEdit, onRemove }: { item: DisplayItem; onEdit: 
   return <article className={`rounded-2xl border bg-black/20 p-4 ${colors[item.color]?.border}`}>
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0"><span className="text-[10px] font-black text-white/35">{label}</span><h3 className="mt-1 truncate font-black">{item.title}</h3>{(item.schedule?.location || item.entry?.location) && <p className="mt-1 text-xs text-white/40">{item.schedule?.location || item.entry?.location}</p>}</div>
-      {record ? <Link href={`/edit/${record.id}`} className="p-2 text-emerald-300" aria-label="練習記録を編集"><Pencil size={16}/></Link> : <button onClick={onEdit} className="p-2 text-orange-300" aria-label="予定・日誌を編集"><Pencil size={16}/></button>}
+      {record ? <div className="flex gap-1"><Link href={`/edit/${record.id}`} className="p-2 text-emerald-300" aria-label="記録を編集"><Pencil size={16}/></Link><button onClick={() => void onRemovePerformance(record)} className="p-2 text-red-300" aria-label="記録を削除"><Trash2 size={16}/></button></div> : <button onClick={onEdit} className="p-2 text-orange-300" aria-label="予定・日誌を編集"><Pencil size={16}/></button>}
     </div>
     {record ? <p className="mt-3 text-lg font-black text-emerald-300">{record.value}{unitMap[record.category] ?? ""}</p> : null}
     {tags.length ? <div className="mt-3 flex flex-wrap gap-1">{tags.map((tag) => <span key={tag} className="rounded-full border border-orange-500/30 px-2 py-1 text-[10px] font-bold text-orange-300">{tag}</span>)}</div> : null}
