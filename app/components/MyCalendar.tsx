@@ -75,7 +75,46 @@ export default function MyCalendar({ userId, initialEntries, schedules, activeSc
     <section className="rounded-[26px] border border-white/10 bg-[#111] p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-xl font-black"><CalendarDays className="text-orange-400"/>マイカレンダー</h2><button onClick={startNew} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-black"><Plus size={17}/>個人予定を追加</button></div>
       <div className="mt-6 flex items-center justify-between"><button onClick={() => moveMonth(-1)} className="p-2 text-white/55" aria-label="前月"><ChevronLeft/></button><strong>{month.getFullYear()}年 {month.getMonth() + 1}月</strong><button onClick={() => moveMonth(1)} className="p-2 text-white/55" aria-label="翌月"><ChevronRight/></button></div>
-      <div className="mt-4 lg:hidden"><div className="mb-2 flex items-center justify-between"><button type="button" onClick={() => moveWeek(-1)} aria-label="前の週" className="rounded-lg border border-white/10 p-2 text-white/55"><ChevronLeft size={18}/></button><span className="text-xs font-black text-white/55">{mobileWeekStart.getMonth() + 1}/{mobileWeekStart.getDate()} からの1週間</span><button type="button" onClick={() => moveWeek(1)} aria-label="次の週" className="rounded-lg border border-white/10 p-2 text-white/55"><ChevronRight size={18}/></button></div><div className="grid grid-cols-7 gap-1">{mobileWeekDays.map((day, index) => { const key = dateKey(day); const items = byDate[key] ?? []; const period = periodForDate(key); const theme = schedulePhase(period?.phase); const goalDay = goal?.target_date === key; const selected = key === selectedDate; return <button type="button" key={key} onClick={() => { startNewForDate(key); setMonth(new Date(day.getFullYear(), day.getMonth(), 1)); }} className={`min-w-0 rounded-xl border px-1 py-2 text-center ${selected ? "border-orange-400 bg-orange-500/15 ring-1 ring-orange-400" : "border-white/10 bg-white/[.025]"}`}><span className={`block text-[9px] font-black ${index === 0 ? "text-red-300" : index === 6 ? "text-sky-300" : "text-white/40"}`}>{weekdays[index]}</span><span className="mx-auto mt-1 grid h-7 w-7 place-items-center rounded-full text-sm font-black">{day.getDate()}</span><span className="mt-1 flex min-h-2 justify-center gap-0.5">{goalDay ? <Flag size={8} className="fill-orange-400 text-orange-400"/> : null}{items.slice(0, 2).map((item) => <i key={item.key} className={`h-1.5 w-1.5 rounded-full ${colors[item.color]?.dot}`}/>)}{period ? <i className={`h-1.5 w-1.5 rounded-full ${theme.dot}`}/> : null}</span></button>; })}</div></div>
+      <div className="mt-4 lg:hidden">
+        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/25 px-2 py-2">
+          <button type="button" onClick={() => moveWeek(-1)} aria-label="前の週" className="rounded-lg p-2 text-white/55"><ChevronLeft size={19}/></button>
+          <div className="text-center">
+            <p className="text-[9px] font-black tracking-[.16em] text-orange-400">1週間の予定</p>
+            <strong className="mt-0.5 block text-sm">{mobileWeekStart.getMonth() + 1}/{mobileWeekStart.getDate()}〜{mobileWeekDays[6].getMonth() + 1}/{mobileWeekDays[6].getDate()}</strong>
+          </div>
+          <button type="button" onClick={() => moveWeek(1)} aria-label="次の週" className="rounded-lg p-2 text-white/55"><ChevronRight size={19}/></button>
+        </div>
+        <div className="mt-3 space-y-2">
+          {mobileWeekDays.map((day, index) => {
+            const key = dateKey(day);
+            const items = byDate[key] ?? [];
+            const period = periodForDate(key);
+            const theme = schedulePhase(period?.phase);
+            const goalDay = goal?.target_date === key;
+            const selected = key === selectedDate;
+            return <button
+              type="button"
+              key={key}
+              onClick={() => { startNewForDate(key); setMonth(new Date(day.getFullYear(), day.getMonth(), 1)); }}
+              aria-label={`${day.getMonth() + 1}月${day.getDate()}日の予定を表示`}
+              className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${selected ? "border-orange-400 bg-orange-500/12 ring-1 ring-orange-400/50" : "border-white/10 bg-white/[.025]"}`}
+            >
+              <span className={`grid h-14 w-14 shrink-0 place-items-center rounded-xl border ${selected ? "border-orange-400/60 bg-orange-500/15" : "border-white/10 bg-black/25"}`}>
+                <span className={`block text-[9px] font-black ${index === 0 ? "text-red-300" : index === 6 ? "text-sky-300" : "text-white/45"}`}>{weekdays[index]}曜</span>
+                <strong className="-mt-2 block text-xl leading-none">{day.getDate()}</strong>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-1.5">
+                  {goalDay ? <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 px-2 py-1 text-[9px] font-black text-orange-300"><Flag size={10} className="fill-orange-400"/>目標日</span> : null}
+                  {period ? <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[9px] font-black ${theme.badge}`}><i className={`h-1.5 w-1.5 rounded-full ${theme.dot}`}/>{period.label || theme.label}</span> : null}
+                </span>
+                {items.length > 0 ? <span className="mt-1.5 block space-y-1">{items.slice(0, 2).map((item) => <span key={item.key} className="flex min-w-0 items-center gap-2"><i className={`h-2 w-2 shrink-0 rounded-full ${colors[item.color]?.dot}`}/><span className="truncate text-sm font-bold text-white/80">{item.title}</span></span>)}{items.length > 2 ? <span className="block text-[10px] font-bold text-white/35">ほか{items.length - 2}件</span> : null}</span> : <span className="mt-1.5 block text-xs text-white/30">予定なし</span>}
+              </span>
+              <ChevronRight size={18} className={selected ? "shrink-0 text-orange-400" : "shrink-0 text-white/20"}/>
+            </button>;
+          })}
+        </div>
+      </div>
       <div className="mt-4 hidden grid-cols-7 text-center text-[10px] font-black text-white/35 lg:grid">{weekdays.map((day) => <span key={day}>{day}</span>)}</div>
       <div className="mt-2 hidden grid-cols-7 gap-1 lg:grid">{days.map((day) => { const key = dateKey(day); const items = byDate[key] ?? []; const period = periodForDate(key); const theme = schedulePhase(period?.phase); const current = day.getMonth() === month.getMonth(); const goalDay = goal?.target_date === key; return <button key={key} onClick={() => startNewForDate(key)} aria-label={`${day.getMonth() + 1}月${day.getDate()}日の予定・練習記録を表示`} className={`h-24 overflow-hidden rounded-lg border p-1.5 text-left transition hover:border-orange-400/70 ${goalDay ? "border-orange-400 bg-orange-500/15 ring-1 ring-orange-400" : key === selectedDate ? "border-white/40 ring-1 ring-white/25" : "border-white/[.07]"} ${theme.day} ${current ? "text-white" : "text-white/20"}`}><span className="flex items-center justify-between"><span className="text-xs font-bold">{day.getDate()}</span>{goalDay ? <Flag size={12} className="fill-orange-400 text-orange-400"/> : period ? <i className={`h-1.5 w-1.5 rounded-full ${theme.dot}`}/> : null}</span>{goalDay ? <span className="mt-1 block truncate text-[8px] font-black text-orange-300">目標：{goal.title}</span> : period ? <span className="mt-0.5 block truncate text-[8px] font-bold opacity-70">{period.label || theme.label}</span> : null}<span className="mt-1 block space-y-1">{items.slice(0, goalDay ? 2 : 3).map((item) => <span key={item.key} className="flex min-w-0 items-center gap-1"><i className={`h-1.5 w-1.5 shrink-0 rounded-full ${colors[item.color]?.dot}`}/><span className="truncate text-[9px] text-white/55">{item.title}</span></span>)}</span></button>; })}</div>
       <p className="mt-3 text-center text-[11px] font-bold text-orange-300/80">日付をタップすると、その日の予定・練習記録を確認できます</p>
