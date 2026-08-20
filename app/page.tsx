@@ -21,13 +21,10 @@ type HomeNewsItem = {
   date: string;
   tag: string;
   title: string;
+  body?: string;
 };
 
-const fallbackNews: HomeNewsItem[] = [
-  { id: "2026-08-06-1", date: "2026.08.06", tag: "INFO", title: "SHONAI VAULTEX 公式サイトを公開しました" },
-  { id: "2026-08-10-1", date: "2026.08.10", tag: "EVENT", title: "無料体験会を毎月開催しています" },
-  { id: "2026-09-01-1", date: "2026.09.01", tag: "RECRUIT", title: "2026年度 新規クラブメンバー募集開始" },
-];
+const fallbackNews: HomeNewsItem[] = [];
 
 const copyByAudience = {
   parent: {
@@ -59,13 +56,18 @@ export default function HomePage() {
 
     fetch("/api/public-news")
       .then((res) => (res.ok ? res.json() : null))
-      .then((rows: Array<{ id: number; title: string; priority?: string | null; created_at: string }>) => {
+      .then((rows: Array<{ id: number; title: string; body?: string | null; priority?: string | null; created_at: string }>) => {
         if (!rows || rows.length === 0) return;
         const mapped = rows.map((row) => ({
           id: row.id,
-          date: new Date(row.created_at).toISOString().slice(0, 10).replaceAll("-", "."),
+          date: new Date(row.created_at).toLocaleDateString("ja-JP", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }),
           tag: row.priority ?? "INFO",
           title: row.title,
+          body: row.body ?? "",
         }));
         setNews(mapped);
       })
@@ -165,7 +167,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="news" className="bg-[#101216] py-24 sm:py-32"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><SectionLabel index="04">NEWS</SectionLabel><div className="mt-10 border-t border-white/15">{news.length ? news.map((item) => <article key={item.id ?? item.date} className="grid gap-3 border-b border-white/15 py-5 sm:grid-cols-12 sm:items-center sm:px-3"><time className="text-xs font-medium text-white/45 sm:col-span-2">{item.date}</time><span className="text-[10px] font-black tracking-[0.14em] text-orange-500 sm:col-span-2">{item.tag}</span><h3 className="text-sm font-bold sm:col-span-8">{item.title}</h3></article>) : <p className="py-5 text-sm text-white/55">お知らせは準備中です</p>}</div></div></section>
+      <section id="news" className="bg-[#101216] py-24 sm:py-32"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><SectionLabel index="04">NEWS</SectionLabel><div className="mt-10 border-t border-white/15">{news.length ? news.map((item) => <article key={item.id ?? item.date} className="grid gap-3 border-b border-white/15 py-5 sm:grid-cols-12 sm:items-center sm:px-3"><time className="text-xs font-medium text-white/45 sm:col-span-2">{item.date}</time><span className="text-[10px] font-black tracking-[0.14em] text-orange-500 sm:col-span-2">{item.tag}</span><div className="sm:col-span-8"><h3 className="text-sm font-bold">{item.title}</h3><p className="mt-1 text-sm leading-6 text-white/55 line-clamp-2">{item.body || "本文は準備中です"}</p></div></article>) : <p className="py-5 text-sm text-white/55">公開されているお知らせはありません</p>}</div></div></section>
 
       <section id="contact" className="relative overflow-hidden bg-orange-500 py-24 text-[#090a0c] sm:py-32"><div className="pointer-events-none absolute -right-8 -top-28 select-none text-[13rem] font-black leading-none tracking-[-0.1em] text-black/10 sm:text-[22rem]">GO</div><div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><p className="flex items-center gap-3 text-xs font-black tracking-[0.22em]"><span className="text-black/50">05</span><span className="h-px w-8 bg-[#090a0c]" />CONTACT</p><div className="mt-8 grid gap-12 lg:grid-cols-12"><div className="lg:col-span-8"><h2 className="text-4xl font-black leading-[0.95] tracking-[-0.065em] sm:text-7xl">YOUR NEXT<br />MOVE STARTS<br />HERE.</h2><p className="mt-7 max-w-md text-sm font-medium leading-7 text-black/70">体験・見学はいつでも歓迎です。まずは気軽に、SHONAI VAULTEXの空気を感じに来てください。</p><CtaLink href="https://forms.gle/9KLAq5PSkBudhbyL9" className="mt-9">お問い合わせ</CtaLink></div><div className="space-y-6 self-end text-sm font-semibold lg:col-span-4"><ContactLine icon={MapPin}>山形県庄内地域（活動場所はお問い合わせください）</ContactLine><ContactLine icon={Mail}>shonaivaultex@gmail.com</ContactLine><ContactLine icon={Phone}>
 準備中
