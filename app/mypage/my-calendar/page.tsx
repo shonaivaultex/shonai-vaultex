@@ -31,6 +31,12 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
     ? await supabase.from("schedules").select("id,title,details,location,starts_at,ends_at,all_day,schedule_type").in("id", scheduleIds)
     : { data: [] };
 
+  const recordIds = (records ?? []).map((record) => record.id);
+  const { data: feedbackRequests } = recordIds.length
+    ? await supabase.from("feedback_requests").select("id,record_id,request_type,message,priority,status").in("record_id", recordIds).eq("status", "pending")
+    : { data: [] };
+  const feedbackRequestByRecord = new Map((feedbackRequests ?? []).map((request) => [request.record_id, request]));
+
   const videoPaths = [...new Set([
     ...(entries ?? []).flatMap((row) => row.video_path ? [row.video_path] : []),
     ...(records ?? []).flatMap((row) => row.video_path ? [row.video_path] : []),
@@ -40,7 +46,7 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
     : { data: [] };
   const videoUrls = new Map((signedVideos ?? []).map((item, index) => [videoPaths[index], item.signedUrl]));
   const enrichedEntries = (entries ?? []).map((row) => ({ ...row, video_url: row.video_path ? videoUrls.get(row.video_path) ?? null : null }));
-  const enrichedRecords = (records ?? []).map((row) => ({ ...row, video_url: row.video_path ? videoUrls.get(row.video_path) ?? null : null }));
+  const enrichedRecords = (records ?? []).map((row) => ({ ...row, video_url: row.video_path ? videoUrls.get(row.video_path) ?? null : null, feedback_request: feedbackRequestByRecord.get(row.id) ?? null }));
   const periods = (periodRows ?? []) as SchedulePeriod[];
   const initialPeriodId = query.period && /^\d+$/.test(query.period) ? Number(query.period) : null;
   const initialPeriodDate = query.periodDate && /^\d{4}-\d{2}-\d{2}$/.test(query.periodDate) ? query.periodDate : undefined;

@@ -10,10 +10,12 @@ import { createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideo
 import { schedulePhase, schedulePhases } from "@/lib/schedule-phases";
 import type { SchedulePeriod } from "@/lib/schedule-periods";
 import { unitMap } from "@/lib/performance-events";
+import FeedbackRequestButton from "@/app/components/FeedbackRequestButton";
 
 type Entry = { id: number; user_id: string; schedule_id: number | null; entry_date: string; starts_at: string | null; ends_at: string | null; all_day: boolean; entry_type: string; title: string; location: string | null; journal: string | null; awareness_categories: string[]; record_value: number | null; record_unit: string | null; performance_record_id: number | null; video_path: string | null; video_url: string | null; color: string };
 type ClubSchedule = { id: number; title: string; details: string | null; location: string | null; starts_at: string; ends_at: string | null; all_day: boolean; schedule_type: string };
-type PerformanceRecord = { id: number; category: string; value: number; date: string; record_kind: string | null; awareness_categories: string[] | null; awareness_note: string | null; video_path: string | null; video_url: string | null };
+type FeedbackRequest = { id: number; request_type: string; message: string | null; priority: string; status: string };
+type PerformanceRecord = { id: number; category: string; value: number; date: string; record_kind: string | null; awareness_categories: string[] | null; awareness_note: string | null; video_path: string | null; video_url: string | null; feedback_request?: FeedbackRequest | null };
 type DisplayItem = { key: string; date: string; title: string; color: string; entry?: Entry; schedule?: ClubSchedule; performance?: PerformanceRecord; active: boolean };
 type CalendarGoal = { id: number; user_id: string; title: string; target_date: string; event_name: string | null; target_value: number | null; target_unit: string | null; status: string; completed_at: string | null; schedule_id?: number | null; calendar_entry_id?: number | null; outcome?: string | null; result_value?: number | null; result_unit?: string | null; reflection?: string | null; next_action?: string | null };
 
@@ -200,6 +202,7 @@ function DailyItemCard({ item, onEdit, onRemove, onRemovePerformance }: { item: 
     {item.entry?.record_value && <p className="mt-3 text-sm font-black text-emerald-300">記録 {item.entry.record_value}{item.entry.record_unit}</p>}
     {item.entry?.performance_record_id && <Link href={`/edit/${item.entry.performance_record_id}`} className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-sky-300"><Link2 size={13}/>パフォーマンス記録と連携</Link>}
     {videoUrl && <details className="mt-3"><summary className="cursor-pointer text-xs font-black text-orange-300"><Play size={13} className="mr-1 inline"/>動画を見る</summary><video controls playsInline preload="metadata" src={videoUrl} className="mt-3 max-h-[50vh] w-full rounded-xl bg-black object-contain"/></details>}
+    {record && <FeedbackRequestButton recordId={record.id} initialRequest={record.feedback_request} />}
     {item.entry && <button onClick={() => void onRemove(item.entry!)} className="mt-3 inline-flex items-center gap-1 text-[11px] font-bold text-red-300/70"><Trash2 size={12}/>個人記録を削除</button>}
   </article>;
 }
