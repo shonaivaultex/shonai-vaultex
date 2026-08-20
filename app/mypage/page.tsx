@@ -38,8 +38,9 @@ export default async function MyPage() {
   const schedulesPromise = Promise.resolve(supabase.from("schedules").select("id, title, details, location, starts_at, ends_at, all_day, training_phase, schedule_type, audience, program_class, registration_enabled, registration_opens_at, registration_deadline").gte("starts_at", new Date().toISOString()).order("starts_at").limit(20));
   const competitionApplicationsPromise = Promise.resolve(supabase.from("competition_applications").select("schedule_id").eq("user_id", userId).eq("status", "submitted"));
   const attendingSchedulesPromise = Promise.resolve(supabase.from("schedule_attendance").select("schedule_id").eq("user_id", userId).eq("status", "attending"));
+  const personalCalendarPromise = Promise.resolve(supabase.from("personal_calendar_entries").select("id,entry_date,title,location,journal,entry_type").eq("user_id", userId).is("schedule_id", null).gte("entry_date", new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" })).order("entry_date").limit(20));
   const deferredDataPromise = loadMypageDeferredData({ userId, gender: playerPromise.then(({ data }) => data?.gender ?? null), currentMonth, previousMonthStart });
-  const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }, { data: attendingSchedules }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise, attendingSchedulesPromise]);
+  const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }, { data: attendingSchedules }, { data: personalCalendarEntries }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise, attendingSchedulesPromise, personalCalendarPromise]);
 
   if (!player) {
     redirect("/profile/create");
@@ -47,8 +48,9 @@ export default async function MyPage() {
 
   const appliedCompetitionIds = new Set((competitionApplications ?? []).map((application) => application.schedule_id));
   const attendingScheduleIds = new Set((attendingSchedules ?? []).map((attendance) => attendance.schedule_id));
-  const nextSchedules = ((schedules ?? []) as ScheduleItem[])
-    .filter((schedule) => schedule.schedule_type !== "competition" || appliedCompetitionIds.has(schedule.id) || attendingScheduleIds.has(schedule.id))
+  const personalSchedules: ScheduleItem[] = (personalCalendarEntries ?? []).map((entry) => ({ id: -entry.id, title: entry.title, details: entry.journal, location: entry.location, starts_at: `${entry.entry_date}T00:00:00+09:00`, ends_at: null, all_day: true, schedule_type: entry.entry_type, audience: "all", program_class: null, registration_enabled: false, registration_opens_at: null, registration_deadline: null, personal: true }));
+  const nextSchedules = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => appliedCompetitionIds.has(schedule.id) || attendingScheduleIds.has(schedule.id)), ...personalSchedules])
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
     .slice(0, 2);
   const nextSchedule = nextSchedules[0];
   const nextScheduleDate = nextSchedule ? new Date(nextSchedule.starts_at) : null;
@@ -71,8 +73,8 @@ export default async function MyPage() {
             {coachRole ? <Link href="/coach/dashboard" prefetch className="mt-7 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-300 transition hover:bg-emerald-400/15">COACH DASHBOARD <ArrowUpRight size={15}/></Link> : null}
           </div>
           <div className="grid grid-cols-2 border-t border-white/10 lg:border-l lg:border-t-0">
-            <Link data-tutorial="schedule-action" href="/mypage/schedules" className="col-span-2 flex min-h-32 items-center justify-between gap-5 border-b border-white/10 p-5 transition hover:bg-white/[.035] sm:p-7">
-              <div><p className="text-[10px] font-black tracking-[.18em] text-white/30">NEXT SESSION</p>{nextSchedule && nextScheduleDate ? <><strong className="mt-2 block text-lg sm:text-xl">{nextSchedule.title}</strong><p className="mt-1 text-sm text-white/45">{nextScheduleDate.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short", timeZone: "Asia/Tokyo" })}　{nextScheduleDate.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}{nextSchedule.location ? `　${nextSchedule.location}` : ""}</p></> : <strong className="mt-2 block text-white/45">予定はありません</strong>}</div><CalendarDays className="shrink-0 text-orange-400" size={25}/>
+            <Link data-tutorial="schedule-action" href="/mypage/my-calendar" className="col-span-2 flex min-h-32 items-center justify-between gap-5 border-b border-white/10 p-5 transition hover:bg-white/[.035] sm:p-7">
+              <div><p className="text-[10px] font-black tracking-[.18em] text-white/30">NEXT SESSION</p>{nextSchedule && nextScheduleDate ? <><strong className="mt-2 block text-lg sm:text-xl">{nextSchedule.title}</strong><p className="mt-1 text-sm text-white/45">{nextScheduleDate.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short", timeZone: "Asia/Tokyo" })}　{nextSchedule.all_day ? "終日" : nextScheduleDate.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}{nextSchedule.location ? `　${nextSchedule.location}` : ""}</p></> : <strong className="mt-2 block text-white/45">予定はありません</strong>}</div><CalendarDays className="shrink-0 text-orange-400" size={25}/>
             </Link>
             <Suspense fallback={<MypageStatsSkeleton/>}><MypageStats dataPromise={deferredDataPromise}/></Suspense>
           </div>
