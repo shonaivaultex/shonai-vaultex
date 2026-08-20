@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, ChevronDown, Play } from "lucide-react";
+import { ArrowLeft, ChevronDown, Flag, Play } from "lucide-react";
 import CoachFeedbackForm from "@/app/components/CoachFeedbackForm";
 import CoachFeedbackActions from "@/app/components/CoachFeedbackActions";
 import { createClient } from "@/lib/supabase-server";
@@ -17,7 +17,10 @@ export default async function CoachAthletePage({ params, searchParams }: { param
   if (!role) redirect("/mypage");
   const { data: athlete } = await supabase.from("players").select("user_id, name, grade, event, program_class").eq("user_id", athleteId).eq("member_status", "active").maybeSingle();
   if (!athlete) notFound();
-  const { data: records, error } = await supabase.from("performance_records").select("*").eq("user_id", athleteId).order("date", { ascending: false });
+  const [{ data: records, error }, { data: athleteGoal }] = await Promise.all([
+    supabase.from("performance_records").select("*").eq("user_id", athleteId).order("date", { ascending: false }),
+    supabase.from("personal_calendar_goals").select("title,target_date,event_name,target_value,target_unit").eq("user_id", athleteId).eq("status", "active").maybeSingle(),
+  ]);
   if (error) notFound();
   const recordIds = (records ?? []).map((record) => record.id);
   const { data: requests } = recordIds.length ? await supabase.from("feedback_requests").select("id, record_id, request_type, message, priority, created_at").in("record_id", recordIds).eq("status", "pending") : { data: [] };
@@ -53,6 +56,7 @@ export default async function CoachAthletePage({ params, searchParams }: { param
   return <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-32 text-white sm:px-8"><div className="mx-auto max-w-3xl">
     <Link href="/coach/dashboard" className="inline-flex items-center gap-2 text-xs font-bold text-white/60 hover:text-orange-400"><ArrowLeft size={16} />担当選手一覧</Link>
     <header className="mt-8 border-l-2 border-orange-500 pl-5"><p className="text-xs font-black tracking-[0.2em] text-orange-400">{requestMode ? "FEEDBACK REQUEST" : "ATHLETE STATUS"}</p><h1 className="mt-2 text-4xl font-black">{requestMode ? "フィードバック回答" : athlete.name}</h1><p className="mt-2 text-white/50">{athlete.name}・{athlete.program_class}・{athlete.grade}・{athlete.event}</p></header>
+    {!requestMode && athleteGoal ? <section className="mt-6 rounded-2xl border border-orange-500/35 bg-orange-500/[.07] p-5"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-500 text-black"><Flag size={18}/></span><div><p className="text-[10px] font-black tracking-[.18em] text-orange-400">NEXT TARGET</p><h2 className="mt-1 text-lg font-black">{athleteGoal.title}</h2><p className="mt-1 text-sm text-white/55">{athleteGoal.target_date.replaceAll("-", "/")}{athleteGoal.event_name ? ` ・ ${athleteGoal.event_name}` : ""}{athleteGoal.target_value ? ` ・ ${athleteGoal.target_value}${athleteGoal.target_unit ?? ""}` : ""}</p></div></div></section> : null}
     {enriched.length === 0 ? <div className="mt-8 rounded-2xl border border-white/10 bg-[#111] p-8 text-center text-white/45">まだ記録がありません</div> : requestMode ? <div className="mt-8">{enriched.map(renderRecord)}</div> : <div className="mt-8 space-y-3">{groupedRecords.map(([category, categoryRecords]) => {
       const pendingCount = categoryRecords.filter((record) => requestByRecord.has(record.id)).length;
       return <details key={category} className="group overflow-hidden rounded-2xl border border-white/10 bg-[#111] open:border-orange-500/45">

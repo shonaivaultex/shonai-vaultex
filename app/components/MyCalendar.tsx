@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Link2, Pencil, Play, Plus, Trash2, Upload, X } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Flag, Link2, Pencil, Play, Plus, Target, Trash2, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
@@ -14,6 +14,7 @@ type Entry = { id: number; user_id: string; schedule_id: number | null; entry_da
 type ClubSchedule = { id: number; title: string; details: string | null; location: string | null; starts_at: string; ends_at: string | null; all_day: boolean; schedule_type: string };
 type PerformanceRecord = { id: number; category: string; value: number; date: string; record_kind: string | null };
 type DisplayItem = { key: string; date: string; title: string; color: string; entry?: Entry; schedule?: ClubSchedule; active: boolean };
+type CalendarGoal = { id: number; user_id: string; title: string; target_date: string; event_name: string | null; target_value: number | null; target_unit: string | null; status: string; completed_at: string | null };
 
 const colors: Record<string, { dot: string; border: string; label: string }> = {
   orange: { dot: "bg-orange-400", border: "border-orange-500/40", label: "オレンジ" }, sky: { dot: "bg-sky-400", border: "border-sky-500/40", label: "ブルー" }, emerald: { dot: "bg-emerald-400", border: "border-emerald-500/40", label: "グリーン" }, violet: { dot: "bg-violet-400", border: "border-violet-500/40", label: "パープル" }, rose: { dot: "bg-rose-400", border: "border-rose-500/40", label: "レッド" }, slate: { dot: "bg-slate-400", border: "border-slate-500/40", label: "グレー" },
@@ -24,10 +25,11 @@ function localDate(date = new Date()) { return date.toLocaleDateString("en-CA", 
 function dateKey(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
 function scheduleDates(schedule: ClubSchedule) { const start = new Date(schedule.starts_at); const end = schedule.ends_at ? new Date(schedule.ends_at) : start; const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate()); const last = new Date(end.getFullYear(), end.getMonth(), end.getDate()); const result: string[] = []; while (cursor <= last && result.length < 370) { result.push(dateKey(cursor)); cursor.setDate(cursor.getDate() + 1); } return result; }
 
-export default function MyCalendar({ userId, initialEntries, schedules, activeScheduleIds, records, periods }: { userId: string; initialEntries: Entry[]; schedules: ClubSchedule[]; activeScheduleIds: number[]; records: PerformanceRecord[]; periods: SchedulePeriod[] }) {
+export default function MyCalendar({ userId, initialEntries, schedules, activeScheduleIds, records, periods, initialGoal }: { userId: string; initialEntries: Entry[]; schedules: ClubSchedule[]; activeScheduleIds: number[]; records: PerformanceRecord[]; periods: SchedulePeriod[]; initialGoal: CalendarGoal | null }) {
   const router = useRouter(); const today = new Date();
   const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1)); const [selectedDate, setSelectedDate] = useState(localDate());
   const [entries, setEntries] = useState(initialEntries); const [editing, setEditing] = useState<Entry | null>(null); const [linkedSchedule, setLinkedSchedule] = useState<ClubSchedule | null>(null); const [open, setOpen] = useState(false);
+  const [goal, setGoal] = useState<CalendarGoal | null>(initialGoal); const [goalOpen, setGoalOpen] = useState(false);
   const activeIds = useMemo(() => new Set(activeScheduleIds), [activeScheduleIds]);
   const displayItems = useMemo(() => {
     const result: DisplayItem[] = entries.filter((entry) => !entry.schedule_id).map((entry) => ({ key: `entry-${entry.id}`, date: entry.entry_date, title: entry.title, color: entry.color, entry, active: true }));
@@ -44,12 +46,17 @@ export default function MyCalendar({ userId, initialEntries, schedules, activeSc
   function close() { setOpen(false); setEditing(null); setLinkedSchedule(null); }
   async function remove(entry: Entry) { if (!confirm(entry.schedule_id ? "この予定の日誌・動画・個人記録を削除しますか？\nクラブ予定と参加登録は残ります。" : `「${entry.title}」を削除しますか？`)) return; const supabase = createClient(); const { error } = await supabase.from("personal_calendar_entries").delete().eq("id", entry.id).eq("user_id", userId); if (error) return alert(error.message); if (entry.video_path) await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([entry.video_path]); setEntries((items) => items.filter((item) => item.id !== entry.id)); }
   async function removePeriod(period: SchedulePeriod) { if (!confirm(`「${period.label || schedulePhase(period.phase).label}」の期間カラーを削除しますか？`)) return; const { error } = await createClient().from("schedule_periods").delete().eq("id", period.id).eq("author_id", userId); if (error) return alert(error.message); router.refresh(); }
+  async function completeGoal() { if (!goal || !confirm(`「${goal.title}」を完了して、次の目標を設定できる状態にしますか？`)) return; const { error } = await createClient().from("personal_calendar_goals").update({ status: "completed", completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", goal.id).eq("user_id", userId); if (error) return alert(error.message); setGoal(null); }
+  const goalDays = goal ? Math.ceil((new Date(`${goal.target_date}T00:00:00`).getTime() - new Date(`${localDate()}T00:00:00`).getTime()) / 86400000) : null;
   return <div className="mt-8 grid items-start gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,.75fr)]">
+    <section className="rounded-[26px] border border-orange-500/35 bg-[linear-gradient(135deg,rgba(249,115,22,.14),rgba(17,17,17,.96)_55%)] p-5 sm:p-6 xl:col-span-2">
+      <div className="flex flex-wrap items-center justify-between gap-4"><div className="flex min-w-0 items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-orange-500 text-black"><Target size={23}/></span><div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">NEXT TARGET</p>{goal ? <><h2 className="mt-1 text-xl font-black sm:text-2xl">{goal.title}</h2><p className="mt-1 text-sm text-white/55">{goal.target_date.replaceAll("-", "/")}{goal.event_name ? ` ・ ${goal.event_name}` : ""}{goal.target_value ? ` ・ ${goal.target_value}${goal.target_unit ?? ""}` : ""}</p><p className="mt-2 text-sm font-black text-orange-300">{goalDays !== null && goalDays > 0 ? `目標まであと${goalDays}日` : goalDays === 0 ? "目標当日" : "振り返って次の目標へ"}</p></> : <><h2 className="mt-1 text-xl font-black">次の目標を1つ決める</h2><p className="mt-1 text-sm text-white/45">大会・種目・目標記録を決めると、カレンダーに表示されます。</p></>}</div></div><div className="flex flex-wrap gap-2"><button onClick={() => setGoalOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-black"><Flag size={16}/>{goal ? "目標を変更" : "次の目標を設定"}</button>{goal ? <button onClick={() => void completeGoal()} className="rounded-xl border border-white/15 px-4 py-3 text-sm font-bold text-white/60">完了して次へ</button> : null}</div></div>
+    </section>
     <section className="rounded-[26px] border border-white/10 bg-[#111] p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-xl font-black"><CalendarDays className="text-orange-400"/>マイカレンダー</h2><button onClick={startNew} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-black"><Plus size={17}/>個人予定を追加</button></div>
       <div className="mt-6 flex items-center justify-between"><button onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="p-2 text-white/55"><ChevronLeft/></button><strong>{month.getFullYear()}年 {month.getMonth() + 1}月</strong><button onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="p-2 text-white/55"><ChevronRight/></button></div>
       <div className="mt-4 grid grid-cols-7 text-center text-[10px] font-black text-white/35">{weekdays.map((day) => <span key={day}>{day}</span>)}</div>
-      <div className="mt-2 grid grid-cols-7 gap-1">{days.map((day) => { const key = dateKey(day); const items = byDate[key] ?? []; const period = periodForDate(key); const theme = schedulePhase(period?.phase); const current = day.getMonth() === month.getMonth(); return <button key={key} onClick={() => startNewForDate(key)} aria-label={`${day.getMonth() + 1}月${day.getDate()}日の個人予定を追加`} className={`h-16 overflow-hidden rounded-lg border p-1.5 text-left transition hover:border-orange-400/70 sm:h-24 ${key === selectedDate ? "border-orange-400 ring-1 ring-orange-400" : "border-white/[.07]"} ${theme.day} ${current ? "text-white" : "text-white/20"}`}><span className="flex items-center justify-between"><span className="text-xs font-bold">{day.getDate()}</span>{period ? <i className={`h-1.5 w-1.5 rounded-full ${theme.dot}`}/> : null}</span>{period ? <span className="mt-0.5 hidden truncate text-[8px] font-bold opacity-70 sm:block">{period.label || theme.label}</span> : null}<span className="mt-1 block space-y-1">{items.slice(0, 3).map((item) => <span key={item.key} className="flex min-w-0 items-center gap-1"><i className={`h-1.5 w-1.5 shrink-0 rounded-full ${colors[item.color]?.dot}`}/><span className="hidden truncate text-[9px] text-white/55 sm:block">{item.title}</span></span>)}</span></button>; })}</div>
+      <div className="mt-2 grid grid-cols-7 gap-1">{days.map((day) => { const key = dateKey(day); const items = byDate[key] ?? []; const period = periodForDate(key); const theme = schedulePhase(period?.phase); const current = day.getMonth() === month.getMonth(); const goalDay = goal?.target_date === key; return <button key={key} onClick={() => startNewForDate(key)} aria-label={`${day.getMonth() + 1}月${day.getDate()}日の個人予定を追加`} className={`h-16 overflow-hidden rounded-lg border p-1.5 text-left transition hover:border-orange-400/70 sm:h-24 ${goalDay ? "border-orange-400 bg-orange-500/15 ring-1 ring-orange-400" : key === selectedDate ? "border-white/40 ring-1 ring-white/25" : "border-white/[.07]"} ${theme.day} ${current ? "text-white" : "text-white/20"}`}><span className="flex items-center justify-between"><span className="text-xs font-bold">{day.getDate()}</span>{goalDay ? <Flag size={12} className="fill-orange-400 text-orange-400"/> : period ? <i className={`h-1.5 w-1.5 rounded-full ${theme.dot}`}/> : null}</span>{goalDay ? <span className="mt-1 block truncate text-[8px] font-black text-orange-300">目標：{goal.title}</span> : period ? <span className="mt-0.5 hidden truncate text-[8px] font-bold opacity-70 sm:block">{period.label || theme.label}</span> : null}<span className="mt-1 block space-y-1">{items.slice(0, goalDay ? 2 : 3).map((item) => <span key={item.key} className="flex min-w-0 items-center gap-1"><i className={`h-1.5 w-1.5 shrink-0 rounded-full ${colors[item.color]?.dot}`}/><span className="hidden truncate text-[9px] text-white/55 sm:block">{item.title}</span></span>)}</span></button>; })}</div>
       <p className="mt-3 text-center text-[11px] font-bold text-orange-300/80">日付をタップすると、その日の予定入力が開きます</p>
       <div className="mt-4 flex flex-wrap gap-3 text-[10px] text-white/45">{Object.entries(colors).map(([key, color]) => <span key={key} className="flex items-center gap-1"><i className={`h-2 w-2 rounded-full ${color.dot}`}/>{color.label}</span>)}</div>
     </section>
@@ -68,7 +75,34 @@ export default function MyCalendar({ userId, initialEntries, schedules, activeSc
       onClose={close}
       onSaved={(entry) => { setEntries((items) => [...items.filter((item) => item.id !== entry.id), entry]); close(); router.refresh(); }}
     />}
+    {goalOpen && <GoalEditor
+      userId={userId}
+      goal={goal}
+      initialDate={selectedDate}
+      onClose={() => setGoalOpen(false)}
+      onSaved={(saved) => { setGoal(saved); setGoalOpen(false); setMonth(new Date(`${saved.target_date}T00:00:00`)); }}
+    />}
   </div>;
+}
+
+function GoalEditor({ userId, goal, initialDate, onClose, onSaved }: { userId: string; goal: CalendarGoal | null; initialDate: string; onClose: () => void; onSaved: (goal: CalendarGoal) => void }) {
+  const [title, setTitle] = useState(goal?.title ?? "");
+  const [targetDate, setTargetDate] = useState(goal?.target_date ?? initialDate);
+  const [eventName, setEventName] = useState(goal?.event_name ?? "");
+  const [targetValue, setTargetValue] = useState(goal?.target_value?.toString() ?? "");
+  const [targetUnit, setTargetUnit] = useState(goal?.target_unit ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  async function save(event: FormEvent) {
+    event.preventDefault(); setSaving(true); setError("");
+    const row = { user_id: userId, title: title.trim(), target_date: targetDate, event_name: eventName.trim() || null, target_value: targetValue ? Number(targetValue) : null, target_unit: targetValue ? targetUnit.trim() || null : null, updated_at: new Date().toISOString() };
+    const supabase = createClient();
+    const query = goal ? supabase.from("personal_calendar_goals").update(row).eq("id", goal.id).eq("user_id", userId) : supabase.from("personal_calendar_goals").insert(row);
+    const { data, error: saveError } = await query.select("*").single();
+    if (saveError) { setError(saveError.message); setSaving(false); return; }
+    onSaved(data as CalendarGoal);
+  }
+  return <div className="fixed inset-0 z-[130] overflow-y-auto bg-black/80 p-4 backdrop-blur-sm"><form onSubmit={save} className="mx-auto my-12 max-w-lg rounded-[28px] border border-orange-500/40 bg-[#111] p-5 shadow-2xl sm:p-7"><div className="flex items-center justify-between"><div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">NEXT TARGET</p><h2 className="mt-1 text-2xl font-black">次の目標を1つ決める</h2></div><button type="button" onClick={onClose} className="rounded-full bg-white/10 p-2"><X/></button></div><p className="mt-3 text-sm leading-6 text-white/45">達成したら完了にして、次の目標を設定します。今、一番近い目標だけを登録してください。</p><div className="mt-6 space-y-4"><label className="block"><span className="text-xs font-bold text-white/55">大会名・目標名</span><input required maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例：県選手権で自己ベスト" className="mt-2 w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3"/></label><label className="block"><span className="text-xs font-bold text-white/55">目標日</span><input required type="date" value={targetDate} onChange={(event) => setTargetDate(event.target.value)} className="mt-2 w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3"/></label><label className="block"><span className="text-xs font-bold text-white/55">種目（任意）</span><input maxLength={80} value={eventName} onChange={(event) => setEventName(event.target.value)} placeholder="例：走幅跳" className="mt-2 w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3"/></label><div className="grid grid-cols-[1fr_120px] gap-3"><label><span className="text-xs font-bold text-white/55">目標記録（任意）</span><input type="number" step="any" min="0" value={targetValue} onChange={(event) => setTargetValue(event.target.value)} placeholder="例：7.50" className="mt-2 w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3"/></label><label><span className="text-xs font-bold text-white/55">単位</span><input maxLength={20} value={targetUnit} onChange={(event) => setTargetUnit(event.target.value)} placeholder="m / 秒" className="mt-2 w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3"/></label></div></div>{error ? <p className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</p> : null}<div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-xl border border-white/15 px-5 py-3 text-sm font-bold text-white/55">閉じる</button><button disabled={saving || !title.trim() || !targetDate} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-black text-black disabled:opacity-40"><Check size={17}/>{saving ? "保存中" : "目標を保存"}</button></div></form></div>;
 }
 
 function EntryEditor({ userId, date, entry, schedule, records, calendarItems, onClose, onSaved }: { userId: string; date: string; entry: Entry | null; schedule: ClubSchedule | null; records: PerformanceRecord[]; calendarItems: DisplayItem[]; onClose: () => void; onSaved: (entry: Entry) => void }) {
