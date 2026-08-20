@@ -99,6 +99,12 @@ export default async function MyPage() {
       <BugReportButton />
       <SchedulePanel items={(schedules ?? []) as ScheduleItem[]} />
       <h2 style={{ marginTop: 40, marginBottom: 20 }}>成長データ</h2>
+      <p className="mb-6 text-sm text-white/75">
+        マイページの「成長データ」は、毎日の練習や大会で出た数字を
+        見やすくまとめた、あなた専用の成長レポートです。
+        今日できたこと、記録の変化、コーチからのコメントを
+        1か所で見られるので、次の練習のヒントがつかみやすくなります。
+      </p>
       {coachRole && <Link href="/coach/dashboard" className="mb-5 flex items-center justify-between rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-5 text-white transition hover:border-emerald-400"><span><strong className="block text-lg">コーチダッシュボード</strong><span className="mt-1 block text-sm text-white/50">担当選手の確認・フィードバック</span></span><ChevronRight className="text-emerald-400" /></Link>}
       <div style={{ display: "grid", gap: 14 }}>
         <Link href="/mypage/control-tests" className="group flex items-center gap-4 rounded-2xl border border-orange-500/60 bg-[#111] p-5 text-white no-underline transition hover:border-orange-400">
