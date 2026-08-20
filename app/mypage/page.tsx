@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
-import { Activity, ArrowUpRight, CalendarDays, ChevronRight, Medal, MessageCircle, NotebookPen, Plus, Trophy, Video } from "lucide-react";
+import { Activity, ArrowUpRight, CalendarDays, ChevronRight, Medal, MessageCircle, NotebookPen, Plus, Target, Trophy, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { type ScheduleItem } from "@/app/components/SchedulePanel";
@@ -32,15 +32,18 @@ export default async function MyPage() {
   }
 
   const { currentMonth, previousMonth, previousMonthStart } = japanMonthKeys();
+  const todayKey = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
 
   const playerPromise = Promise.resolve(supabase.from("players").select("*").eq("user_id", userId).single());
   const coachRolePromise = Promise.resolve(supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "coach").maybeSingle());
   const schedulesPromise = Promise.resolve(supabase.from("schedules").select("id, title, details, location, starts_at, ends_at, all_day, training_phase, schedule_type, audience, program_class, registration_enabled, registration_opens_at, registration_deadline").gte("starts_at", new Date().toISOString()).order("starts_at").limit(20));
   const competitionApplicationsPromise = Promise.resolve(supabase.from("competition_applications").select("schedule_id").eq("user_id", userId).eq("status", "submitted"));
   const attendingSchedulesPromise = Promise.resolve(supabase.from("schedule_attendance").select("schedule_id").eq("user_id", userId).eq("status", "attending"));
-  const personalCalendarPromise = Promise.resolve(supabase.from("personal_calendar_entries").select("id,entry_date,title,location,journal,entry_type").eq("user_id", userId).is("schedule_id", null).gte("entry_date", new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" })).order("entry_date").limit(20));
+  const personalCalendarPromise = Promise.resolve(supabase.from("personal_calendar_entries").select("id,entry_date,title,location,journal,entry_type").eq("user_id", userId).is("schedule_id", null).gte("entry_date", todayKey).order("entry_date").limit(20));
+  const todayRecordsPromise = Promise.resolve(supabase.from("performance_records").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("date", todayKey));
+  const activeGoalPromise = Promise.resolve(supabase.from("personal_calendar_goals").select("title,target_date").eq("user_id", userId).eq("status", "active").maybeSingle());
   const deferredDataPromise = loadMypageDeferredData({ userId, gender: playerPromise.then(({ data }) => data?.gender ?? null), currentMonth, previousMonthStart });
-  const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }, { data: attendingSchedules }, { data: personalCalendarEntries }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise, attendingSchedulesPromise, personalCalendarPromise]);
+  const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }, { data: attendingSchedules }, { data: personalCalendarEntries }, { count: todayRecordCount }, { data: activeGoal }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise, attendingSchedulesPromise, personalCalendarPromise, todayRecordsPromise, activeGoalPromise]);
 
   if (!player) {
     redirect("/profile/create");
@@ -73,20 +76,24 @@ export default async function MyPage() {
             {coachRole ? <Link href="/coach/dashboard" prefetch className="mt-7 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-300 transition hover:bg-emerald-400/15">COACH DASHBOARD <ArrowUpRight size={15}/></Link> : null}
           </div>
           <div className="grid grid-cols-2 border-t border-white/10 lg:border-l lg:border-t-0">
-            <Link data-tutorial="schedule-action" href="/mypage/my-calendar" className="col-span-2 flex min-h-32 items-center justify-between gap-5 border-b border-white/10 p-5 transition hover:bg-white/[.035] sm:p-7">
-              <div><p className="text-[10px] font-black tracking-[.18em] text-white/30">NEXT SESSION</p>{nextSchedule && nextScheduleDate ? <><strong className="mt-2 block text-lg sm:text-xl">{nextSchedule.title}</strong><p className="mt-1 text-sm text-white/45">{nextScheduleDate.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short", timeZone: "Asia/Tokyo" })}　{nextSchedule.all_day ? "終日" : nextScheduleDate.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" })}{nextSchedule.location ? `　${nextSchedule.location}` : ""}</p></> : <strong className="mt-2 block text-white/45">予定はありません</strong>}</div><CalendarDays className="shrink-0 text-orange-400" size={25}/>
-            </Link>
+            <div data-tutorial="schedule-action" className="col-span-2 border-b border-white/10 p-5 sm:p-7">
+              <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300"><NotebookPen size={19}/></span><div><p className="text-[10px] font-black tracking-[.18em] text-emerald-300">MY CALENDAR</p><strong className="mt-0.5 block">今日を確認・記録する</strong></div></div><Link href="/mypage/my-calendar" className="inline-flex items-center gap-1 text-xs font-black text-white/50 transition hover:text-white">開く<ChevronRight size={15}/></Link></div>
+              <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                <Link href="/mypage/my-calendar" className="rounded-xl border border-white/10 bg-white/[.025] p-3 transition hover:border-orange-400/40"><span className="text-[10px] font-black text-white/30">NEXT</span>{nextSchedule && nextScheduleDate ? <><strong className="mt-1 block truncate text-sm">{nextSchedule.title}</strong><span className="mt-1 block truncate text-[11px] text-white/40">{nextScheduleDate.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short", timeZone: "Asia/Tokyo" })}{nextSchedule.location ? ` ・ ${nextSchedule.location}` : ""}</span></> : <strong className="mt-1 block text-sm text-white/35">次の予定はありません</strong>}</Link>
+                <Link href={`/performance?kind=unofficial-athletics&date=${todayKey}&from=calendar`} className="flex items-center justify-between rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] p-3 transition hover:bg-emerald-400/10"><span><span className="text-[10px] font-black text-emerald-300/70">TODAY&apos;S LOG</span><strong className="mt-1 block text-sm">{todayRecordCount ? `記録済み ${todayRecordCount}件` : "今日の練習を記録"}</strong></span><Plus size={18} className="text-emerald-300"/></Link>
+              </div>
+              {activeGoal ? <Link href="/mypage/my-calendar" className="mt-3 flex min-w-0 items-center gap-2 text-xs text-white/40"><Target size={14} className="shrink-0 text-orange-400"/><span className="truncate">次の目標：{activeGoal.title}</span><span className="ml-auto shrink-0">{activeGoal.target_date.replaceAll("-", "/")}</span></Link> : null}
+            </div>
             <Suspense fallback={<MypageStatsSkeleton/>}><MypageStats dataPromise={deferredDataPromise}/></Suspense>
           </div>
         </div>
       </section>
 
       <section className="mt-5">
-        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           <Link data-tutorial="record-action" href="/performance" className="group flex min-h-20 items-center justify-between rounded-2xl bg-orange-500 px-5 font-black text-black transition hover:bg-orange-400"><span className="flex items-center gap-3"><Plus size={22}/><span>記録を追加</span></span><ArrowUpRight size={18} className="transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5"/></Link>
           <Link data-tutorial="video-action" href="/mypage/video-feedback" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-sky-400/50"><span className="flex items-center gap-3"><Video size={21} className="text-sky-400"/><span>動画を送る</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
           <Link href="/mypage/schedules" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-orange-400/50"><span className="flex items-center gap-3"><CalendarDays size={21} className="text-orange-400"/><span>全体スケジュール</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
-          <Link href="/mypage/my-calendar" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-emerald-400/50"><span className="flex items-center gap-3"><NotebookPen size={21} className="text-emerald-400"/><span>マイカレンダー</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
           <Link data-tutorial="ai-navigator" href="/mypage/ai-navigator" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-orange-400/50"><span className="flex items-center gap-3"><MessageCircle size={21} className="text-orange-400"/><span>AIに相談</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
         </div>
       </section>
