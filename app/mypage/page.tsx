@@ -21,6 +21,21 @@ function japanMonthKeys() {
   };
 }
 
+function tokyoDateKey(value: string) {
+  return new Date(value).toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
+}
+
+function occursOnDate(schedule: ScheduleItem, key: string) {
+  const start = tokyoDateKey(schedule.starts_at);
+  const end = schedule.ends_at ? tokyoDateKey(schedule.ends_at) : start;
+  return start <= key && end >= key;
+}
+
+function todayScheduleTime(schedule: ScheduleItem) {
+  if (schedule.all_day || schedule.personal) return "終日";
+  return new Date(schedule.starts_at).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" });
+}
+
 export default async function MyPage() {
   const supabase = await createClient();
 
@@ -33,10 +48,11 @@ export default async function MyPage() {
 
   const { currentMonth, previousMonth, previousMonthStart } = japanMonthKeys();
   const todayKey = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
+  const todayStart = new Date(`${todayKey}T00:00:00+09:00`).toISOString();
 
   const playerPromise = Promise.resolve(supabase.from("players").select("*").eq("user_id", userId).single());
   const coachRolePromise = Promise.resolve(supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "coach").maybeSingle());
-  const schedulesPromise = Promise.resolve(supabase.from("schedules").select("id, title, details, location, starts_at, ends_at, all_day, training_phase, schedule_type, audience, program_class, registration_enabled, registration_opens_at, registration_deadline").gte("starts_at", new Date().toISOString()).order("starts_at").limit(20));
+  const schedulesPromise = Promise.resolve(supabase.from("schedules").select("id, title, details, location, starts_at, ends_at, all_day, training_phase, schedule_type, audience, program_class, registration_enabled, registration_opens_at, registration_deadline").or(`starts_at.gte.${todayStart},ends_at.gte.${todayStart}`).order("starts_at").limit(30));
   const competitionApplicationsPromise = Promise.resolve(supabase.from("competition_applications").select("schedule_id").eq("user_id", userId).eq("status", "submitted"));
   const attendingSchedulesPromise = Promise.resolve(supabase.from("schedule_attendance").select("schedule_id,status").eq("user_id", userId));
   const personalCalendarPromise = Promise.resolve(supabase.from("personal_calendar_entries").select("id,entry_date,title,location,journal,entry_type").eq("user_id", userId).is("schedule_id", null).gte("entry_date", todayKey).order("entry_date").limit(20));
@@ -50,6 +66,7 @@ export default async function MyPage() {
   }
 
   const appliedCompetitionIds = new Set((competitionApplications ?? []).map((application) => application.schedule_id));
+  const attendanceByScheduleId = new Map((attendingSchedules ?? []).map((attendance) => [attendance.schedule_id, attendance.status]));
   const answeredScheduleIds = new Set((attendingSchedules ?? []).map((attendance) => attendance.schedule_id));
   const attendingScheduleIds = new Set((attendingSchedules ?? []).filter((attendance) => attendance.status === "attending").map((attendance) => attendance.schedule_id));
   const unansweredScheduleCount = ((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && !answeredScheduleIds.has(schedule.id)).length;
@@ -59,6 +76,8 @@ export default async function MyPage() {
     .slice(0, 2);
   const nextSchedule = nextSchedules[0];
   const nextScheduleDate = nextSchedule ? new Date(nextSchedule.starts_at) : null;
+  const todayTrainingItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && occursOnDate(schedule, todayKey))])
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
 
   return (
     <main className="mx-auto my-16 max-w-[1480px] px-4 pb-16 sm:px-7 lg:my-20 xl:px-10">
@@ -80,6 +99,10 @@ export default async function MyPage() {
           <div className="grid grid-cols-2 border-t border-white/10 lg:border-l lg:border-t-0">
             <div data-tutorial="schedule-action" className="col-span-2 border-b border-white/10 p-5 sm:p-7">
               <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300"><NotebookPen size={19}/></span><div><p className="text-[10px] font-black tracking-[.18em] text-emerald-300">MY CALENDAR</p><strong className="mt-0.5 block">今日を確認・記録する</strong></div></div><div className="flex items-center gap-2">{unansweredScheduleCount ? <Link href="/mypage/schedules" className="rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-1.5 text-[10px] font-black text-orange-300">出欠未回答 {unansweredScheduleCount}件</Link> : null}<Link href="/mypage/my-calendar" className="inline-flex items-center gap-1 text-xs font-black text-white/50 transition hover:text-white">開く<ChevronRight size={15}/></Link></div></div>
+              <div className="mt-5 rounded-2xl border border-emerald-400/15 bg-emerald-400/[.04] p-4">
+                <div className="flex items-center justify-between gap-3"><div><p className="text-[9px] font-black tracking-[.18em] text-emerald-300">TODAY&apos;S TRAINING</p><strong className="mt-1 block text-sm">今日の練習</strong></div><span className="rounded-full bg-white/[.06] px-2.5 py-1 text-[10px] font-black text-white/45">{todayTrainingItems.length}件</span></div>
+                {todayTrainingItems.length ? <div className="mt-3 space-y-2">{todayTrainingItems.slice(0, 3).map((item) => { const attendanceStatus = item.personal ? "個人予定" : attendanceByScheduleId.get(item.id) === "attending" ? "参加" : attendanceByScheduleId.get(item.id) === "undecided" ? "未定" : "出欠未回答"; return <Link key={`${item.personal ? "personal" : "club"}-${item.id}`} href={`/mypage/my-calendar?date=${todayKey}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-white/[.07] bg-black/20 px-3 py-2.5 transition hover:border-emerald-400/30"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400"/><span className="min-w-0 flex-1"><strong className="block truncate text-sm">{item.title}</strong><span className="mt-0.5 block truncate text-[10px] text-white/40">{todayScheduleTime(item)}{item.location ? ` ・ ${item.location}` : ""}</span></span><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black ${attendanceStatus === "参加" ? "bg-emerald-400/15 text-emerald-300" : attendanceStatus === "出欠未回答" ? "bg-orange-400/15 text-orange-300" : "bg-white/[.07] text-white/40"}`}>{attendanceStatus}</span></Link>; })}{todayTrainingItems.length > 3 ? <Link href={`/mypage/my-calendar?date=${todayKey}`} className="block pt-1 text-center text-[10px] font-black text-emerald-300">ほか{todayTrainingItems.length - 3}件を表示</Link> : null}</div> : <Link href={`/mypage/my-calendar?date=${todayKey}`} className="mt-3 flex items-center justify-between rounded-xl border border-dashed border-white/10 px-3 py-3 text-xs text-white/40"><span>今日の予定はありません</span><span className="inline-flex items-center gap-1 font-black text-emerald-300"><Plus size={14}/>個人練習を追加</span></Link>}
+              </div>
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
                 <Link href="/mypage/my-calendar" className="rounded-xl border border-white/10 bg-white/[.025] p-3 transition hover:border-orange-400/40"><span className="text-[10px] font-black text-white/30">NEXT</span>{nextSchedule && nextScheduleDate ? <><strong className="mt-1 block truncate text-sm">{nextSchedule.title}</strong><span className="mt-1 block truncate text-[11px] text-white/40">{nextScheduleDate.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short", timeZone: "Asia/Tokyo" })}{nextSchedule.location ? ` ・ ${nextSchedule.location}` : ""}</span></> : <strong className="mt-1 block text-sm text-white/35">次の予定はありません</strong>}</Link>
                 <Link href={`/performance?kind=unofficial-athletics&date=${todayKey}&from=calendar`} className="flex items-center justify-between rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] p-3 transition hover:bg-emerald-400/10"><span><span className="text-[10px] font-black text-emerald-300/70">TODAY&apos;S LOG</span><strong className="mt-1 block text-sm">{todayRecordCount ? `記録済み ${todayRecordCount}件` : "今日の練習を記録"}</strong></span><Plus size={18} className="text-emerald-300"/></Link>
