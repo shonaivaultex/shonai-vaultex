@@ -37,16 +37,18 @@ export default async function MyPage() {
   const coachRolePromise = Promise.resolve(supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "coach").maybeSingle());
   const schedulesPromise = Promise.resolve(supabase.from("schedules").select("id, title, details, location, starts_at, ends_at, all_day, training_phase, schedule_type, audience, program_class, registration_enabled, registration_opens_at, registration_deadline").gte("starts_at", new Date().toISOString()).order("starts_at").limit(20));
   const competitionApplicationsPromise = Promise.resolve(supabase.from("competition_applications").select("schedule_id").eq("user_id", userId).eq("status", "submitted"));
+  const attendingSchedulesPromise = Promise.resolve(supabase.from("schedule_attendance").select("schedule_id").eq("user_id", userId).eq("status", "attending"));
   const deferredDataPromise = loadMypageDeferredData({ userId, gender: playerPromise.then(({ data }) => data?.gender ?? null), currentMonth, previousMonthStart });
-  const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise]);
+  const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }, { data: attendingSchedules }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise, attendingSchedulesPromise]);
 
   if (!player) {
     redirect("/profile/create");
   }
 
   const appliedCompetitionIds = new Set((competitionApplications ?? []).map((application) => application.schedule_id));
+  const attendingScheduleIds = new Set((attendingSchedules ?? []).map((attendance) => attendance.schedule_id));
   const nextSchedules = ((schedules ?? []) as ScheduleItem[])
-    .filter((schedule) => schedule.schedule_type !== "competition" || appliedCompetitionIds.has(schedule.id))
+    .filter((schedule) => schedule.schedule_type !== "competition" || appliedCompetitionIds.has(schedule.id) || attendingScheduleIds.has(schedule.id))
     .slice(0, 2);
   const nextSchedule = nextSchedules[0];
   const nextScheduleDate = nextSchedule ? new Date(nextSchedule.starts_at) : null;
