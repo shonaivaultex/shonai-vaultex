@@ -42,11 +42,14 @@ export default function CoachPage() {
     {/* 写真 */}
     <div className="overflow-hidden rounded-3xl">
       <Image
-        src="/coach.jpg"
+        src="/coach-large.jpg"
         alt="Coach"
         width={700}
         height={900}
         className="h-full w-full object-cover transition duration-500 hover:scale-105"
+        quality={95}
+        sizes="(min-width: 1024px) 50vw, 100vw"
+        priority
       />
     </div>
 

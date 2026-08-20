@@ -6,7 +6,7 @@ const coaches = [
     name: "宮内 勝史",
     display: "COACHES",
     role: "HEAD COACH",
-    image: "/coach.jpg",
+    image: "/coach-large.jpg",
     href: "/coach/masashi-miyauchi",
     specialty: ["走幅跳", "短距離", "投てき"],
   },
@@ -72,6 +72,8 @@ export default function CoachPage() {
                   src={coach.image}
                   alt={coach.name}
                   fill
+                  quality={95}
+                  sizes="(min-width: 768px) 50vw, 95vw"
                   className="object-cover transition duration-500 group-hover:scale-105"
                 />
 
