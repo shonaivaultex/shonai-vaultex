@@ -1,44 +1,177 @@
-import { ArrowDown, Bot, CheckCircle2, ClipboardCheck, Eye, Flag, Gauge, Mail, MapPin, MessageCircle, Phone, Play, RefreshCw, Sparkles, Users } from "lucide-react";
+"use client";
+
+import { Dumbbell, Mail, MapPin, Phone, Trophy, Users } from "lucide-react";
 import Hero from "./components/Hero";
+import LoadingScreen from "./components/LoadingScreen";
+import { useEffect, useState } from "react";
+import { ProgramCard } from "./components/ProgramCard";
+import { programs } from "./components/program-data";
 import { ContactLine } from "./components/ui/ContactLine";
 import { CtaLink } from "./components/ui/CtaLink";
 import { SectionLabel } from "./components/ui/SectionLabel";
+import { Stat } from "./components/ui/Stat";
+const features = [
+  { icon: Trophy, title: "挑戦を継続できる環境", text: "練習だけでなく、試合後の振り返りまで支える仕組みで「自分で成長を言語化」できるようにします。" },
+  { icon: Users, title: "仲間と共に伸びる文化", text: "上手くいかない日も、仲間とコーチが一緒に改善。比較ではなく、本人の前回より良くなることを重視します。" },
+  { icon: Dumbbell, title: "競技力＋人間力", text: "基礎練習・技術練習・体力作りを、体力・メンタル・生活習慣まで一体で整える設計です。" },
+] as const;
 
-const aspirations = ["自己ベストを更新したい", "自分の身体をもっと知りたい", "技術について相談したい", "大会で力を発揮したい", "楽しく陸上を続けたい", "新しいことに挑戦したい"] as const;
-const weapons = [
-  { icon: Users, label: "COACHING", title: "一人ひとりと向き合う", text: "少人数SESSIONを中心に、本人の考えや感覚を聞きながら、コーチと一緒に成長方法を考えます。" },
-  { icon: Sparkles, label: "VAULTEX CLASS", title: "仲間と学ぶ・楽しむ", text: "一つのテーマを仲間と学び、試し、陸上そのものを楽しむ全体型の教室です。月2回程度を想定しています。" },
-  { icon: ClipboardCheck, label: "PERFORMANCE LOG", title: "良かった自分を忘れない", text: "記録だけでなく、意識・感覚・動画を残し、調子が良かった時の自分をあとから振り返れます。" },
-  { icon: Gauge, label: "ATHLETE SCAN", title: "今の自分を知る", text: "CONTROL TESTから現在の身体能力プロフィールを可視化。才能を決める診断ではなく、今回見えた身体特性です。" },
-  { icon: Bot, label: "VAULTEX AI", title: "一人で悩まない", text: "記録や振り返りを一緒に整理し、次に見るもの・試すこと・相談先を考える競技相談パートナーです。" },
-  { icon: MessageCircle, label: "COACH FEEDBACK", title: "分からなくなったら相談する", text: "自分だけでは整理できない時は、記録や動画と一緒にコーチへ相談し、直接やり取りできます。" },
-] as const;
-const growthCycle = [
-  { icon: Flag, label: "GOAL", text: "なりたい自分を決める" }, { icon: Play, label: "TRY", text: "練習・挑戦する" },
-  { icon: ClipboardCheck, label: "RECORD", text: "記録・感覚・動画を残す" }, { icon: Eye, label: "REFLECT", text: "振り返る" },
-  { icon: MessageCircle, label: "TALK", text: "AIやコーチと考える" }, { icon: RefreshCw, label: "GROW", text: "成長し、次の目標へ" },
-] as const;
-const news = [
-  { date: "2026.08.06", tag: "OPEN", title: "SHONAI VAULTEX 公式サイトを公開しました" },
-  { date: "2026.08.10", tag: "EVENT", title: "無料体験会の参加者を募集しています" },
-  { date: "2026.09.01", tag: "RECRUIT", title: "2026年度 新規クラブメンバー募集開始" },
-] as const;
+type HomeNewsItem = {
+  id?: number | string;
+  date: string;
+  tag: string;
+  title: string;
+};
+
+const fallbackNews: HomeNewsItem[] = [
+  { id: "2026-08-06-1", date: "2026.08.06", tag: "INFO", title: "SHONAI VAULTEX 公式サイトを公開しました" },
+  { id: "2026-08-10-1", date: "2026.08.10", tag: "EVENT", title: "無料体験会を毎月開催しています" },
+  { id: "2026-09-01-1", date: "2026.09.01", tag: "RECRUIT", title: "2026年度 新規クラブメンバー募集開始" },
+];
+
+const copyByAudience = {
+  parent: {
+    aboutTitle: "ご家族の安心が、子どもの挑戦を支えます。",
+    aboutText1: "練習の見守りや進捗を把握できる情報設計で、家庭からクラブ生活を応援しやすい環境を目指します。",
+    aboutText2: "勝敗よりも「毎週の小さな成長」を大切にし、長く継続できる習慣づくりを支援します。",
+    featureSub: "競技力と人間力を、同時に育てるVAULTEXの3つの約束。",
+    ctaText: "無料体験を今すぐ予約する",
+  },
+  player: {
+    aboutTitle: "自分の成長を、数字と感覚で実感する場所です。",
+    aboutText1: "記録、フィードバック、日々の振り返りを1か所で見られるから、次の練習が明確になります。",
+    aboutText2: "強くなるだけでなく、仲間やチームで支え合いながら『前より上手くなる』を続けます。",
+    featureSub: "競技力とメンタルを、同時に育てるVAULTEXの3つの約束。",
+    ctaText: "まずは練習を体験して、今日の自分と比較してみる",
+  },
+} as const;
 
 export default function HomePage() {
-  return <main className="overflow-x-hidden bg-[#090a0c] text-white">
-    <Hero />
-    <section id="about" className="border-t border-white/10 py-20 sm:py-28"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-      <SectionLabel index="01">YOUR GOAL</SectionLabel><div className="mt-8 grid gap-10 lg:grid-cols-12"><div className="lg:col-span-5"><h2 className="text-4xl font-black leading-tight tracking-[-0.055em] sm:text-6xl">あなたは、<br/><span className="text-orange-500">どうなりたい？</span></h2><p className="mt-7 max-w-md text-sm leading-8 text-white/60">スタート地点も、目標も、人それぞれでいい。VAULTEXは、全員を同じゴールへ連れていくクラブではありません。</p></div><div className="grid gap-3 sm:grid-cols-2 lg:col-span-7">{aspirations.map((item, index) => <div key={item} className="flex min-h-24 items-center gap-4 rounded-2xl border border-white/10 bg-white/[.025] px-5 py-4"><span className="text-xs font-black text-orange-500">0{index + 1}</span><strong className="text-base leading-6">{item}</strong></div>)}</div></div><p className="mt-12 border-l-2 border-orange-500 pl-5 text-xl font-black sm:text-2xl">スタート地点も、目標も、人それぞれでいい。</p>
-    </div></section>
-    <section id="weapons" className="bg-[#101216] py-20 sm:py-28"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-      <SectionLabel index="02">YOUR TOOLS</SectionLabel><div className="mt-7 grid gap-7 lg:grid-cols-12 lg:items-end"><h2 className="text-4xl font-black leading-tight tracking-[-0.055em] sm:text-6xl lg:col-span-7">目標は、人それぞれ。<br/><span className="text-orange-500">だから、武器も一つじゃない。</span></h2><p className="max-w-md text-sm leading-8 text-white/60 lg:col-span-4 lg:col-start-9">難しい機能を使うことが目的ではありません。自分の目標を叶えるために、今必要なものを選びます。</p></div>
-      <div className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{weapons.map(({ icon: Icon, label, title, text }, index) => <article key={label} className="group rounded-2xl border border-white/10 bg-[#0c0e11] p-6 transition-colors hover:border-orange-500/50 sm:p-7"><div className="flex items-center justify-between"><span className="grid size-11 place-items-center rounded-xl bg-orange-500/10 text-orange-400"><Icon size={22} strokeWidth={1.7}/></span><span className="text-[10px] font-black text-white/25">0{index + 1}</span></div><p className="mt-8 text-[10px] font-black tracking-[.2em] text-orange-400">{label}</p><h3 className="mt-2 text-xl font-black">{title}</h3><p className="mt-4 text-sm leading-7 text-white/55">{text}</p></article>)}</div>
-      <div className="mt-8 rounded-2xl border border-orange-500/25 bg-orange-500/[.06] p-6 sm:flex sm:items-center sm:justify-between sm:gap-8"><div><h3 className="text-xl font-black">機能を全部使う必要はありません。</h3><p className="mt-2 max-w-3xl text-sm leading-7 text-white/60">動画を使う人、SCANを成長の指標にする人、コーチとの対話を大切にする人。あなたの目標に必要なものを選んで使ってください。</p></div><CheckCircle2 className="mt-5 shrink-0 text-orange-400 sm:mt-0" size={34}/></div>
-    </div></section>
-    <section className="border-y border-white/10 py-20 sm:py-28"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-      <SectionLabel index="03">VAULTEX GROWTH CYCLE</SectionLabel><div className="mt-7 grid gap-8 lg:grid-cols-12"><h2 className="text-4xl font-black tracking-[-0.055em] sm:text-6xl lg:col-span-7">挑戦を、<span className="text-orange-500">次の成長へ。</span></h2><p className="max-w-md text-sm leading-8 text-white/60 lg:col-span-4 lg:col-start-9">機能はバラバラではなく、一つの成長サイクルを支えるためにつながっています。</p></div><div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">{growthCycle.map(({ icon: Icon, label, text }, index) => <div key={label} className="relative rounded-2xl border border-white/10 bg-[#101216] p-5"><Icon size={22} className="text-orange-400"/><p className="mt-7 text-xs font-black tracking-[.18em] text-orange-400">{label}</p><p className="mt-2 text-sm font-bold leading-6">{text}</p>{index < growthCycle.length - 1 ? <ArrowDown className="absolute -bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-orange-500 p-1 text-black sm:hidden" size={24}/> : null}</div>)}</div><p className="mt-8 text-center text-sm font-black text-orange-300">GOAL → TRY → RECORD → REFLECT → TALK → GROW → NEXT GOAL</p>
-    </div></section>
-    <section id="news" className="bg-[#101216] py-20 sm:py-24"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><SectionLabel index="04">NEWS</SectionLabel><div className="mt-9 border-t border-white/15">{news.map((item) => <article key={`${item.date}-${item.title}`} className="grid gap-3 border-b border-white/15 py-5 sm:grid-cols-12 sm:items-center sm:px-3"><time className="text-xs font-medium text-white/45 sm:col-span-2">{item.date}</time><span className="text-[10px] font-black tracking-[0.14em] text-orange-500 sm:col-span-2">{item.tag}</span><h3 className="text-sm font-bold sm:col-span-8">{item.title}</h3></article>)}</div></div></section>
-    <section id="contact" className="relative overflow-hidden bg-orange-500 py-20 text-[#090a0c] sm:py-28"><div className="pointer-events-none absolute -right-8 -top-28 select-none text-[13rem] font-black leading-none tracking-[-0.1em] text-black/10 sm:text-[22rem]">GO</div><div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><p className="flex items-center gap-3 text-xs font-black tracking-[0.22em]"><span className="text-black/50">05</span><span className="h-px w-8 bg-[#090a0c]"/>NEXT STEP</p><div className="mt-8 grid gap-12 lg:grid-cols-12"><div className="lg:col-span-8"><h2 className="text-4xl font-black leading-[0.98] tracking-[-0.065em] sm:text-7xl">まず、あなたの<br/>目標を聞かせてください。</h2><p className="mt-7 max-w-lg text-sm font-medium leading-7 text-black/70">体験・見学・目標についての相談から始められます。機能の知識や競技経験は必要ありません。</p><div className="mt-9 flex flex-wrap gap-3"><CtaLink href="https://forms.gle/gE26L75sc31dJdJk7">VAULTEXを体験する</CtaLink><CtaLink href="https://forms.gle/9KLAq5PSkBudhbyL9" variant="outline">目標について相談する</CtaLink></div></div><div className="space-y-6 self-end text-sm font-semibold lg:col-span-4"><ContactLine icon={MapPin}>山形県庄内地域（活動場所はお問い合わせください）</ContactLine><ContactLine icon={Mail}>shonaivaultex@gmail.com</ContactLine><ContactLine icon={Phone}>準備中</ContactLine></div></div></div></section>
-  </main>;
+  const [loading, setLoading] = useState(true);
+  const [audience, setAudience] = useState<"parent" | "player">("parent");
+  const [news, setNews] = useState<HomeNewsItem[]>(fallbackNews);
+  const currentCopy = copyByAudience[audience];
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2200);
+
+    fetch("/api/public-news")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((rows: Array<{ id: number; title: string; priority?: string | null; created_at: string }>) => {
+        if (!rows || rows.length === 0) return;
+        const mapped = rows.map((row) => ({
+          id: row.id,
+          date: new Date(row.created_at).toISOString().slice(0, 10).replaceAll("-", "."),
+          tag: row.priority ?? "INFO",
+          title: row.title,
+        }));
+        setNews(mapped);
+      })
+      .catch(() => {});
+
+    return () => clearTimeout(timer);
+  }, []);
+  return (
+    <>
+   <LoadingScreen loading={loading} />
+
+    <main className="overflow-x-hidden bg-[#090a0c] text-white">
+      <Hero />
+      <section className="border-b border-white/10 bg-[#101216] py-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-start gap-3 px-5 sm:px-8 lg:px-10">
+          <div className="inline-flex rounded-full border border-white/10 bg-black/30 p-1">
+            <button type="button" onClick={() => setAudience("parent")} className={`rounded-full px-4 py-2 text-xs font-black ${audience === "parent" ? "bg-orange-500 text-black" : "text-white/70"}`}>保護者向け</button>
+            <button type="button" onClick={() => setAudience("player")} className={`rounded-full px-4 py-2 text-xs font-black ${audience === "player" ? "bg-orange-500 text-black" : "text-white/70"}`}>選手向け</button>
+          </div>
+          <CtaLink href="https://forms.gle/9KLAq5PSkBudhbyL9" className="mt-1">{currentCopy.ctaText}</CtaLink>
+        </div>
+      </section>
+
+      <section id="about" className="border-t border-white/10 py-24 sm:py-32">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-12 lg:gap-8 lg:px-10">
+          <div className="lg:col-span-4"><SectionLabel index="01">ABOUT US</SectionLabel></div>
+          <div className="lg:col-span-8">
+            <h2 className="max-w-3xl text-3xl font-black leading-tight tracking-[-0.045em] sm:text-5xl">
+              {currentCopy.aboutTitle}
+            </h2>
+            <div className="mt-9 grid max-w-3xl gap-6 text-sm leading-8 text-white/65 sm:grid-cols-2">
+              <p>{currentCopy.aboutText1}</p>
+              <p>{currentCopy.aboutText2}</p>
+            </div>
+            <div className="mt-12 grid max-w-3xl grid-cols-3 border-y border-white/10 py-6">
+  <Stat value="2026" label="FOUNDED" />
+  <Stat value="3つ" label="成長支援の柱" />
+  <Stat value="4" label="PROGRAM" />
+</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="feature" className="bg-[#101216] py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <SectionLabel index="02">OUR FEATURE</SectionLabel>
+          <div className="mt-7 flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><h2 className="text-3xl font-black tracking-[-0.045em] sm:text-5xl">強くなる、その先へ。</h2><p className="max-w-sm text-sm leading-7 text-white/60">{currentCopy.featureSub}</p></div>
+          <div className="mt-14 grid gap-px bg-white/10 md:grid-cols-3">{features.map(({ icon: Icon, title, text }, index) => <article key={title} className="group bg-[#101216] p-7 sm:p-9"><div className="flex items-start justify-between"><Icon aria-hidden="true" size={30} strokeWidth={1.5} className="text-orange-500" /><span className="text-xs font-bold text-white/35">0{index + 1}</span></div><h3 className="mt-16 text-lg font-black tracking-wide">{title}</h3><p className="mt-4 text-sm leading-7 text-white/60">{text}</p><div className="mt-8 h-px w-10 bg-orange-500 transition-all duration-300 group-hover:w-full" /></article>)}</div>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <CtaLink href="/program">プログラムを詳しく見る</CtaLink>
+            <CtaLink href="/mypage" variant="outline">マイページの成長レポートを見る</CtaLink>
+          </div>
+          <div className="mt-12 rounded-2xl border border-white/10 bg-[#0c0d10] p-6 sm:p-10">
+            <SectionLabel index="02-2">HOW TO START</SectionLabel>
+            <h3 className="mt-3 text-2xl font-black tracking-[-0.03em] sm:text-3xl">まずは3ステップ。迷わない入会導線</h3>
+            <div className="mt-7 grid gap-4 text-sm leading-7 text-white/70 md:grid-cols-3">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <span className="text-xs font-black tracking-[0.12em] text-orange-400">STEP 1</span>
+                <p className="mt-3 font-bold text-white">無料体験を予約</p>
+                <p className="mt-2">まずは体験会の日程だけ選んでください。</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <span className="text-xs font-black tracking-[0.12em] text-orange-400">STEP 2</span>
+                <p className="mt-3 font-bold text-white">実際に体験</p>
+                <p className="mt-2">練習の進行、雰囲気、コーチングを現場で見られます。</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <span className="text-xs font-black tracking-[0.12em] text-orange-400">STEP 3</span>
+                <p className="mt-3 font-bold text-white">記録を残して継続</p>
+                <p className="mt-2">マイページで成長の跡を確認しながらトレーニングを続けます。</p>
+              </div>
+            </div>
+            <CtaLink href="https://forms.gle/9KLAq5PSkBudhbyL9" className="mt-8 inline-flex">無料体験を予約する</CtaLink>
+          </div>
+        </div>
+      </section>
+
+      <section id="program" className="py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <SectionLabel index="03">PROGRAM</SectionLabel>
+          <div className="mt-7 grid gap-10 lg:grid-cols-12"><h2 className="text-3xl font-black tracking-[-0.045em] sm:text-5xl lg:col-span-5">自分のペースで、<br />頂点を目指す。</h2><p className="max-w-md self-end text-sm leading-7 text-white/60 lg:col-span-5 lg:col-start-8">年齢と経験に合わせたプログラムで、運動の楽しさから本格的な競技力まで、一歩ずつサポートします。</p></div>
+          <div className="mt-16 grid gap-8 md:grid-cols-2">
+  {programs.map((program) => (
+    <ProgramCard
+      key={program.slug}
+      program={program}
+      
+    />
+  ))}
+</div>
+
+<div className="mt-12 flex justify-center">
+  <CtaLink href="/program" variant="outline">
+    VIEW ALL PROGRAMS
+  </CtaLink>
+</div>
+        </div>
+      </section>
+
+      <section id="news" className="bg-[#101216] py-24 sm:py-32"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><SectionLabel index="04">NEWS</SectionLabel><div className="mt-10 border-t border-white/15">{news.length ? news.map((item) => <article key={item.id ?? item.date} className="grid gap-3 border-b border-white/15 py-5 sm:grid-cols-12 sm:items-center sm:px-3"><time className="text-xs font-medium text-white/45 sm:col-span-2">{item.date}</time><span className="text-[10px] font-black tracking-[0.14em] text-orange-500 sm:col-span-2">{item.tag}</span><h3 className="text-sm font-bold sm:col-span-8">{item.title}</h3></article>) : <p className="py-5 text-sm text-white/55">お知らせは準備中です</p>}</div></div></section>
+
+      <section id="contact" className="relative overflow-hidden bg-orange-500 py-24 text-[#090a0c] sm:py-32"><div className="pointer-events-none absolute -right-8 -top-28 select-none text-[13rem] font-black leading-none tracking-[-0.1em] text-black/10 sm:text-[22rem]">GO</div><div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><p className="flex items-center gap-3 text-xs font-black tracking-[0.22em]"><span className="text-black/50">05</span><span className="h-px w-8 bg-[#090a0c]" />CONTACT</p><div className="mt-8 grid gap-12 lg:grid-cols-12"><div className="lg:col-span-8"><h2 className="text-4xl font-black leading-[0.95] tracking-[-0.065em] sm:text-7xl">YOUR NEXT<br />MOVE STARTS<br />HERE.</h2><p className="mt-7 max-w-md text-sm font-medium leading-7 text-black/70">体験・見学はいつでも歓迎です。まずは気軽に、SHONAI VAULTEXの空気を感じに来てください。</p><CtaLink href="https://forms.gle/9KLAq5PSkBudhbyL9" className="mt-9">お問い合わせ</CtaLink></div><div className="space-y-6 self-end text-sm font-semibold lg:col-span-4"><ContactLine icon={MapPin}>山形県庄内地域（活動場所はお問い合わせください）</ContactLine><ContactLine icon={Mail}>shonaivaultex@gmail.com</ContactLine><ContactLine icon={Phone}>
+準備中
+</ContactLine></div></div></div></section>
+        </main>
+  </>
+  
+);
 }

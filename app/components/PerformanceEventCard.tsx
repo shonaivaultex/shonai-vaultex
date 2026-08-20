@@ -1,14 +1,12 @@
-import LazyPerformanceChart from "@/app/components/LazyPerformanceChart";
+import PerformanceChart from "@/app/components/PerformanceChart";
 import TargetGoalEditor from "@/app/components/TargetGoalEditor";
-import LazyPerformanceHistory from "@/app/components/LazyPerformanceHistory";
-import type { ReactNode } from "react";
+import PerformanceHistoryModal from "@/app/components/PerformanceHistoryModal";
 
 type PerformanceRecord = {
   id: number;
   value: number | string;
   date: string;
   awareness_category?: string | null;
-  awareness_categories?: string[] | null;
   awareness_note?: string | null;
   video_path?: string | null;
   video_url?: string | null;
@@ -22,7 +20,8 @@ type PerformanceEventCardProps = {
   target: number | null;
   userId: string;
   scopeLabel?: "PB" | "SB";
-  rankingContent?: ReactNode;
+  ranking?: { overall_rank: number; overall_total: number; overall_top_percent: number; class_rank: number | null; class_total: number | null; class_top_percent: number | null; program_class: string | null; gender: "male" | "female" } | null;
+  leaderboard?: Array<{ ranking_scope: "overall" | "class"; leaderboard_position: number; display_name: string; best_value: number | string; is_current_user: boolean }>;
   focusRecordId?: number | null;
 };
 
@@ -37,6 +36,23 @@ function formatChange(value: number, unit: string) {
   return `${sign}${round(Math.abs(normalized))}${unit}`;
 }
 
+function describeTrend(value: number, isTimeEvent: boolean) {
+  if (value === 0) {
+    return {
+      label: "変化なし",
+      arrow: "−",
+      isPositive: null as null | boolean,
+    };
+  }
+
+  const isPositive = isTimeEvent ? value < 0 : value > 0;
+  return {
+    label: isPositive ? "改善" : "悪化",
+    arrow: isPositive ? "↑" : "↓",
+    isPositive,
+  };
+}
+
 export default function PerformanceEventCard({
   category,
   unit,
@@ -45,7 +61,8 @@ export default function PerformanceEventCard({
   target,
   userId,
   scopeLabel = "PB",
-  rankingContent,
+  ranking,
+  leaderboard = [],
   focusRecordId,
 }: PerformanceEventCardProps) {
   const chronological = [...records].sort((a, b) => {
@@ -62,8 +79,6 @@ export default function PerformanceEventCard({
   const yearlyFirst = yearlyRecords.at(-1);
   const yearlyChange = yearlyLatest && yearlyFirst ? Number(yearlyLatest.value) - Number(yearlyFirst.value) : null;
   const isTimeEvent = unit === "秒" || unit === "分";
-  const latestImproved = latestChange === null ? null : isTimeEvent ? latestChange < 0 : latestChange > 0;
-  const yearlyImproved = yearlyChange === null ? null : isTimeEvent ? yearlyChange < 0 : yearlyChange > 0;
   const bestValue = Number(best.value);
   const initialValue = Number(firstEver.value);
   const remaining = target === null ? null : isTimeEvent ? bestValue - target : target - bestValue;
@@ -76,9 +91,16 @@ export default function PerformanceEventCard({
       : progressSpan > 0
         ? Math.max(0, Math.min(100, Math.round((progressMade / progressSpan) * 100)))
         : Math.max(0, Math.min(100, Math.round(isTimeEvent ? (target / bestValue) * 100 : (bestValue / target) * 100)));
+  const overallLeaders = leaderboard.filter((item) => item.ranking_scope === "overall");
+  const classLeaders = leaderboard.filter((item) => item.ranking_scope === "class");
+  const thirdPlace = overallLeaders.find((item) => item.leaderboard_position === 3);
+  const differenceToThird = thirdPlace && ranking && ranking.overall_rank > 3
+    ? Math.abs(Number(thirdPlace.best_value) - bestValue)
+    : null;
+  const latestTrend = latestChange === null ? null : describeTrend(latestChange, isTimeEvent);
+  const yearlyTrend = yearlyChange === null ? null : describeTrend(yearlyChange, isTimeEvent);
   return (
     <article
-      className="[content-visibility:auto] [contain-intrinsic-size:auto_900px]"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -130,23 +152,52 @@ export default function PerformanceEventCard({
             {latestChange === null ? (
               <strong className="mt-2 block text-base text-white/35">記録待ち</strong>
             ) : (
-              <strong className={`mt-2 block text-xl ${latestChange === 0 ? "text-white/50" : latestImproved ? "text-emerald-400" : "text-red-400"}`}>
-                {formatChange(latestChange, unit)}
+              <strong className={`mt-2 block text-xl ${latestTrend?.isPositive ? "text-emerald-400" : latestTrend?.isPositive === false ? "text-red-400" : "text-white/50"}`}>
+                <span className="mr-2">{latestTrend?.arrow}</span>
+                <span>{latestTrend?.label}</span>
+                <span className="ml-2 text-base text-white/80">{formatChange(latestChange, unit)}</span>
               </strong>
             )}
+            {latest && previous ? (
+              <p className="mt-2 text-xs text-white/45">{`${previous.date} → ${latest.date}`}</p>
+            ) : null}
           </div>
           <div className="rounded-xl border border-white/10 p-4">
-            <p className="m-0 text-[11px] font-bold tracking-[0.08em] text-white/45">年間成長</p>
-            <strong className={`mt-2 block text-xl ${yearlyChange === null || yearlyChange === 0 ? "text-white/50" : yearlyImproved ? "text-emerald-400" : "text-red-400"}`}>
-              {currentYear} {yearlyChange === null ? "—" : formatChange(yearlyChange, unit)}
+            <p className="m-0 text-[11px] font-bold tracking-[0.08em] text-white/45">{currentYear}年度の変化</p>
+            <strong className={`mt-2 block text-xl ${yearlyChange === null || yearlyChange === 0 ? "text-white/50" : yearlyTrend?.isPositive ? "text-emerald-400" : "text-red-400"}`}>
+              {yearlyChange === null
+                ? `${currentYear}年度のデータが不足しています`
+                : `${yearlyTrend?.arrow} ${yearlyTrend?.label} ${formatChange(yearlyChange, unit)}`}
             </strong>
+            {yearlyLatest && yearlyFirst ? (
+              <p className="mt-2 text-xs text-white/45">{`${yearlyFirst.date} → ${yearlyLatest.date}`}</p>
+            ) : null}
           </div>
         </div>
 
-        {rankingContent}
+        {ranking && (
+          <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.025] p-4">
+            <p className="m-0 text-[11px] font-bold tracking-[0.08em] text-white/45">VAULTEX {ranking.gender === "female" ? "女子" : "男子"}ランキング</p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div><span className="block text-xs text-white/45">全体</span><strong className="mt-1 block text-base text-orange-300">{ranking.overall_rank}位／{ranking.overall_total}人</strong><span className="text-xs text-white/50">上位{Math.max(1, Math.ceil(ranking.overall_top_percent))}%</span></div>
+              <div><span className="block text-xs text-white/45">{ranking.program_class ?? "クラス未選択"}</span>{ranking.class_rank !== null && ranking.class_total !== null && ranking.class_top_percent !== null ? <><strong className="mt-1 block text-base text-orange-300">{ranking.class_rank}位／{ranking.class_total}人</strong><span className="text-xs text-white/50">上位{Math.max(1, Math.ceil(ranking.class_top_percent))}%</span></> : <strong className="mt-1 block text-sm text-white/35">プロフィールで選択</strong>}</div>
+            </div>
+            {leaderboard.length > 0 && (
+              <div className="mt-4 grid gap-4 border-t border-white/10 pt-4 sm:grid-cols-2">
+                <Leaderboard title={`${ranking.gender === "female" ? "女子" : "男子"} 全体 TOP 3`} rows={overallLeaders} unit={unit} />
+                <Leaderboard title={`${ranking.program_class ?? "クラス"} TOP 3`} rows={classLeaders} unit={unit} />
+              </div>
+            )}
+            {differenceToThird !== null && (
+              <p className="mt-4 rounded-lg bg-orange-500/10 px-3 py-2 text-xs text-orange-200">
+                3位まであと <strong>{round(differenceToThird)}{unit}</strong>
+              </p>
+            )}
+          </div>
+        )}
 
         <div style={{ marginTop: 24 }}>
-          <LazyPerformanceChart
+          <PerformanceChart
             unit={unit}
             records={records.map((record) => ({
               date: record.date,
@@ -156,7 +207,22 @@ export default function PerformanceEventCard({
         </div>
       </div>
 
-      <LazyPerformanceHistory records={records} unit={unit} focusRecordId={focusRecordId} />
+      <PerformanceHistoryModal records={records} unit={unit} focusRecordId={focusRecordId} />
     </article>
+  );
+}
+
+function Leaderboard({ title, rows, unit }: { title: string; rows: PerformanceEventCardProps["leaderboard"]; unit: string }) {
+  return (
+    <div>
+      <p className="mb-2 text-[11px] font-bold text-white/45">{title}</p>
+      {rows && rows.length > 0 ? rows.map((row) => (
+        <div key={`${title}-${row.leaderboard_position}-${row.display_name}`} className={`flex items-center gap-2 border-t border-white/[0.06] py-2 text-xs ${row.is_current_user ? "text-orange-300" : "text-white/75"}`}>
+          <span className="w-5 font-black">{row.leaderboard_position}</span>
+          <span className="min-w-0 flex-1 truncate">{row.display_name}{row.is_current_user ? "（自分）" : ""}</span>
+          <strong>{row.best_value}{unit}</strong>
+        </div>
+      )) : <p className="text-xs text-white/30">まだ記録がありません</p>}
+    </div>
   );
 }
