@@ -92,14 +92,14 @@ export default async function CoachManagementPage() {
   ];
 
   return <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-8 text-white sm:px-8"><div className="mx-auto max-w-5xl">
-    <section id="management-menu" className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-[#090a0c]/98 px-5 py-4 backdrop-blur">
+    <section id="management-menu" className="fixed left-0 right-0 top-16 z-40 border-b border-white/10 bg-[#090a0c]/98 px-5 py-4 backdrop-blur">
       <div className="mx-auto max-w-5xl">
         <p className="text-xs font-black tracking-[0.18em] text-orange-300">START HERE</p>
         <h2 className="mt-2 text-lg font-black">管理作業ガイド</h2>
         <p className="mt-2 text-sm text-white/65">クリックで移動。各見出しの「番号」を確認すると、今いる場所がすぐわかります。</p>
       </div>
     </section>
-    <div className="h-56" />
+    <div className="h-[17rem]" />
     <section className="rounded-2xl border border-white/10 bg-[#101216]/95 p-5 backdrop-blur">
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         {quickActions.map((action, index) => (
