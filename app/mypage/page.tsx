@@ -38,7 +38,7 @@ export default async function MyPage() {
   const coachRolePromise = Promise.resolve(supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "coach").maybeSingle());
   const schedulesPromise = Promise.resolve(supabase.from("schedules").select("id, title, details, location, starts_at, ends_at, all_day, training_phase, schedule_type, audience, program_class, registration_enabled, registration_opens_at, registration_deadline").gte("starts_at", new Date().toISOString()).order("starts_at").limit(20));
   const competitionApplicationsPromise = Promise.resolve(supabase.from("competition_applications").select("schedule_id").eq("user_id", userId).eq("status", "submitted"));
-  const attendingSchedulesPromise = Promise.resolve(supabase.from("schedule_attendance").select("schedule_id").eq("user_id", userId).eq("status", "attending"));
+  const attendingSchedulesPromise = Promise.resolve(supabase.from("schedule_attendance").select("schedule_id,status").eq("user_id", userId));
   const personalCalendarPromise = Promise.resolve(supabase.from("personal_calendar_entries").select("id,entry_date,title,location,journal,entry_type").eq("user_id", userId).is("schedule_id", null).gte("entry_date", todayKey).order("entry_date").limit(20));
   const todayRecordsPromise = Promise.resolve(supabase.from("performance_records").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("date", todayKey));
   const activeGoalPromise = Promise.resolve(supabase.from("personal_calendar_goals").select("title,target_date").eq("user_id", userId).eq("status", "active").maybeSingle());
@@ -50,7 +50,9 @@ export default async function MyPage() {
   }
 
   const appliedCompetitionIds = new Set((competitionApplications ?? []).map((application) => application.schedule_id));
-  const attendingScheduleIds = new Set((attendingSchedules ?? []).map((attendance) => attendance.schedule_id));
+  const answeredScheduleIds = new Set((attendingSchedules ?? []).map((attendance) => attendance.schedule_id));
+  const attendingScheduleIds = new Set((attendingSchedules ?? []).filter((attendance) => attendance.status === "attending").map((attendance) => attendance.schedule_id));
+  const unansweredScheduleCount = ((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && !answeredScheduleIds.has(schedule.id)).length;
   const personalSchedules: ScheduleItem[] = (personalCalendarEntries ?? []).map((entry) => ({ id: -entry.id, title: entry.title, details: entry.journal, location: entry.location, starts_at: `${entry.entry_date}T00:00:00+09:00`, ends_at: null, all_day: true, schedule_type: entry.entry_type, audience: "all", program_class: null, registration_enabled: false, registration_opens_at: null, registration_deadline: null, personal: true }));
   const nextSchedules = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => appliedCompetitionIds.has(schedule.id) || attendingScheduleIds.has(schedule.id)), ...personalSchedules])
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
@@ -77,7 +79,7 @@ export default async function MyPage() {
           </div>
           <div className="grid grid-cols-2 border-t border-white/10 lg:border-l lg:border-t-0">
             <div data-tutorial="schedule-action" className="col-span-2 border-b border-white/10 p-5 sm:p-7">
-              <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300"><NotebookPen size={19}/></span><div><p className="text-[10px] font-black tracking-[.18em] text-emerald-300">MY CALENDAR</p><strong className="mt-0.5 block">今日を確認・記録する</strong></div></div><Link href="/mypage/my-calendar" className="inline-flex items-center gap-1 text-xs font-black text-white/50 transition hover:text-white">開く<ChevronRight size={15}/></Link></div>
+              <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300"><NotebookPen size={19}/></span><div><p className="text-[10px] font-black tracking-[.18em] text-emerald-300">MY CALENDAR</p><strong className="mt-0.5 block">今日を確認・記録する</strong></div></div><div className="flex items-center gap-2">{unansweredScheduleCount ? <Link href="/mypage/schedules" className="rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-1.5 text-[10px] font-black text-orange-300">出欠未回答 {unansweredScheduleCount}件</Link> : null}<Link href="/mypage/my-calendar" className="inline-flex items-center gap-1 text-xs font-black text-white/50 transition hover:text-white">開く<ChevronRight size={15}/></Link></div></div>
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
                 <Link href="/mypage/my-calendar" className="rounded-xl border border-white/10 bg-white/[.025] p-3 transition hover:border-orange-400/40"><span className="text-[10px] font-black text-white/30">NEXT</span>{nextSchedule && nextScheduleDate ? <><strong className="mt-1 block truncate text-sm">{nextSchedule.title}</strong><span className="mt-1 block truncate text-[11px] text-white/40">{nextScheduleDate.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short", timeZone: "Asia/Tokyo" })}{nextSchedule.location ? ` ・ ${nextSchedule.location}` : ""}</span></> : <strong className="mt-1 block text-sm text-white/35">次の予定はありません</strong>}</Link>
                 <Link href={`/performance?kind=unofficial-athletics&date=${todayKey}&from=calendar`} className="flex items-center justify-between rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] p-3 transition hover:bg-emerald-400/10"><span><span className="text-[10px] font-black text-emerald-300/70">TODAY&apos;S LOG</span><strong className="mt-1 block text-sm">{todayRecordCount ? `記録済み ${todayRecordCount}件` : "今日の練習を記録"}</strong></span><Plus size={18} className="text-emerald-300"/></Link>
@@ -98,7 +100,7 @@ export default async function MyPage() {
         </div>
       </section>
 
-      <Suspense fallback={<MypageDeferredSkeleton/>}><MypageDeferredContent dataPromise={deferredDataPromise} userId={userId} schedules={nextSchedules} currentMonth={currentMonth} previousMonth={previousMonth}/></Suspense>
+      <Suspense fallback={<MypageDeferredSkeleton/>}><MypageDeferredContent dataPromise={deferredDataPromise} userId={userId} currentMonth={currentMonth} previousMonth={previousMonth}/></Suspense>
       <div data-tutorial="performance">
       <div className="mb-4 mt-12 flex items-end justify-between"><div><p className="text-[10px] font-black tracking-[.22em] text-orange-400">PERFORMANCE</p><h2 className="mt-1 text-2xl font-black tracking-[-.03em]">記録を振り返る</h2></div><span className="hidden text-xs text-white/25 sm:block">記録・動画・意識</span></div>
       <div className="grid gap-3 lg:grid-cols-3">

@@ -5,7 +5,6 @@ import { eventKindMap } from "@/lib/performance-events";
 import { evaluateAthleteScan, type AthleteMeasurement, type AthleteStandard, type TypeSettings } from "@/lib/athlete-scan";
 import MonthlyGrowthReport, { type GrowthRecord } from "@/app/components/MonthlyGrowthReport";
 import NewsPanel, { type NewsItem } from "@/app/components/NewsPanel";
-import SchedulePanel, { type ScheduleItem } from "@/app/components/SchedulePanel";
 
 type DeferredData = {
   currentMonthRecordCount: number;
@@ -130,13 +129,11 @@ export function MypageDeferredSkeleton() {
 export default async function MypageDeferredContent({
   dataPromise,
   userId,
-  schedules,
   currentMonth,
   previousMonth,
 }: {
   dataPromise: Promise<DeferredData>;
   userId: string;
-  schedules: ScheduleItem[];
   currentMonth: string;
   previousMonth: string;
 }) {
@@ -152,7 +149,7 @@ export default async function MypageDeferredContent({
     </div>
     <div className="mt-7 grid items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]">
       <MonthlyGrowthReport records={data.growthRecords} currentMonth={currentMonth} previousMonth={previousMonth}/>
-      <div id="news" className="space-y-6"><NewsPanel initialItems={data.newsItems} userId={userId}/><SchedulePanel items={schedules}/></div>
+      <div id="news"><NewsPanel initialItems={data.newsItems} userId={userId}/></div>
     </div>
   </>;
 }
