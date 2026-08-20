@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Activity, ArrowLeft, ArrowRight, Bell, Bot, CalendarDays, Check, Compass, Play, Plus, ScanLine, Settings, Share, Smartphone, Sparkles, X } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 
-export const MYPAGE_TUTORIAL_VERSION = 3;
+export const MYPAGE_TUTORIAL_VERSION = 4;
 
 type TutorialRect = { top: number; left: number; right: number; bottom: number; width: number; height: number };
 
@@ -16,7 +16,7 @@ const steps = [
   { eyebrow: "STEP 2 / RECORD", title: "カレンダーから練習を記録", body: "MY CALENDARから今日または過去の日付を選び、練習記録・意識・動画を残せます。登録内容はPB、グラフ、成長レポートへ自動で反映されます。", icon: Plus, target: "schedule-action" },
   { eyebrow: "STEP 3 / VIDEO & FEEDBACK", title: "動画だけでもコーチに相談できる", body: "記録がない日でも動画を送れます。相談内容を添えると、コーチとのトークでフィードバックを受け取れます。", icon: Play, target: "video-action" },
   { eyebrow: "STEP 4 / PERFORMANCE", title: "記録・意識・動画を振り返る", body: "練習記録、本番記録、コントロールテストはここから見分けられます。良かった日の意識や動画も一緒に確認できます。", icon: Activity, target: "performance" },
-  { eyebrow: "STEP 5 / SCHEDULE", title: "クラブ全体の予定を確認", body: "練習会やクラス別の予定を確認します。出欠回答が必要な予定もここから開けます。", icon: CalendarDays, target: "all-schedules" },
+  { eyebrow: "STEP 5 / SCHEDULE", title: "参加予定をマイカレンダーへ追加", body: "全体スケジュールで練習会やクラス別予定を確認できます。「参加」を押した予定は、自分のマイカレンダーへ自動で追加されます。欠席・未定の予定は追加されません。", icon: CalendarDays, target: "all-schedules" },
   { eyebrow: "STEP 6 / VAULTEX AI", title: "迷ったらVAULTEX AIへ", body: "使い方や競技の悩みをそのまま話しかけてOKです。状況を一緒に整理し、見るべき記録や次の行動、必要ならコーチ相談へ案内します。", icon: Compass, target: "ai-navigator" },
   { eyebrow: "STEP 7 / SETTINGS", title: "設定・マニュアル・バックアップ", body: "通知設定、使用マニュアル、記録のCSV保存、プロフィール編集は「その他」にまとまっています。チュートリアルはページ上部の「マイページの使い方」から何度でも見直せます。", icon: Settings, target: "settings" },
   { eyebrow: "READY", title: "準備完了。まず1つ触ってみよう", body: "最初から全部覚えなくて大丈夫です。分からないことがあればVAULTEX AIに聞けば、いつでも使い方を案内します。", icon: Bot, target: null },
