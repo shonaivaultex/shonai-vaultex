@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
-import { Activity, ArrowUpRight, CalendarDays, ChevronRight, Medal, MessageCircle, Plus, Trophy, Video } from "lucide-react";
+import { Activity, ArrowUpRight, CalendarDays, ChevronRight, Medal, MessageCircle, NotebookPen, Plus, Trophy, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { type ScheduleItem } from "@/app/components/SchedulePanel";
@@ -80,10 +80,11 @@ export default async function MyPage() {
       </section>
 
       <section className="mt-5">
-        <div className="grid gap-2.5 sm:grid-cols-3">
+        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           <Link data-tutorial="record-action" href="/performance" className="group flex min-h-20 items-center justify-between rounded-2xl bg-orange-500 px-5 font-black text-black transition hover:bg-orange-400"><span className="flex items-center gap-3"><Plus size={22}/><span>記録を追加</span></span><ArrowUpRight size={18} className="transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5"/></Link>
           <Link data-tutorial="video-action" href="/mypage/video-feedback" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-sky-400/50"><span className="flex items-center gap-3"><Video size={21} className="text-sky-400"/><span>動画を送る</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
           <Link data-tutorial="ai-navigator" href="/mypage/ai-navigator" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-orange-400/50"><span className="flex items-center gap-3"><MessageCircle size={21} className="text-orange-400"/><span>AIに相談</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
+          <Link href="/mypage/my-calendar" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-emerald-400/50"><span className="flex items-center gap-3"><NotebookPen size={21} className="text-emerald-400"/><span>マイカレンダー</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
         </div>
       </section>
 

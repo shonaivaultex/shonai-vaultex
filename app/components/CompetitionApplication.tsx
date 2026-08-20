@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { Check, Clock3, Send, Trophy, X } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
+import { useRouter } from "next/navigation";
 
 export type CompetitionApplicationItem = {
   id: number;
@@ -25,6 +26,7 @@ function dateTime(value: string) {
 }
 
 export default function CompetitionApplication({ scheduleId, opensAt, deadline, currentTime, initialApplication }: Props) {
+  const router = useRouter();
   const [application, setApplication] = useState(initialApplication);
   const [open, setOpen] = useState(false);
   const [events, setEvents] = useState(initialApplication?.events ?? "");
@@ -47,6 +49,7 @@ export default function CompetitionApplication({ scheduleId, opensAt, deadline, 
     if (error) { alert(error.message); return; }
     setApplication(data as CompetitionApplicationItem);
     setOpen(false);
+    router.refresh();
   }
 
   async function withdraw() {
@@ -57,6 +60,7 @@ export default function CompetitionApplication({ scheduleId, opensAt, deadline, 
     if (error) { alert(error.message); return; }
     setApplication(data as CompetitionApplicationItem);
     setOpen(false);
+    router.refresh();
   }
 
   if (beforeOpen) return <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-white/40"><Clock3 size={13}/>申込開始：{dateTime(opensAt!)}</p>;
