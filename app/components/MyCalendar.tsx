@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { CalendarDays, CalendarPlus, Check, ChevronLeft, ChevronRight, ExternalLink, Flag, Link2, Pencil, Play, Plus, Target, Trash2, Upload, X } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Flag, Link2, MessageCircleQuestion, Pencil, Play, Plus, Target, Trash2, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
@@ -30,37 +30,6 @@ function dateKey(date: Date) { return `${date.getFullYear()}-${String(date.getMo
 function timeValue(value: string | null | undefined) { return value ? new Date(value).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Tokyo" }) : ""; }
 function entryTimeLabel(entry: Entry | undefined) { if (!entry || entry.all_day) return null; const start = timeValue(entry.starts_at); const end = timeValue(entry.ends_at); return start ? `${start}${end ? `〜${end}` : ""}` : null; }
 function scheduleDates(schedule: ClubSchedule) { const start = new Date(schedule.starts_at); const end = schedule.ends_at ? new Date(schedule.ends_at) : start; const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate()); const last = new Date(end.getFullYear(), end.getMonth(), end.getDate()); const result: string[] = []; while (cursor <= last && result.length < 370) { result.push(dateKey(cursor)); cursor.setDate(cursor.getDate() + 1); } return result; }
-function compactUtc(value: string) { return new Date(value).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z"); }
-function compactDate(value: string) { return value.slice(0, 10).replaceAll("-", ""); }
-function dayAfter(value: string) { const date = new Date(`${value.slice(0, 10)}T00:00:00`); date.setDate(date.getDate() + 1); return dateKey(date); }
-function escapeIcs(value: string) { return value.replaceAll("\\", "\\\\").replaceAll("\n", "\\n").replaceAll(",", "\\,").replaceAll(";", "\\;"); }
-function calendarExport(item: DisplayItem) {
-  const schedule = item.schedule;
-  const entry = item.entry;
-  const allDay = schedule?.all_day ?? entry?.all_day ?? true;
-  const start = schedule?.starts_at ?? entry?.starts_at ?? `${item.date}T00:00:00+09:00`;
-  const end = schedule?.ends_at ?? entry?.ends_at ?? start;
-  const description = schedule?.details ?? entry?.journal ?? "SHONAI VAULTEX マイカレンダー";
-  const location = schedule?.location ?? entry?.location ?? "";
-  const startValue = allDay ? compactDate(start) : compactUtc(start);
-  const endValue = allDay ? compactDate(dayAfter(end)) : compactUtc(end);
-  const google = new URL("https://calendar.google.com/calendar/render");
-  google.searchParams.set("action", "TEMPLATE");
-  google.searchParams.set("text", item.title);
-  google.searchParams.set("dates", `${startValue}/${endValue}`);
-  if (description) google.searchParams.set("details", description);
-  if (location) google.searchParams.set("location", location);
-  const dateField = allDay
-    ? `DTSTART;VALUE=DATE:${startValue}\r\nDTEND;VALUE=DATE:${endValue}`
-    : `DTSTART:${startValue}\r\nDTEND:${endValue}`;
-  const ics = [
-    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//SHONAI VAULTEX//MY CALENDAR//JA", "CALSCALE:GREGORIAN",
-    "BEGIN:VEVENT", `UID:${item.key}@shonai-vaultex.vercel.app`, `DTSTAMP:${compactUtc(new Date().toISOString())}`,
-    dateField, `SUMMARY:${escapeIcs(item.title)}`, `DESCRIPTION:${escapeIcs(description)}`, `LOCATION:${escapeIcs(location)}`,
-    "END:VEVENT", "END:VCALENDAR",
-  ].join("\r\n");
-  return { googleUrl: google.toString(), icsUrl: `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}` };
-}
 
 export default function MyCalendar({ userId, initialEntries, schedules, activeScheduleIds, records, periods, initialGoal, initialSelectedDate }: { userId: string; initialEntries: Entry[]; schedules: ClubSchedule[]; activeScheduleIds: number[]; records: PerformanceRecord[]; periods: SchedulePeriod[]; initialGoal: CalendarGoal | null; initialSelectedDate?: string }) {
   const router = useRouter(); const today = new Date();
@@ -224,7 +193,6 @@ function DailyItemCard({ item, onEdit, onRemove, onRemovePerformance }: { item: 
     : item.schedule ? item.active ? "参加予定" : "保存済みの振り返り"
     : entryTypes[item.entry?.entry_type as keyof typeof entryTypes] ?? "個人予定";
   const timeLabel = item.schedule ? (item.schedule.all_day ? "終日" : `${timeValue(item.schedule.starts_at)}${item.schedule.ends_at ? `〜${timeValue(item.schedule.ends_at)}` : ""}`) : entryTimeLabel(item.entry);
-  const exportLinks = !record ? calendarExport(item) : null;
 
   return <article className={`rounded-2xl border bg-black/20 p-4 ${colors[item.color]?.border}`}>
     <div className="flex items-start justify-between gap-3">
@@ -238,7 +206,7 @@ function DailyItemCard({ item, onEdit, onRemove, onRemovePerformance }: { item: 
     {item.entry?.record_value && <p className="mt-3 text-sm font-black text-emerald-300">記録 {item.entry.record_value}{item.entry.record_unit}</p>}
     {item.entry?.performance_record_id && <Link href={`/edit/${item.entry.performance_record_id}`} className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-sky-300"><Link2 size={13}/>パフォーマンス記録と連携</Link>}
     {videoUrl && <details className="mt-3"><summary className="cursor-pointer text-xs font-black text-orange-300"><Play size={13} className="mr-1 inline"/>動画を見る</summary><video controls playsInline preload="metadata" src={videoUrl} className="mt-3 max-h-[50vh] w-full rounded-xl bg-black object-contain"/></details>}
-    {exportLinks && <details className="mt-3 rounded-xl border border-white/10 bg-white/[.025] p-3"><summary className="cursor-pointer list-none text-xs font-black text-sky-300"><CalendarPlus size={14} className="mr-1.5 inline"/>スマホのカレンダーに追加</summary><div className="mt-3 grid gap-2 sm:grid-cols-2"><a href={exportLinks.icsUrl} download={`vaultex-${item.date}-${item.key}.ics`} className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 px-3 py-2.5 text-xs font-bold text-white/65"><CalendarDays size={14}/>iPhone・標準カレンダー</a><a href={exportLinks.googleUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-lg border border-sky-400/30 bg-sky-400/[.06] px-3 py-2.5 text-xs font-bold text-sky-300">Googleカレンダー<ExternalLink size={13}/></a></div><p className="mt-2 text-[10px] leading-5 text-white/35">予定名・日時・場所・メモを入力した状態で開きます。最後にスマホ側で「追加」または「保存」を押してください。</p></details>}
+    {!record ? <Link href={`/mypage/ai-navigator?prompt=${encodeURIComponent(`「${item.title}」についてコーチに相談したい`)}`} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-sky-400/35 bg-sky-400/[.06] px-4 py-3 text-sm font-black text-sky-300"><MessageCircleQuestion size={17}/>コーチに相談</Link> : null}
     {record && <FeedbackRequestButton recordId={record.id} initialRequest={record.feedback_request} />}
     {item.entry && <button onClick={() => void onRemove(item.entry!)} className="mt-3 inline-flex items-center gap-1 text-[11px] font-bold text-red-300/70"><Trash2 size={12}/>個人記録を削除</button>}
   </article>;
