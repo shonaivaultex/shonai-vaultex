@@ -3,6 +3,7 @@ export const siteNavigation = [
   { label: "ABOUT", href: "/about" },
   { label: "FEATURE", href: "/#weapons" },
   { label: "PROGRAM", href: "/program" },
+  { label: "NEWS", href: "/#news" },
   { label: "CONTACT", href: "/#contact" },
   {label: "COACH", href: "/coach",},//
 ] as const;
