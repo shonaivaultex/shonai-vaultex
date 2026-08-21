@@ -133,8 +133,8 @@ export default async function CoachManagementPage() {
       <MemberManagement members={(allAthletes ?? []).map((athlete) => ({ ...athlete, member_status: athlete.member_status ?? "active" }))} />
     </section>
     <section id="announcement" className="mt-8 rounded-2xl border border-white/10 bg-[#101216] p-5">
-      <h2 className="inline-flex items-center gap-2 text-sm font-black tracking-[0.1em] text-emerald-300"><span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20">03</span>お知らせを投稿（HOME反映）</h2>
-      <p className="mt-2 text-xs text-white/55">お知らせを投稿すると、ホーム表示が即更新されます。</p>
+      <h2 className="inline-flex items-center gap-2 text-sm font-black tracking-[0.1em] text-emerald-300"><span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20">03</span>会員・一般向けお知らせ</h2>
+      <p className="mt-2 text-xs text-white/55">通常は会員だけに配信し、公開チェックを入れた内容だけHOMEにも掲載します。</p>
       <CoachAnnouncementForm />
     </section>
     <section id="invite" className="mt-8 rounded-2xl border border-white/10 bg-[#101216] p-5">
