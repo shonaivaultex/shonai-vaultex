@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Flag, Link2, Pencil, Play, Plus, Target, Trash2, Upload, X } from "lucide-react";
+import { CalendarDays, CalendarPlus, Check, ChevronLeft, ChevronRight, ExternalLink, Flag, Link2, Pencil, Play, Plus, Target, Trash2, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
@@ -11,6 +11,7 @@ import { schedulePhase, schedulePhases } from "@/lib/schedule-phases";
 import type { SchedulePeriod } from "@/lib/schedule-periods";
 import { unitMap } from "@/lib/performance-events";
 import FeedbackRequestButton from "@/app/components/FeedbackRequestButton";
+import CalendarSyncButton from "@/app/components/CalendarSyncButton";
 
 type Entry = { id: number; user_id: string; schedule_id: number | null; entry_date: string; starts_at: string | null; ends_at: string | null; all_day: boolean; entry_type: string; title: string; location: string | null; journal: string | null; awareness_categories: string[]; record_value: number | null; record_unit: string | null; performance_record_id: number | null; video_path: string | null; video_url: string | null; color: string };
 type ClubSchedule = { id: number; title: string; details: string | null; location: string | null; starts_at: string; ends_at: string | null; all_day: boolean; schedule_type: string };
@@ -29,6 +30,37 @@ function dateKey(date: Date) { return `${date.getFullYear()}-${String(date.getMo
 function timeValue(value: string | null | undefined) { return value ? new Date(value).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Tokyo" }) : ""; }
 function entryTimeLabel(entry: Entry | undefined) { if (!entry || entry.all_day) return null; const start = timeValue(entry.starts_at); const end = timeValue(entry.ends_at); return start ? `${start}${end ? `〜${end}` : ""}` : null; }
 function scheduleDates(schedule: ClubSchedule) { const start = new Date(schedule.starts_at); const end = schedule.ends_at ? new Date(schedule.ends_at) : start; const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate()); const last = new Date(end.getFullYear(), end.getMonth(), end.getDate()); const result: string[] = []; while (cursor <= last && result.length < 370) { result.push(dateKey(cursor)); cursor.setDate(cursor.getDate() + 1); } return result; }
+function compactUtc(value: string) { return new Date(value).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z"); }
+function compactDate(value: string) { return value.slice(0, 10).replaceAll("-", ""); }
+function dayAfter(value: string) { const date = new Date(`${value.slice(0, 10)}T00:00:00`); date.setDate(date.getDate() + 1); return dateKey(date); }
+function escapeIcs(value: string) { return value.replaceAll("\\", "\\\\").replaceAll("\n", "\\n").replaceAll(",", "\\,").replaceAll(";", "\\;"); }
+function calendarExport(item: DisplayItem) {
+  const schedule = item.schedule;
+  const entry = item.entry;
+  const allDay = schedule?.all_day ?? entry?.all_day ?? true;
+  const start = schedule?.starts_at ?? entry?.starts_at ?? `${item.date}T00:00:00+09:00`;
+  const end = schedule?.ends_at ?? entry?.ends_at ?? start;
+  const description = schedule?.details ?? entry?.journal ?? "SHONAI VAULTEX マイカレンダー";
+  const location = schedule?.location ?? entry?.location ?? "";
+  const startValue = allDay ? compactDate(start) : compactUtc(start);
+  const endValue = allDay ? compactDate(dayAfter(end)) : compactUtc(end);
+  const google = new URL("https://calendar.google.com/calendar/render");
+  google.searchParams.set("action", "TEMPLATE");
+  google.searchParams.set("text", item.title);
+  google.searchParams.set("dates", `${startValue}/${endValue}`);
+  if (description) google.searchParams.set("details", description);
+  if (location) google.searchParams.set("location", location);
+  const dateField = allDay
+    ? `DTSTART;VALUE=DATE:${startValue}\r\nDTEND;VALUE=DATE:${endValue}`
+    : `DTSTART:${startValue}\r\nDTEND:${endValue}`;
+  const ics = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//SHONAI VAULTEX//MY CALENDAR//JA", "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT", `UID:${item.key}@shonai-vaultex.vercel.app`, `DTSTAMP:${compactUtc(new Date().toISOString())}`,
+    dateField, `SUMMARY:${escapeIcs(item.title)}`, `DESCRIPTION:${escapeIcs(description)}`, `LOCATION:${escapeIcs(location)}`,
+    "END:VEVENT", "END:VCALENDAR",
+  ].join("\r\n");
+  return { googleUrl: google.toString(), icsUrl: `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}` };
+}
 
 export default function MyCalendar({ userId, initialEntries, schedules, activeScheduleIds, records, periods, initialGoal, initialSelectedDate }: { userId: string; initialEntries: Entry[]; schedules: ClubSchedule[]; activeScheduleIds: number[]; records: PerformanceRecord[]; periods: SchedulePeriod[]; initialGoal: CalendarGoal | null; initialSelectedDate?: string }) {
   const router = useRouter(); const today = new Date();
@@ -78,7 +110,7 @@ export default function MyCalendar({ userId, initialEntries, schedules, activeSc
       <div className="flex flex-wrap items-center justify-between gap-4"><div className="flex min-w-0 items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-orange-500 text-black"><Target size={23}/></span><div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">NEXT TARGET</p>{goal ? <><h2 className="mt-1 text-xl font-black sm:text-2xl">{goal.title}</h2><p className="mt-1 text-sm text-white/55">{goal.target_date.replaceAll("-", "/")}{goal.event_name ? ` ・ ${goal.event_name}` : ""}{goal.target_value ? ` ・ ${goal.target_value}${goal.target_unit ?? ""}` : ""}</p><p className="mt-2 text-sm font-black text-orange-300">{goalDays !== null && goalDays > 0 ? `目標まであと${goalDays}日` : goalDays === 0 ? "目標当日" : "結果を振り返って次の目標へ"}</p></> : <><h2 className="mt-1 text-xl font-black">次の目標を1つ決める</h2><p className="mt-1 text-sm text-white/45">大会・種目・目標記録を決めると、カレンダーに表示されます。</p></>}</div></div><div className="flex flex-wrap gap-2"><button onClick={() => setGoalOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-black"><Flag size={16}/>{goal ? "目標を変更" : "次の目標を設定"}</button>{goal ? <button onClick={() => setReviewOpen(true)} className="rounded-xl border border-white/15 px-4 py-3 text-sm font-bold text-white/60">目標を振り返る</button> : null}</div></div>
     </section>
     <section className="rounded-[26px] border border-white/10 bg-[#111] p-4 sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-xl font-black"><CalendarDays className="text-orange-400"/>マイカレンダー</h2><button onClick={startNew} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-black"><Plus size={17}/>個人予定を追加</button></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-xl font-black"><CalendarDays className="text-orange-400"/>マイカレンダー</h2><div className="flex flex-wrap gap-2"><CalendarSyncButton/><button onClick={startNew} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-black"><Plus size={17}/>個人予定を追加</button></div></div>
       <div className="mt-6 flex items-center justify-between"><button onClick={() => moveMonth(-1)} className="p-2 text-white/55" aria-label="前月"><ChevronLeft/></button><strong>{month.getFullYear()}年 {month.getMonth() + 1}月</strong><button onClick={() => moveMonth(1)} className="p-2 text-white/55" aria-label="翌月"><ChevronRight/></button></div>
       <div className="mt-3 grid grid-cols-2 rounded-xl border border-white/10 bg-black/25 p-1 lg:hidden">
         <button type="button" onClick={() => setMobileCalendarView("week")} className={`rounded-lg px-3 py-2 text-xs font-black transition ${mobileCalendarView === "week" ? "bg-orange-500 text-black" : "text-white/45"}`}>週間</button>
@@ -192,6 +224,7 @@ function DailyItemCard({ item, onEdit, onRemove, onRemovePerformance }: { item: 
     : item.schedule ? item.active ? "参加予定" : "保存済みの振り返り"
     : entryTypes[item.entry?.entry_type as keyof typeof entryTypes] ?? "個人予定";
   const timeLabel = item.schedule ? (item.schedule.all_day ? "終日" : `${timeValue(item.schedule.starts_at)}${item.schedule.ends_at ? `〜${timeValue(item.schedule.ends_at)}` : ""}`) : entryTimeLabel(item.entry);
+  const exportLinks = !record ? calendarExport(item) : null;
 
   return <article className={`rounded-2xl border bg-black/20 p-4 ${colors[item.color]?.border}`}>
     <div className="flex items-start justify-between gap-3">
@@ -205,6 +238,7 @@ function DailyItemCard({ item, onEdit, onRemove, onRemovePerformance }: { item: 
     {item.entry?.record_value && <p className="mt-3 text-sm font-black text-emerald-300">記録 {item.entry.record_value}{item.entry.record_unit}</p>}
     {item.entry?.performance_record_id && <Link href={`/edit/${item.entry.performance_record_id}`} className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-sky-300"><Link2 size={13}/>パフォーマンス記録と連携</Link>}
     {videoUrl && <details className="mt-3"><summary className="cursor-pointer text-xs font-black text-orange-300"><Play size={13} className="mr-1 inline"/>動画を見る</summary><video controls playsInline preload="metadata" src={videoUrl} className="mt-3 max-h-[50vh] w-full rounded-xl bg-black object-contain"/></details>}
+    {exportLinks && <details className="mt-3 rounded-xl border border-white/10 bg-white/[.025] p-3"><summary className="cursor-pointer list-none text-xs font-black text-sky-300"><CalendarPlus size={14} className="mr-1.5 inline"/>スマホのカレンダーに追加</summary><div className="mt-3 grid gap-2 sm:grid-cols-2"><a href={exportLinks.icsUrl} download={`vaultex-${item.date}-${item.key}.ics`} className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 px-3 py-2.5 text-xs font-bold text-white/65"><CalendarDays size={14}/>iPhone・標準カレンダー</a><a href={exportLinks.googleUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-lg border border-sky-400/30 bg-sky-400/[.06] px-3 py-2.5 text-xs font-bold text-sky-300">Googleカレンダー<ExternalLink size={13}/></a></div><p className="mt-2 text-[10px] leading-5 text-white/35">予定名・日時・場所・メモを入力した状態で開きます。最後にスマホ側で「追加」または「保存」を押してください。</p></details>}
     {record && <FeedbackRequestButton recordId={record.id} initialRequest={record.feedback_request} />}
     {item.entry && <button onClick={() => void onRemove(item.entry!)} className="mt-3 inline-flex items-center gap-1 text-[11px] font-bold text-red-300/70"><Trash2 size={12}/>個人記録を削除</button>}
   </article>;
