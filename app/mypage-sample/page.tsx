@@ -1,5 +1,20 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { Activity, ArrowLeft, ArrowRight, BarChart3, CalendarDays, Check, ChevronRight, MessageCircle, NotebookPen, Play, ScanLine, Sparkles, Target, Trophy, Video } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BarChart3,
+  Bell,
+  CalendarDays,
+  ChevronRight,
+  MessageCircle,
+  NotebookPen,
+  ScanLine,
+  Sparkles,
+  Target,
+  Trophy,
+  Video,
+} from "lucide-react";
 import OverallGrowthReport from "@/app/components/OverallGrowthReport";
 import type { GrowthRecord } from "@/app/components/MonthlyGrowthReport";
 import type { PerformanceKind } from "@/lib/performance-events";
@@ -14,49 +29,116 @@ const sampleRecords: SampleRecord[] = [
   { id: 5, category: "100m", value: 11.82, date: "2026-04-06", awareness_categories: ["力感"], record_kind: "athletics" },
   { id: 6, category: "100m", value: 11.69, date: "2026-06-07", awareness_categories: ["リズム"], record_kind: "athletics" },
   { id: 7, category: "100m", value: 11.54, date: "2026-08-09", awareness_categories: ["スタート", "リズム"], record_kind: "athletics" },
-  { id: 8, category: "走幅跳", value: 6.22, date: "2026-05-17", awareness_categories: ["動作"], record_kind: "unofficial-athletics" },
-  { id: 9, category: "走幅跳", value: 6.41, date: "2026-07-19", awareness_categories: ["リズム"], record_kind: "unofficial-athletics" },
-  { id: 10, category: "立幅跳", value: 2.74, date: "2026-04-20", awareness_categories: ["力感"], record_kind: "control-test" },
-  { id: 11, category: "立幅跳", value: 2.83, date: "2026-07-20", awareness_categories: ["動作"], record_kind: "control-test" },
-  { id: 12, category: "立五段跳", value: 13.68, date: "2026-04-20", awareness_categories: ["リズム"], record_kind: "control-test" },
-  { id: 13, category: "立五段跳", value: 14.12, date: "2026-07-20", awareness_categories: ["リズム", "感覚"], record_kind: "control-test" },
+  { id: 8, category: "立幅跳", value: 2.74, date: "2026-04-20", awareness_categories: ["力感"], record_kind: "control-test" },
+  { id: 9, category: "立幅跳", value: 2.83, date: "2026-07-20", awareness_categories: ["動作"], record_kind: "control-test" },
+  { id: 10, category: "立五段跳", value: 13.68, date: "2026-04-20", awareness_categories: ["リズム"], record_kind: "control-test" },
+  { id: 11, category: "立五段跳", value: 14.12, date: "2026-07-20", awareness_categories: ["リズム", "感覚"], record_kind: "control-test" },
 ];
 
+const explanations = {
+  profile: ["プロフィールと1週間予定", "所属クラス・専門種目と、これから1週間のクラブ予定を一目で確認できます。"],
+  calendar: ["マイカレンダー", "参加予定、個人練習、練習日誌、記録、動画を日付ごとにまとめます。"],
+  video: ["動画を送る", "記録がない日でも、動画だけをコーチに送り、見てほしい動きを相談できます。"],
+  schedule: ["全体スケジュール", "クラブ全体・クラス別の予定を確認。「参加」を押すとマイカレンダーへ反映されます。"],
+  ai: ["VAULTEX AI", "競技の悩みやシステムの使い方を整理し、次に見る機能やコーチ相談へ案内します。"],
+  scan: ["VAULTEX ATHLETE SCAN", "CONTROL TESTから身体能力の現在地と変化を確認。継続測定でプロフィールが育ちます。"],
+  growth: ["月間成長レポート", "今月のベスト、PB、意識傾向、次に確認したいことを自動で整理します。"],
+  news: ["NEWS", "予定変更、コーチからの返信、重要なお知らせをまとめて確認できます。"],
+  report: ["全期間の成長レポート", "種目ごとの記録推移や成長幅を、累計・シーズン別に振り返れます。"],
+} as const;
+
 export default function MyPageSample() {
-  return <main className="min-h-screen bg-[#090a0c] px-4 pb-24 pt-24 text-white sm:px-8">
-    <div className="mx-auto max-w-6xl">
-      <div className="flex flex-wrap items-center justify-between gap-3"><Link href="/" className="inline-flex items-center gap-2 text-xs font-bold tracking-[.14em] text-white/55 transition hover:text-orange-400"><ArrowLeft size={16}/>ホームへ戻る</Link><span className="rounded-full border border-orange-400/40 bg-orange-500/10 px-3 py-2 text-[10px] font-black tracking-[.14em] text-orange-300">PUBLIC DEMO / 架空データ</span></div>
-
-      <header className="mt-8 overflow-hidden rounded-[30px] border border-orange-500/40 bg-[radial-gradient(circle_at_82%_15%,rgba(249,115,22,.22),transparent_32%),linear-gradient(145deg,#171717,#0c0d0f_70%)]">
-        <div className="p-6 sm:p-9">
-          <p className="text-[10px] font-black tracking-[.24em] text-orange-400">SHONAI VAULTEX MY PAGE</p>
-          <div className="mt-4 grid gap-7 lg:grid-cols-[.8fr_1.2fr] lg:items-end"><div><h1 className="text-3xl font-black tracking-[-.05em] sm:text-5xl">毎日の練習が、<br/>成長の記録になる。</h1><p className="mt-4 max-w-lg text-sm leading-7 text-white/55">予定を確認し、練習を記録し、動画と感覚を振り返る。すべてが一つのマイページにつながります。</p></div><div className="grid grid-cols-2 gap-3 sm:grid-cols-4"><Metric label="累計記録" value="13件"/><Metric label="PB更新" value="7回"/><Metric label="よく使う意識" value="リズム"/><Metric label="次の目標まで" value="18日"/></div></div>
+  return (
+    <main className="min-h-screen bg-[#08090b] px-3 pb-24 pt-20 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1460px]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link href="/" className="inline-flex items-center gap-2 text-xs font-bold tracking-[.14em] text-white/55 transition hover:text-orange-400">
+            <ArrowLeft size={16} />ホームへ戻る
+          </Link>
+          <span className="rounded-full border border-orange-400/40 bg-orange-500/10 px-3 py-2 text-[10px] font-black tracking-[.14em] text-orange-300">PUBLIC DEMO / 架空データ</span>
         </div>
-        <div className="grid border-t border-white/10 lg:grid-cols-[.78fr_1.22fr]">
-          <div className="p-6 sm:p-8 lg:border-r lg:border-white/10"><span className="rounded-full border border-orange-500/35 bg-orange-500/10 px-3 py-1 text-[10px] font-black tracking-[.15em] text-orange-300">ELITE</span><h2 className="mt-5 text-3xl font-black sm:text-4xl">VAULTEX 選手</h2><p className="mt-2 text-sm text-white/40">走幅跳・100m</p><div className="mt-8 hidden grid-cols-7 gap-1.5 sm:grid"><WeekDay day="月" date="17"/><WeekDay day="火" date="18" label="調整"/><WeekDay day="水" date="19"/><WeekDay day="木" date="20" label="跳躍" active/><WeekDay day="金" date="21"/><WeekDay day="土" date="22" label="大会" competition/><WeekDay day="日" date="23"/></div></div>
-          <div className="p-5 sm:p-7"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300"><NotebookPen size={19}/></span><div><p className="text-[10px] font-black tracking-[.18em] text-emerald-300">MY CALENDAR</p><strong className="mt-0.5 block">今日を確認・記録する</strong></div></div><span className="text-xs font-black text-white/35">開く <ChevronRight size={14} className="inline"/></span></div><div className="mt-5 rounded-2xl border border-emerald-400/15 bg-emerald-400/[.04] p-4"><div className="flex items-center justify-between"><div><p className="text-[9px] font-black tracking-[.16em] text-emerald-300">TODAY&apos;S TRAINING</p><strong className="mt-1 block text-sm">今日の練習</strong></div><span className="rounded-full bg-white/[.06] px-2.5 py-1 text-[10px] font-black text-white/45">1件</span></div><div className="mt-3 flex items-center gap-3 rounded-xl border border-white/[.07] bg-black/20 px-3 py-3"><span className="h-2 w-2 rounded-full bg-emerald-400"/><span className="min-w-0 flex-1"><strong className="block truncate text-sm">跳躍練習</strong><span className="text-[10px] text-white/40">17:00 ・ DENKITEKKOフィールド</span></span><span className="rounded-full bg-emerald-400/15 px-2 py-1 text-[9px] font-black text-emerald-300">参加</span></div></div><div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-white/10 bg-white/[.025] p-3"><span className="text-[9px] font-black text-white/30">NEXT</span><strong className="mt-1 block text-sm">秋季記録会</strong><span className="mt-1 block text-[10px] text-white/40">9/6(日) ・ 走幅跳</span></div><div className="flex items-center justify-between rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] p-3"><span><span className="text-[9px] font-black text-emerald-300/70">TODAY&apos;S LOG</span><strong className="mt-1 block text-sm">今日の練習を記録</strong></span><Check size={18} className="text-emerald-300"/></div></div></div>
+
+        <header className="mb-5 mt-8 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-black tracking-[.28em] text-orange-400">ATHLETE DASHBOARD</p>
+            <h1 className="mt-1 text-4xl font-black tracking-[-.05em] sm:text-5xl">MY PAGE</h1>
+          </div>
+          <span className="hidden text-xs font-black tracking-[.18em] text-white/15 sm:block">SHONAI VAULTEX</span>
+        </header>
+
+        <div className="mb-5 flex items-center justify-between rounded-2xl border border-orange-500/35 bg-orange-500/[.06] px-4 py-3 text-xs sm:px-5">
+          <span className="flex items-center gap-2 font-black"><Sparkles size={16} className="text-orange-400" />各エリアの使い方</span>
+          <span className="text-right text-white/40">PCはカーソル、スマホは「？」をタップ</span>
         </div>
-      </header>
 
-      <section className="mt-5 rounded-3xl border border-white/10 bg-[#111] p-5 sm:p-8"><div className="max-w-2xl"><p className="text-[10px] font-black tracking-[.2em] text-orange-400">HOW TO USE</p><h2 className="mt-2 text-2xl font-black sm:text-3xl">入会後は、この4ステップだけ。</h2><p className="mt-2 text-sm leading-6 text-white/45">最初から全部覚える必要はありません。普段の練習を残すだけで、自分だけの成長データが育っていきます。</p></div><div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4"><GuideStep number="01" icon={<CalendarDays/>} title="予定を確認" text="全体予定で「参加」を押すと、自分のカレンダーへ自動で追加。"/><GuideStep number="02" icon={<Activity/>} title="練習を記録" text="記録・意識・短いメモ・動画を、その日のカレンダーに残す。"/><GuideStep number="03" icon={<BarChart3/>} title="成長を振り返る" text="PB、グラフ、意識傾向、ATHLETE SCANを自動で整理。"/><GuideStep number="04" icon={<MessageCircle/>} title="コーチへ相談" text="動画や記録と一緒に相談。迷ったらVAULTEX AIが入口を案内。"/></div><div className="mt-5 flex flex-wrap gap-2 text-[10px] font-bold text-white/45"><MiniPoint icon={<Video size={14}/>} text="動画だけでも送信OK"/><MiniPoint icon={<Play size={14}/>} text="コーチとトークで継続相談"/><MiniPoint icon={<Sparkles size={14}/>} text="分からない時はAIに質問"/></div></section>
+        <section className="grid overflow-hidden rounded-[30px] border border-white/10 bg-[#101113] lg:grid-cols-[1.05fr_.95fr]">
+          <Explained title={explanations.profile[0]} text={explanations.profile[1]} className="min-h-[450px] border-b border-white/10 p-6 sm:p-10 lg:border-b-0 lg:border-r">
+            <div className="flex items-center gap-2"><span className="rounded-full border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-xs font-black text-orange-300">エリート</span><span className="text-xs text-white/35">ATHLETE</span></div>
+            <h2 className="mt-7 text-4xl font-black tracking-[-.05em] sm:text-6xl">VAULTEX 選手</h2>
+            <p className="mt-2 text-base text-white/40">走幅跳・100m</p>
+            <div className="mt-20">
+              <div className="mb-4 flex items-end justify-between"><div><p className="text-[10px] font-black tracking-[.2em] text-orange-300">CLUB SCHEDULE</p><strong className="mt-1 block text-sm">これから1週間</strong></div><span className="text-xs text-white/35">全体を見る <ChevronRight size={13} className="inline" /></span></div>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-7"><WeekDay day="金" date="21" label="東北選手権" active/><WeekDay day="土" date="22" label="東北選手権"/><WeekDay day="日" date="23" label="東北選手権"/><WeekDay day="月" date="24"/><WeekDay day="火" date="25"/><WeekDay day="水" date="26"/><WeekDay day="木" date="27"/></div>
+            </div>
+          </Explained>
 
-      <section className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
-        <article className="rounded-3xl border border-white/10 bg-[#111] p-5 sm:p-7"><div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-black tracking-[.18em] text-orange-400">NEXT TARGET</p><h2 className="mt-1 text-2xl font-black">秋季記録会</h2></div><span className="grid h-12 w-12 place-items-center rounded-2xl bg-orange-500 text-black"><Target/></span></div><div className="mt-5 grid gap-3 sm:grid-cols-2"><div className="rounded-2xl bg-white/[.035] p-4"><span className="text-xs text-white/40">目標種目</span><strong className="mt-1 block text-lg">走幅跳 6.60m</strong></div><div className="rounded-2xl bg-white/[.035] p-4"><span className="text-xs text-white/40">目標日</span><strong className="mt-1 block text-lg">2026/09/06</strong></div></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10"><span className="block h-full w-[72%] rounded-full bg-gradient-to-r from-orange-700 to-orange-300"/></div><p className="mt-2 text-right text-xs font-black text-orange-300">目標まであと18日</p></article>
-        <article className="rounded-3xl border border-cyan-400/20 bg-cyan-400/[.04] p-5 sm:p-7"><div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl bg-cyan-400/10 text-cyan-300"><ScanLine/></span><div><p className="text-[10px] font-black tracking-[.16em] text-cyan-300">ATHLETE SCAN</p><h2 className="mt-1 font-black">身体能力の現在地</h2></div></div><div className="mt-5 grid grid-cols-3 gap-2 text-center"><Score label="SPEED" value="78"/><Score label="POWER" value="84"/><Score label="REACTIVE" value="73"/></div><p className="mt-4 text-xs leading-6 text-white/45">CONTROL TESTを継続すると、身体能力プロフィールの変化を確認できます。</p></article>
-      </section>
+          <Explained title={explanations.calendar[0]} text={explanations.calendar[1]} className="min-h-[450px] bg-[radial-gradient(circle_at_100%_0%,rgba(249,115,22,.2),transparent_55%)] p-5 sm:p-8">
+            <div className="flex items-center justify-between gap-3 pr-10"><div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300"><NotebookPen size={20}/></span><div><p className="text-[10px] font-black tracking-[.2em] text-emerald-300">MY CALENDAR</p><strong className="mt-1 block">今日を確認・記録する</strong></div></div><span className="rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-2 text-[10px] font-black text-orange-300">出欠未回答 3件</span></div>
+            <div className="mt-6 rounded-2xl border border-emerald-400/20 bg-black/20 p-4"><div className="flex items-center justify-between"><div><p className="text-[10px] font-black tracking-[.16em] text-emerald-300">TODAY&apos;S TRAINING</p><strong className="mt-1 block">今日の練習</strong></div><span className="rounded-full bg-white/[.06] px-3 py-1 text-xs font-black text-white/45">1件</span></div><div className="mt-4 flex items-center gap-3 rounded-xl border border-white/[.08] bg-black/25 px-4 py-3"><span className="h-2 w-2 rounded-full bg-emerald-400"/><span className="min-w-0 flex-1"><strong className="block truncate text-sm">試合前日練習</strong><span className="text-[10px] text-white/40">終日 ・ あづま</span></span><span className="rounded-full bg-white/[.06] px-2 py-1 text-[9px] text-white/40">個人予定</span></div></div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2"><DashboardTile eyebrow="NEXT" title="東北選手権" meta="8/21(金) ・ あづま総合運動公園"/><DashboardTile eyebrow="TODAY'S LOG" title="今日の練習を記録" accent/></div>
+            <div className="mt-4 flex items-center justify-between text-xs text-white/40"><span className="flex items-center gap-2"><Target size={14} className="text-orange-400"/>次の目標：東北選手権</span><span>2026/08/22</span></div>
+            <div className="mt-6 grid grid-cols-2 border-t border-white/10"><Metric label="THIS MONTH" value="7 RECORDS"/><Metric label="TO CHECK" value="0 ITEMS"/></div>
+          </Explained>
+        </section>
 
-      <section className="mt-5 rounded-3xl border border-orange-500/30 bg-[#0e0f11] p-5 sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">GROWTH REPORT SAMPLE</p><h2 className="mt-1 text-2xl font-black sm:text-3xl">全期間の成長レポート</h2><p className="mt-2 text-sm leading-6 text-white/45">記録を追加するだけで、種目ごとの成長と取り組みの傾向を自動で整理します。</p></div><span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-500/15 text-orange-400"><BarChart3/></span></div><div className="mt-7"><OverallGrowthReport records={sampleRecords}/></div></section>
+        <section className="mt-5 grid gap-3 md:grid-cols-3">
+          <Explained title={explanations.video[0]} text={explanations.video[1]} className="rounded-2xl border border-white/10 bg-[#111214] p-5"><NavCard icon={<Video size={20}/>} title="動画を送る" color="text-cyan-300"/></Explained>
+          <Explained title={explanations.schedule[0]} text={explanations.schedule[1]} className="rounded-2xl border border-white/10 bg-[#111214] p-5"><NavCard icon={<CalendarDays size={20}/>} title="全体スケジュール" color="text-orange-400"/></Explained>
+          <Explained title={explanations.ai[0]} text={explanations.ai[1]} className="rounded-2xl border border-white/10 bg-[#111214] p-5"><NavCard icon={<MessageCircle size={20}/>} title="AIに相談" color="text-orange-400"/></Explained>
+        </section>
 
-      <section className="mt-5 grid gap-3 sm:grid-cols-3"><Feature icon={<CalendarDays/>} title="予定と記録がつながる" text="マイカレンダーから練習、試合、動画、振り返りを確認。"/><Feature icon={<Trophy/>} title="成長を自動で集計" text="PB、前回比、意識傾向を自分で計算せずに確認。"/><Feature icon={<Sparkles/>} title="コーチへすぐ相談" text="記録や動画に紐づけて、見てほしい点をそのまま送信。"/></section>
+        <Explained title={explanations.scan[0]} text={explanations.scan[1]} className="mt-5 rounded-[28px] border border-orange-500/45 bg-[#101113] p-6 sm:p-8">
+          <div className="flex items-start gap-4 pr-10"><span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-orange-500 text-black"><ScanLine/></span><div><p className="text-[11px] font-black tracking-[.2em] text-orange-400">VAULTEX ATHLETE SCAN</p><h2 className="mt-1 text-xl font-black">身体能力の現在地を知る</h2><p className="mt-2 text-sm leading-6 text-white/45">CONTROL TESTから6能力・3特性・現在のATHLETE TYPEを確認します。</p></div></div>
+          <div className="mt-6 rounded-xl bg-orange-500 px-4 py-4 text-center text-sm font-black text-black">＋ 最初のVAULTEX SCANを記録</div>
+          <p className="mt-3 text-center text-xs font-bold text-white/40">CONTROL TESTの履歴・詳細 <ChevronRight size={13} className="inline"/></p>
+        </Explained>
 
-      <div className="mt-10 rounded-3xl bg-orange-500 p-6 text-black sm:flex sm:items-center sm:justify-between sm:p-8"><div><p className="text-[10px] font-black tracking-[.2em]">START YOUR JOURNEY</p><h2 className="mt-2 text-2xl font-black">次は、あなたの成長を記録しよう。</h2></div><Link href="https://forms.gle/9KLAq5PSkBudhbyL9" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-4 text-sm font-black text-white sm:mt-0">無料体験を予約する<ArrowRight size={17}/></Link></div>
-    </div>
-  </main>;
+        <section className="mt-5 grid gap-5 lg:grid-cols-[1.9fr_.85fr]">
+          <Explained title={explanations.growth[0]} text={explanations.growth[1]} className="rounded-[28px] border border-orange-500/35 bg-[#111214] p-5 sm:p-7">
+            <div className="flex items-center justify-between pr-10"><div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">MONTHLY GROWTH</p><h2 className="mt-1 text-xl font-black">8月の成長レポート</h2></div><span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500/10 text-orange-400"><BarChart3/></span></div>
+            <div className="mt-6 rounded-2xl border border-orange-500/30 bg-black/20 p-5"><div className="flex items-start justify-between"><div><p className="text-[10px] font-black tracking-[.18em] text-orange-300">MONTH&apos;S HIGHLIGHT</p><h3 className="mt-2 text-lg font-black">走幅跳 今月ベスト</h3><strong className="mt-2 block text-4xl">6.48m</strong></div><span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500 text-black"><Trophy size={20}/></span></div><p className="mt-4 text-sm text-white/55">7月の平均より12cm前進しました。</p><p className="mt-3 text-sm font-bold text-orange-200"><Sparkles size={14} className="mr-1 inline"/>よく使った意識は「リズム」</p></div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2"><DashboardTile eyebrow="PB CHASE" title="100m 今月PBに到達" accent/><DashboardTile eyebrow="NEXT STEP" title="走幅跳をあと1件記録すると安定度も確認できます"/></div>
+          </Explained>
+          <Explained title={explanations.news[0]} text={explanations.news[1]} className="rounded-[28px] border border-white/10 bg-[#111214] p-5 sm:p-7">
+            <div className="flex items-center gap-2 pr-10"><Bell size={18} className="text-orange-400"/><h2 className="font-black">NEWS</h2></div>
+            <div className="mt-5 divide-y divide-white/10"><NewsItem title="新しい予定：酒田スプリント" date="2026/10/25"/><NewsItem title="コーチから返信が届きました" date="2026/08/20"/><NewsItem title="CONTROL TEST測定会のお知らせ" date="2026/08/18"/></div>
+            <p className="mt-5 text-center text-xs font-black text-orange-400">NEWSをすべて見る <ChevronRight size={13} className="inline"/></p>
+          </Explained>
+        </section>
+
+        <Explained title={explanations.report[0]} text={explanations.report[1]} className="mt-5 rounded-[28px] border border-orange-500/30 bg-[#0e0f11] p-5 sm:p-8">
+          <div className="mb-7 pr-10"><p className="text-[10px] font-black tracking-[.2em] text-orange-400">GROWTH REPORT SAMPLE</p><h2 className="mt-1 text-2xl font-black">全期間の成長レポート</h2></div>
+          <OverallGrowthReport records={sampleRecords}/>
+        </Explained>
+
+        <div className="mt-10 rounded-3xl bg-orange-500 p-6 text-black sm:flex sm:items-center sm:justify-between sm:p-8"><div><p className="text-[10px] font-black tracking-[.2em]">START YOUR JOURNEY</p><h2 className="mt-2 text-2xl font-black">次は、あなたの成長を記録しよう。</h2></div><Link href="https://forms.gle/9KLAq5PSkBudhbyL9" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-4 text-sm font-black text-white sm:mt-0">無料体験を予約する<ArrowRight size={17}/></Link></div>
+      </div>
+    </main>
+  );
 }
 
-function Metric({label,value}:{label:string;value:string}){return <div className="rounded-xl border border-white/10 bg-black/25 p-3"><span className="block text-[9px] font-black tracking-wide text-white/35">{label}</span><strong className="mt-1 block truncate text-base text-white">{value}</strong></div>}
-function Score({label,value}:{label:string;value:string}){return <div className="rounded-xl bg-black/25 p-3"><span className="text-[8px] font-black text-white/35">{label}</span><strong className="mt-1 block text-2xl text-cyan-300">{value}</strong></div>}
-function Feature({icon,title,text}:{icon:React.ReactNode;title:string;text:string}){return <article className="rounded-2xl border border-white/10 bg-[#111] p-5"><span className="text-orange-400">{icon}</span><h3 className="mt-4 font-black">{title}</h3><p className="mt-2 text-xs leading-6 text-white/45">{text}</p></article>}
-function WeekDay({day,date,label,active=false,competition=false}:{day:string;date:string;label?:string;active?:boolean;competition?:boolean}){return <div className={`min-w-0 rounded-xl border px-2 py-3 ${active?"border-orange-400/45 bg-orange-400/10":"border-white/[.07] bg-black/15"}`}><span className="text-[9px] font-black text-white/30">{day}</span><strong className="mt-0.5 block">{date}</strong>{label?<><span className={`mt-3 block h-1.5 w-1.5 rounded-full ${competition?"bg-orange-400":"bg-emerald-400"}`}/><span className="mt-1 block truncate text-[8px] text-white/55">{label}</span></>:<span className="mt-3 block text-[8px] text-white/15">—</span>}</div>}
-function GuideStep({number,icon,title,text}:{number:string;icon:React.ReactNode;title:string;text:string}){return <article className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 p-5"><span className="absolute right-4 top-3 text-3xl font-black text-white/[.035]">{number}</span><span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-500/10 text-orange-400">{icon}</span><h3 className="mt-4 font-black">{title}</h3><p className="mt-2 text-xs leading-6 text-white/45">{text}</p></article>}
-function MiniPoint({icon,text}:{icon:React.ReactNode;text:string}){return <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/20 px-3 py-2"><span className="text-orange-400">{icon}</span>{text}</span>}
+function Explained({ title, text, children, className = "" }: { title: string; text: string; children: ReactNode; className?: string }) {
+  return <div className={`group/explain relative ${className}`}>
+    {children}
+    <button type="button" aria-label={`${title}の説明を見る`} className="absolute right-3 top-3 z-20 grid h-7 w-7 place-items-center rounded-full border border-orange-400/45 bg-black/70 text-xs font-black text-orange-300 transition hover:bg-orange-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-orange-300">?</button>
+    <div className="pointer-events-none absolute inset-x-3 top-12 z-30 translate-y-2 rounded-2xl border border-orange-400/50 bg-[#090a0c]/95 p-4 opacity-0 shadow-2xl shadow-black/60 backdrop-blur-md transition duration-200 group-hover/explain:translate-y-0 group-hover/explain:opacity-100 group-focus-within/explain:translate-y-0 group-focus-within/explain:opacity-100 sm:left-auto sm:max-w-sm">
+      <p className="text-[9px] font-black tracking-[.18em] text-orange-400">この機能について</p><strong className="mt-1 block text-sm text-white">{title}</strong><p className="mt-2 text-xs leading-6 text-white/65">{text}</p>
+    </div>
+  </div>;
+}
+
+function WeekDay({day,date,label,active=false}:{day:string;date:string;label?:string;active?:boolean}) { return <div className={`min-w-0 rounded-xl border px-2 py-3 ${active ? "border-orange-400/60 bg-orange-400/10" : "border-white/[.08] bg-black/15"}`}><span className="text-[9px] font-black text-white/35">{day}</span><strong className="mt-1 block">{date}日</strong>{label ? <><span className="mt-3 block h-1.5 w-1.5 rounded-full bg-orange-400"/><span className="mt-1 block truncate text-[8px] text-white/55">{label}</span></> : <span className="mt-3 block text-[8px] text-white/20">予定なし</span>}</div> }
+function DashboardTile({eyebrow,title,meta,accent=false}:{eyebrow:string;title:string;meta?:string;accent?:boolean}) { return <div className={`rounded-xl border p-4 ${accent ? "border-emerald-400/25 bg-emerald-400/[.05]" : "border-white/10 bg-black/20"}`}><span className={`text-[9px] font-black tracking-wide ${accent ? "text-emerald-300" : "text-white/30"}`}>{eyebrow}</span><strong className="mt-1 block text-sm">{title}</strong>{meta && <span className="mt-1 block text-[10px] text-white/40">{meta}</span>}</div> }
+function Metric({label,value}:{label:string;value:string}) { return <div className="border-r border-white/10 px-3 pt-5 last:border-r-0"><span className="block text-[9px] font-black tracking-[.16em] text-white/25">{label}</span><strong className="mt-2 block text-2xl">{value}</strong></div> }
+function NavCard({icon,title,color}:{icon:ReactNode;title:string;color:string}) { return <div className="flex items-center justify-between gap-3 pr-8"><span className="flex items-center gap-3"><span className={color}>{icon}</span><strong>{title}</strong></span><ChevronRight size={17} className="text-white/30"/></div> }
+function NewsItem({title,date}:{title:string;date:string}) { return <div className="flex gap-3 py-4"><span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-orange-500/10 text-orange-400"><Bell size={13}/></span><span><strong className="block text-sm leading-5">{title}</strong><span className="mt-1 block text-xs text-white/35">{date}</span></span></div> }
