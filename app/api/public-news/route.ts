@@ -7,6 +7,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("announcements")
     .select("id, title, body, priority, created_at")
+    .eq("is_public", true)
     .order("created_at", { ascending: false })
     .limit(6);
 
