@@ -9,9 +9,9 @@ export type Message = { id:number|string; role:"user"|"companion"; content:strin
 export type CompanionInitialData = { conversations:Conversation[]; activeId:string|null; messages:Message[] };
 type Draft = { eventName:string; consultation:string; currentFeeling:string; triedActions:string; dataSummary:string; requestedFocus:string; attachmentCandidates:Array<{label:string;kind:string}> };
 
-export default function AiNavigator({initialData}:{initialData:CompanionInitialData}) {
+export default function AiNavigator({initialData,initialPrompt=""}:{initialData:CompanionInitialData;initialPrompt?:string}) {
   const [conversations,setConversations]=useState(initialData.conversations), [activeId,setActiveId]=useState(initialData.activeId), [messages,setMessages]=useState(initialData.messages);
-  const [input,setInput]=useState(""), [loading,setLoading]=useState(false), [sending,setSending]=useState(false), [historyOpen,setHistoryOpen]=useState(false), [error,setError]=useState("");
+  const [input,setInput]=useState(initialPrompt), [loading,setLoading]=useState(false), [sending,setSending]=useState(false), [historyOpen,setHistoryOpen]=useState(false), [error,setError]=useState("");
   const [draft,setDraft]=useState<Draft|null>(null), [consultationId,setConsultationId]=useState<string|null>(null); const endRef=useRef<HTMLDivElement>(null);
   const load=useCallback(async(id?:string|null)=>{setLoading(true);const r=await fetch(`/api/ai-companion${id?`?conversationId=${encodeURIComponent(id)}`:""}`,{cache:"no-store"}),d=await r.json();if(r.ok){setConversations(d.conversations);setActiveId(d.activeId);setMessages(d.messages);setConsultationId(d.consultationId??null)}else setError(d.error);setLoading(false)},[]);
   useEffect(()=>{endRef.current?.scrollIntoView({behavior:"smooth",block:"end"})},[messages]);
