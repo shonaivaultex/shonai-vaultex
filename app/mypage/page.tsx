@@ -194,6 +194,10 @@ export default async function MyPage() {
           <ChevronRight className="text-orange-400 transition group-hover:translate-x-1" aria-hidden="true" />
         </Link>
       </div>
+      <Link href="/mypage/ranking" className="group mt-3 flex items-center justify-between rounded-2xl border border-orange-400/25 bg-orange-400/[.055] px-5 py-4 text-white transition hover:border-orange-400/55 hover:bg-orange-400/[.09]">
+        <span className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-500/15 text-orange-300"><Trophy size={20}/></span><span className="min-w-0"><strong className="block">VAULTEXランキング</strong><span className="mt-0.5 block truncate text-xs text-white/45">男女別・全体／クラス別で本番記録の現在地を見る</span></span></span>
+        <ChevronRight size={18} className="shrink-0 text-orange-300 transition group-hover:translate-x-1"/>
+      </Link>
       </div>
 
       <MypageSettings />
