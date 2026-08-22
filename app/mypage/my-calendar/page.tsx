@@ -61,8 +61,8 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
         <h1 className="mt-2 text-4xl font-black tracking-[-.04em] sm:text-5xl">自分の競技生活を残す</h1>
         <p className="mt-3 max-w-2xl leading-7 text-white/55">クラブ予定と、学校・自主練習・休養を一つのカレンダーで管理できます。登録した練習記録・意識・動画は、実施日のカレンダーへ自動で反映されます。</p>
       </header>
-      <div id="period-management" className="mt-8"><SchedulePeriodManager key={periodManagerKey} initialPeriods={periods} userId={user.id} initialEditingId={initialPeriodId} initialDate={initialPeriodDate}/></div>
       <MyCalendar userId={user.id} initialEntries={enrichedEntries} schedules={schedules ?? []} activeScheduleIds={[...activeScheduleIds]} records={enrichedRecords} periods={periods} initialGoal={activeGoal} initialSelectedDate={initialSelectedDate}/>
+      <div id="period-management" className="mt-6 scroll-mt-24"><SchedulePeriodManager key={periodManagerKey} initialPeriods={periods} userId={user.id} initialEditingId={initialPeriodId} initialDate={initialPeriodDate}/></div>
     </div>
   </main>;
 }
