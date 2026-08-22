@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 import MyCalendar from "@/app/components/MyCalendar";
 import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
-import SchedulePeriodManager from "@/app/components/SchedulePeriodManager";
 import type { SchedulePeriod } from "@/lib/schedule-periods";
 
 export default async function MyCalendarPage({ searchParams }: { searchParams: Promise<{ period?: string; periodDate?: string; date?: string }> }) {
@@ -52,7 +51,6 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
   const initialPeriodId = query.period && /^\d+$/.test(query.period) ? Number(query.period) : null;
   const initialPeriodDate = query.periodDate && /^\d{4}-\d{2}-\d{2}$/.test(query.periodDate) ? query.periodDate : undefined;
   const initialSelectedDate = query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : undefined;
-  const periodManagerKey = initialPeriodId ? `edit-${initialPeriodId}` : initialPeriodDate ? `new-${initialPeriodDate}` : "closed";
 
   return <main className="min-h-screen bg-[#090a0c] px-4 pb-24 pt-28 text-white sm:px-8">
     <div className="mx-auto max-w-7xl">
@@ -62,8 +60,7 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
         <h1 className="mt-2 text-4xl font-black tracking-[-.04em] sm:text-5xl">自分の競技生活を残す</h1>
         <p className="mt-3 max-w-2xl leading-7 text-white/55">クラブ予定と、学校・自主練習・休養を一つのカレンダーで管理できます。登録した練習記録・意識・動画は、実施日のカレンダーへ自動で反映されます。</p>
       </header>
-      <MyCalendar userId={user.id} initialEntries={enrichedEntries} schedules={schedules ?? []} activeScheduleIds={[...activeScheduleIds]} records={enrichedRecords} periods={periods} initialGoal={activeGoal} goalHistory={goalHistory ?? []} initialSelectedDate={initialSelectedDate}/>
-      <div id="period-management" className="mt-6 scroll-mt-24"><SchedulePeriodManager key={periodManagerKey} initialPeriods={periods} userId={user.id} initialEditingId={initialPeriodId} initialDate={initialPeriodDate}/></div>
+      <MyCalendar userId={user.id} initialEntries={enrichedEntries} schedules={schedules ?? []} activeScheduleIds={[...activeScheduleIds]} records={enrichedRecords} periods={periods} initialGoal={activeGoal} goalHistory={goalHistory ?? []} initialSelectedDate={initialSelectedDate} initialPeriodId={initialPeriodId} initialPeriodDate={initialPeriodDate}/>
     </div>
   </main>;
 }
