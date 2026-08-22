@@ -112,11 +112,11 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
         <div className="fixed inset-x-0 bottom-0 bg-black/85" style={{ top: spotlightRect.bottom }} />
         <div className="pointer-events-none fixed rounded-2xl border-2 border-orange-400 shadow-[0_0_0_4px_rgba(249,115,22,.18),0_0_32px_rgba(249,115,22,.55)]" style={{ top: spotlightRect.top, left: spotlightRect.left, width: spotlightRect.width, height: spotlightRect.height }} />
       </> : <div className="fixed inset-0 bg-black/88 backdrop-blur-sm" />}
-      <div className={`fixed left-1/2 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 ${spotlightRect ? (cardBelow ? "top-auto" : "bottom-4") : "top-1/2 -translate-y-1/2"}`} style={spotlightRect && cardBelow ? { top: spotlightRect.bottom + 16 } : undefined}>
-        <div className="relative overflow-hidden rounded-3xl border border-orange-500/45 bg-[#101010] text-white shadow-[0_24px_90px_rgba(0,0,0,.75)]">
+      <div className={`fixed left-1/2 w-[calc(100%-1rem)] max-w-lg -translate-x-1/2 sm:w-[calc(100%-2rem)] ${spotlightRect ? (cardBelow ? "top-auto" : "bottom-2 sm:bottom-4") : "top-1/2 -translate-y-1/2"}`} style={spotlightRect && cardBelow ? { top: Math.max(8, Math.min(spotlightRect.bottom + 16, viewportHeight - 360)) } : undefined}>
+        <div className="relative flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border border-orange-500/45 bg-[#101010] text-white shadow-[0_24px_90px_rgba(0,0,0,.75)] sm:max-h-[calc(100dvh-2rem)]">
           <div className="h-1 bg-white/10"><div className="h-full bg-orange-500 transition-all duration-300" style={{ width: `${((step + 1) / steps.length) * 100}%` }} /></div>
           <button type="button" aria-label="あとで見る" disabled={saving} onClick={dismiss} className="absolute right-4 top-5 rounded-full bg-white/10 p-2 text-white/55 transition hover:text-white disabled:opacity-40"><X size={18} /></button>
-          <div className="px-5 pb-5 pt-7 sm:px-7 sm:pb-7">
+          <div className="min-h-0 overflow-y-auto overscroll-contain px-5 pt-7 sm:px-7">
             <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-orange-500/15 text-orange-400"><Icon size={24} /></span><div className="min-w-0 pr-8"><p className="text-[10px] font-black tracking-[.18em] text-orange-400">{current.eyebrow}</p><h2 id="mypage-tutorial-title" className="mt-1 text-xl font-black leading-tight sm:text-2xl">{current.title}</h2></div></div>
             <p className="mt-4 text-sm leading-6 text-white/65">{current.body}</p>
             {"install" in current && current.install ? <div className="mt-4 rounded-2xl border border-orange-500/25 bg-orange-500/[0.07] p-4">
@@ -128,8 +128,10 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
               </>}
               <p className="mt-3 flex items-start gap-2 border-t border-white/10 pt-3 text-[11px] leading-5 text-white/45"><Bell size={15} className="mt-0.5 shrink-0 text-orange-400" />追加後、マイページの「通知設定」から通知をONにしてください。ホーム画面へ追加するだけでは通知はまだ有効になりません。</p>
             </div> : null}
-            <div className="mt-4 flex items-center justify-center gap-1.5" aria-label={`${step + 1}/${steps.length}`}>{steps.map((item, index) => <span key={item.eyebrow} className={`h-1.5 rounded-full transition-all ${index === step ? "w-6 bg-orange-500" : "w-1.5 bg-white/20"}`} />)}</div>
-            <div className="mt-5 flex items-center gap-3">
+            <div className="mb-4 mt-4 flex items-center justify-center gap-1.5" aria-label={`${step + 1}/${steps.length}`}>{steps.map((item, index) => <span key={item.eyebrow} className={`h-1.5 rounded-full transition-all ${index === step ? "w-6 bg-orange-500" : "w-1.5 bg-white/20"}`} />)}</div>
+          </div>
+          <div className="shrink-0 border-t border-white/10 bg-[#101010] px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-7 sm:pb-5">
+            <div className="flex items-center gap-3">
               {step > 0 ? <button type="button" aria-label="前へ" onClick={() => setStep((value) => value - 1)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/15 text-white/65 hover:text-white"><ArrowLeft size={18} /></button> : null}
               {!last ? <button type="button" onClick={() => setStep((value) => value + 1)} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 font-black text-black transition hover:bg-orange-400">次へ <span className="text-xs opacity-60">{step + 1}/{steps.length}</span><ArrowRight size={18} /></button> : <button type="button" disabled={saving} onClick={() => void finish()} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 font-black text-black transition hover:bg-orange-400 disabled:opacity-50"><Check size={18} />マイページを始める</button>}
             </div>
