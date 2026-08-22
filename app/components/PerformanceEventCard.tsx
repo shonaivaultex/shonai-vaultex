@@ -49,7 +49,7 @@ function describeTrend(value: number, isTimeEvent: boolean) {
 
   const isPositive = isTimeEvent ? value < 0 : value > 0;
   return {
-    label: isPositive ? "改善" : "悪化",
+    label: isPositive ? "向上" : "差を確認",
     arrow: isPositive ? "↑" : "↓",
     isPositive,
   };
@@ -155,22 +155,23 @@ export default function PerformanceEventCard({
             {latestChange === null ? (
               <strong className="mt-2 block text-base text-white/35">記録待ち</strong>
             ) : (
-              <strong className={`mt-2 block text-xl ${latestTrend?.isPositive ? "text-emerald-400" : latestTrend?.isPositive === false ? "text-red-400" : "text-white/50"}`}>
+              <strong className={`mt-2 block text-xl ${latestTrend?.isPositive ? "text-emerald-400" : latestTrend?.isPositive === false ? "text-sky-300" : "text-white/50"}`}>
                 <span className="mr-2">{latestTrend?.arrow}</span>
-                <span>{latestTrend?.label}</span>
+                <span>{latestTrend?.isPositive === false ? "前回との差" : latestTrend?.label}</span>
                 <span className="ml-2 text-base text-white/80">{formatChange(latestChange, unit)}</span>
               </strong>
             )}
+            {latestTrend?.isPositive === false ? <p className="mt-2 text-xs text-sky-200/60">次の変化も確認していこう</p> : null}
             {latest && previous ? (
               <p className="mt-2 text-xs text-white/45">{`${previous.date} → ${latest.date}`}</p>
             ) : null}
           </div>
           <div className="rounded-xl border border-white/10 p-4">
             <p className="m-0 text-[11px] font-bold tracking-[0.08em] text-white/45">{currentYear}年度の変化</p>
-            <strong className={`mt-2 block text-xl ${yearlyChange === null || yearlyChange === 0 ? "text-white/50" : yearlyTrend?.isPositive ? "text-emerald-400" : "text-red-400"}`}>
+            <strong className={`mt-2 block text-xl ${yearlyChange === null || yearlyChange === 0 ? "text-white/50" : yearlyTrend?.isPositive ? "text-emerald-400" : "text-sky-300"}`}>
               {yearlyChange === null
                 ? `${currentYear}年度のデータが不足しています`
-                : `${yearlyTrend?.arrow} ${yearlyTrend?.label} ${formatChange(yearlyChange, unit)}`}
+                : `${yearlyTrend?.arrow} ${yearlyTrend?.isPositive === false ? "今年度の差" : yearlyTrend?.label} ${formatChange(yearlyChange, unit)}`}
             </strong>
             {yearlyLatest && yearlyFirst ? (
               <p className="mt-2 text-xs text-white/45">{`${yearlyFirst.date} → ${yearlyLatest.date}`}</p>
