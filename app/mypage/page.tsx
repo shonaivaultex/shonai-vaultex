@@ -82,11 +82,12 @@ export default async function MyPage() {
     .slice(0, 2);
   const nextSchedule = nextSchedules[0];
   const nextScheduleDate = nextSchedule ? new Date(nextSchedule.starts_at) : null;
+  const weekDateKeys = Array.from({ length: 7 }, (_, index) => addTokyoDays(todayKey, index));
+  const weekMyCalendarItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey))), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey)))]).sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
   const todayTrainingItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && occursOnDate(schedule, todayKey))])
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
   const visibleClubSchedules = ((schedules ?? []) as ScheduleItem[]).filter((schedule) => schedule.audience === "all" || schedule.program_class === player.program_class);
-  const weekSchedule = Array.from({ length: 7 }, (_, index) => {
-    const dateKey = addTokyoDays(todayKey, index);
+  const weekSchedule = weekDateKeys.map((dateKey) => {
     const date = new Date(`${dateKey}T12:00:00+09:00`);
     return {
       dateKey,
@@ -114,13 +115,13 @@ export default async function MyPage() {
             {coachRole ? <Link href="/coach/dashboard" prefetch className="mt-7 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-300 transition hover:bg-emerald-400/15">COACH DASHBOARD <ArrowUpRight size={15}/></Link> : null}
             <Link href={`/mypage/my-calendar?date=${todayKey}`} className="group mt-8 hidden rounded-2xl border border-emerald-400/20 bg-emerald-400/[.05] p-5 transition hover:border-emerald-400/45 hover:bg-emerald-400/[.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 lg:block">
               <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300"><NotebookPen size={20}/></span><span className="min-w-0"><span className="block text-[10px] font-black tracking-[.2em] text-emerald-300">MY CALENDAR</span><strong className="mt-1 block text-base">今日を確認・記録する</strong></span></div>
+                <div className="flex min-w-0 items-center gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300"><NotebookPen size={20}/></span><span className="min-w-0"><span className="block text-[10px] font-black tracking-[.2em] text-emerald-300">MY CALENDAR</span><strong className="mt-1 block text-base">1週間の予定を確認・記録</strong></span></div>
                 <span className="inline-flex shrink-0 items-center gap-1 text-xs font-black text-emerald-300">開く<ChevronRight size={15} className="transition group-hover:translate-x-1"/></span>
               </div>
               <div className="mt-4 rounded-xl border border-white/[.07] bg-black/20 px-4 py-3">
-                <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-black tracking-[.15em] text-white/35">TODAY&apos;S TRAINING</span><span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] font-black text-emerald-300">{todayTrainingItems.length}件</span></div>
-                <strong className="mt-2 block truncate text-sm">{todayTrainingItems[0]?.title ?? "今日の予定はありません"}</strong>
-                {todayTrainingItems.length > 1 ? <span className="mt-1 block text-[10px] text-white/35">ほか{todayTrainingItems.length - 1}件</span> : null}
+                <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-black tracking-[.15em] text-white/35">1週間の予定</span><span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] font-black text-emerald-300">{weekMyCalendarItems.length}件</span></div>
+                <strong className="mt-2 block truncate text-sm">{weekMyCalendarItems[0]?.title ?? "1週間の予定はありません"}</strong>
+                {weekMyCalendarItems.length > 1 ? <span className="mt-1 block text-[10px] text-white/35">ほか{weekMyCalendarItems.length - 1}件</span> : null}
               </div>
               {activeGoal ? <div className="mt-3 flex min-w-0 items-center gap-2 text-xs text-white/45"><Target size={14} className="shrink-0 text-orange-400"/><span className="truncate">次の目標：{activeGoal.title}</span><span className="ml-auto shrink-0">{activeGoal.target_date.replaceAll("-", "/")}</span></div> : <div className="mt-3 text-xs text-white/35">予定や練習記録をカレンダーでまとめて確認</div>}
             </Link>
