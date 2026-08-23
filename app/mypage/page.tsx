@@ -83,6 +83,17 @@ export default async function MyPage() {
   const nextSchedule = nextSchedules[0];
   const nextScheduleDate = nextSchedule ? new Date(nextSchedule.starts_at) : null;
   const weekDateKeys = Array.from({ length: 7 }, (_, index) => addTokyoDays(todayKey, index));
+  const weekMyCalendarSchedule = weekDateKeys.map((dateKey) => {
+    const date = new Date(`${dateKey}T12:00:00+09:00`);
+    const items = [...((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && occursOnDate(schedule, dateKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && occursOnDate(schedule, dateKey))]
+      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+    return {
+      dateKey,
+      day: date.toLocaleDateString("ja-JP", { day: "numeric", timeZone: "Asia/Tokyo" }),
+      weekday: date.toLocaleDateString("ja-JP", { weekday: "short", timeZone: "Asia/Tokyo" }),
+      items,
+    };
+  });
   const weekMyCalendarItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey))), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey)))]).sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
   const todayTrainingItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && occursOnDate(schedule, todayKey))])
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
@@ -119,9 +130,19 @@ export default async function MyPage() {
                 <span className="inline-flex shrink-0 items-center gap-1 text-xs font-black text-emerald-300">開く<ChevronRight size={15} className="transition group-hover:translate-x-1"/></span>
               </div>
               <div className="mt-4 rounded-xl border border-white/[.07] bg-black/20 px-4 py-3">
-                <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-black tracking-[.15em] text-white/35">1週間の予定</span><span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] font-black text-emerald-300">{weekMyCalendarItems.length}件</span></div>
-                <strong className="mt-2 block truncate text-sm">{weekMyCalendarItems[0]?.title ?? "1週間の予定はありません"}</strong>
-                {weekMyCalendarItems.length > 1 ? <span className="mt-1 block text-[10px] text-white/35">ほか{weekMyCalendarItems.length - 1}件</span> : null}
+                <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-black tracking-[.15em] text-white/35">1週間の予定表</span><span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] font-black text-emerald-300">{weekMyCalendarItems.length}件</span></div>
+                <div className="mt-3 grid grid-cols-7 gap-1.5">
+                  {weekMyCalendarSchedule.map((date) => {
+                    const firstItem = date.items[0];
+                    return (
+                      <div key={date.dateKey} className={`min-w-0 rounded-lg border px-2 py-2 transition ${date.dateKey === todayKey ? "border-orange-400/45 bg-orange-400/10" : "border-white/[.07] bg-black/15"}`}>
+                        <span className={`block text-[9px] font-black ${date.weekday === "日" ? "text-rose-300" : date.weekday === "土" ? "text-sky-300" : "text-white/30"}`}>{date.weekday}</span>
+                        <strong className="mt-0.5 block leading-none">{date.day}</strong>
+                        {firstItem ? <><span className={`mt-2 block h-1.5 w-1.5 rounded-full ${firstItem.schedule_type === "competition" ? "bg-orange-400" : "bg-emerald-400"}`}/><span className="mt-1.5 block truncate text-[9px] font-bold text-white/65">{firstItem.title}</span>{date.items.length > 1 ? <span className="mt-1 block text-[8px] text-white/30">ほか{date.items.length - 1}件</span> : null}</> : <span className="mt-2 block text-[9px] text-white/20">予定なし</span>}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               {activeGoal ? <div className="mt-3 flex min-w-0 items-center gap-2 text-xs text-white/45"><Target size={14} className="shrink-0 text-orange-400"/><span className="truncate">次の目標：{activeGoal.title}</span><span className="ml-auto shrink-0">{activeGoal.target_date.replaceAll("-", "/")}</span></div> : <div className="mt-3 text-xs text-white/35">予定や練習記録をカレンダーでまとめて確認</div>}
             </Link>
