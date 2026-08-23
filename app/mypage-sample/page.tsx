@@ -49,7 +49,7 @@ const explanations = {
 
 export default function MyPageSample() {
   return (
-    <main className="min-h-screen bg-[#08090b] px-3 pb-24 pt-20 text-white sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#08090b] px-3 pb-24 pt-20 text-white">
       <div className="mx-auto max-w-[1460px]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link href="/" className="inline-flex items-center gap-2 text-xs font-bold tracking-[.14em] text-white/55 transition hover:text-orange-400">
@@ -61,67 +61,67 @@ export default function MyPageSample() {
         <header className="mb-5 mt-8 flex items-end justify-between gap-4">
           <div>
             <p className="text-[11px] font-black tracking-[.28em] text-orange-400">ATHLETE DASHBOARD</p>
-            <h1 className="mt-1 text-4xl font-black tracking-[-.05em] sm:text-5xl">MY PAGE</h1>
+            <h1 className="mt-1 text-4xl font-black tracking-[-.05em]">MY PAGE</h1>
           </div>
-          <span className="hidden text-xs font-black tracking-[.18em] text-white/15 sm:block">SHONAI VAULTEX</span>
+          <span className="text-xs font-black tracking-[.18em] text-white/15">SHONAI VAULTEX</span>
         </header>
 
-        <div className="mb-5 flex items-center justify-between rounded-2xl border border-orange-500/35 bg-orange-500/[.06] px-4 py-3 text-xs sm:px-5">
+        <div className="mb-5 flex items-center justify-between rounded-2xl border border-orange-500/35 bg-orange-500/[.06] px-4 py-3 text-xs">
           <span className="flex items-center gap-2 font-black"><Sparkles size={16} className="text-orange-400" />各エリアの使い方</span>
           <span className="text-right text-white/40">PCはカーソル、スマホは「？」をタップ</span>
         </div>
 
-        <section className="grid overflow-hidden rounded-[30px] border border-white/10 bg-[#101113] lg:grid-cols-[1.05fr_.95fr]">
-          <Explained title={explanations.profile[0]} text={explanations.profile[1]} className="min-h-[450px] border-b border-white/10 p-6 sm:p-10 lg:border-b-0 lg:border-r">
+        <section className="grid overflow-hidden rounded-[30px] border border-white/10 bg-[#101113]">
+          <Explained title={explanations.profile[0]} text={explanations.profile[1]} className="min-h-[450px] border-b border-white/10 p-6">
             <div className="flex items-center gap-2"><span className="rounded-full border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-xs font-black text-orange-300">エリート</span><span className="text-xs text-white/35">ATHLETE</span></div>
-            <h2 className="mt-7 text-4xl font-black tracking-[-.05em] sm:text-6xl">VAULTEX 選手</h2>
+            <h2 className="mt-7 text-4xl font-black tracking-[-.05em]">VAULTEX 選手</h2>
             <p className="mt-2 text-base text-white/40">走幅跳・100m</p>
             <div className="mt-20">
               <div className="mb-4 flex items-end justify-between"><div><p className="text-[10px] font-black tracking-[.2em] text-orange-300">CLUB SCHEDULE</p><strong className="mt-1 block text-sm">これから1週間</strong></div><span className="text-xs text-white/35">全体を見る <ChevronRight size={13} className="inline" /></span></div>
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-7"><WeekDay day="金" date="21" label="東北選手権" active/><WeekDay day="土" date="22" label="東北選手権"/><WeekDay day="日" date="23" label="東北選手権"/><WeekDay day="月" date="24"/><WeekDay day="火" date="25"/><WeekDay day="水" date="26"/><WeekDay day="木" date="27"/></div>
+              <div className="grid grid-cols-4 gap-2"><WeekDay day="金" date="21" label="東北選手権" active/><WeekDay day="土" date="22" label="東北選手権"/><WeekDay day="日" date="23" label="東北選手権"/><WeekDay day="月" date="24"/><WeekDay day="火" date="25"/><WeekDay day="水" date="26"/><WeekDay day="木" date="27"/></div>
             </div>
           </Explained>
 
-          <Explained title={explanations.calendar[0]} text={explanations.calendar[1]} className="min-h-[450px] bg-[radial-gradient(circle_at_100%_0%,rgba(249,115,22,.2),transparent_55%)] p-5 sm:p-8">
+          <Explained title={explanations.calendar[0]} text={explanations.calendar[1]} className="min-h-[450px] bg-[radial-gradient(circle_at_100%_0%,rgba(249,115,22,.2),transparent_55%)] p-5">
             <div className="flex items-center justify-between gap-3 pr-10"><div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300"><NotebookPen size={20}/></span><div><p className="text-[10px] font-black tracking-[.2em] text-emerald-300">MY CALENDAR</p><strong className="mt-1 block">今日を確認・記録する</strong></div></div><span className="rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-2 text-[10px] font-black text-orange-300">出欠未回答 3件</span></div>
             <div className="mt-6 rounded-2xl border border-emerald-400/20 bg-black/20 p-4"><div className="flex items-center justify-between"><div><p className="text-[10px] font-black tracking-[.16em] text-emerald-300">TODAY&apos;S TRAINING</p><strong className="mt-1 block">今日の練習</strong></div><span className="rounded-full bg-white/[.06] px-3 py-1 text-xs font-black text-white/45">1件</span></div><div className="mt-4 flex items-center gap-3 rounded-xl border border-white/[.08] bg-black/25 px-4 py-3"><span className="h-2 w-2 rounded-full bg-emerald-400"/><span className="min-w-0 flex-1"><strong className="block truncate text-sm">試合前日練習</strong><span className="text-[10px] text-white/40">終日 ・ あづま</span></span><span className="rounded-full bg-white/[.06] px-2 py-1 text-[9px] text-white/40">個人予定</span></div></div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2"><DashboardTile eyebrow="NEXT" title="東北選手権" meta="8/21(金) ・ あづま総合運動公園"/><DashboardTile eyebrow="TODAY'S LOG" title="今日の練習を記録" accent/></div>
+            <div className="mt-4 grid gap-3"><DashboardTile eyebrow="NEXT" title="東北選手権" meta="8/21(金) ・ あづま総合運動公園"/><DashboardTile eyebrow="TODAY'S LOG" title="今日の練習を記録" accent/></div>
             <div className="mt-4 flex items-center justify-between text-xs text-white/40"><span className="flex items-center gap-2"><Target size={14} className="text-orange-400"/>次の目標：東北選手権</span><span>2026/08/22</span></div>
             <div className="mt-6 grid grid-cols-2 border-t border-white/10"><Metric label="THIS MONTH" value="7 RECORDS"/><Metric label="TO CHECK" value="0 ITEMS"/></div>
           </Explained>
         </section>
 
-        <section className="mt-5 grid gap-3 md:grid-cols-3">
+        <section className="mt-5 grid gap-3 grid-cols-1">
           <Explained title={explanations.video[0]} text={explanations.video[1]} className="rounded-2xl border border-white/10 bg-[#111214] p-5"><NavCard icon={<Video size={20}/>} title="動画を送る" color="text-cyan-300"/></Explained>
           <Explained title={explanations.schedule[0]} text={explanations.schedule[1]} className="rounded-2xl border border-white/10 bg-[#111214] p-5"><NavCard icon={<CalendarDays size={20}/>} title="全体スケジュール" color="text-orange-400"/></Explained>
           <Explained title={explanations.ai[0]} text={explanations.ai[1]} className="rounded-2xl border border-white/10 bg-[#111214] p-5"><NavCard icon={<MessageCircle size={20}/>} title="AIに相談" color="text-orange-400"/></Explained>
         </section>
 
-        <Explained title={explanations.scan[0]} text={explanations.scan[1]} className="mt-5 rounded-[28px] border border-orange-500/45 bg-[#101113] p-6 sm:p-8">
+        <Explained title={explanations.scan[0]} text={explanations.scan[1]} className="mt-5 rounded-[28px] border border-orange-500/45 bg-[#101113] p-6">
           <div className="flex items-start gap-4 pr-10"><span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-orange-500 text-black"><ScanLine/></span><div><p className="text-[11px] font-black tracking-[.2em] text-orange-400">VAULTEX ATHLETE SCAN</p><h2 className="mt-1 text-xl font-black">身体能力の現在地を知る</h2><p className="mt-2 text-sm leading-6 text-white/45">CONTROL TESTから6能力・3特性・現在のATHLETE TYPEを確認します。</p></div></div>
           <div className="mt-6 rounded-xl bg-orange-500 px-4 py-4 text-center text-sm font-black text-black">＋ 最初のVAULTEX SCANを記録</div>
           <p className="mt-3 text-center text-xs font-bold text-white/40">CONTROL TESTの履歴・詳細 <ChevronRight size={13} className="inline"/></p>
         </Explained>
 
-        <section className="mt-5 grid gap-5 lg:grid-cols-[1.9fr_.85fr]">
-          <Explained title={explanations.growth[0]} text={explanations.growth[1]} className="rounded-[28px] border border-orange-500/35 bg-[#111214] p-5 sm:p-7">
+        <section className="mt-5 grid gap-5">
+          <Explained title={explanations.growth[0]} text={explanations.growth[1]} className="rounded-[28px] border border-orange-500/35 bg-[#111214] p-5">
             <div className="flex items-center justify-between pr-10"><div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">MONTHLY GROWTH</p><h2 className="mt-1 text-xl font-black">8月の成長レポート</h2></div><span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500/10 text-orange-400"><BarChart3/></span></div>
             <div className="mt-6 rounded-2xl border border-orange-500/30 bg-black/20 p-5"><div className="flex items-start justify-between"><div><p className="text-[10px] font-black tracking-[.18em] text-orange-300">MONTH&apos;S HIGHLIGHT</p><h3 className="mt-2 text-lg font-black">走幅跳 今月ベスト</h3><strong className="mt-2 block text-4xl">6.48m</strong></div><span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500 text-black"><Trophy size={20}/></span></div><p className="mt-4 text-sm text-white/55">7月の平均より12cm前進しました。</p><p className="mt-3 text-sm font-bold text-orange-200"><Sparkles size={14} className="mr-1 inline"/>よく使った意識は「リズム」</p></div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2"><DashboardTile eyebrow="PB CHASE" title="100m 今月PBに到達" accent/><DashboardTile eyebrow="NEXT STEP" title="走幅跳をあと1件記録すると安定度も確認できます"/></div>
+            <div className="mt-3 grid gap-3"><DashboardTile eyebrow="PB CHASE" title="100m 今月PBに到達" accent/><DashboardTile eyebrow="NEXT STEP" title="走幅跳をあと1件記録すると安定度も確認できます"/></div>
           </Explained>
-          <Explained title={explanations.news[0]} text={explanations.news[1]} className="rounded-[28px] border border-white/10 bg-[#111214] p-5 sm:p-7">
+          <Explained title={explanations.news[0]} text={explanations.news[1]} className="rounded-[28px] border border-white/10 bg-[#111214] p-5">
             <div className="flex items-center gap-2 pr-10"><Bell size={18} className="text-orange-400"/><h2 className="font-black">NEWS</h2></div>
             <div className="mt-5 divide-y divide-white/10"><NewsItem title="新しい予定：酒田スプリント" date="2026/10/25"/><NewsItem title="コーチから返信が届きました" date="2026/08/20"/><NewsItem title="CONTROL TEST測定会のお知らせ" date="2026/08/18"/></div>
             <p className="mt-5 text-center text-xs font-black text-orange-400">NEWSをすべて見る <ChevronRight size={13} className="inline"/></p>
           </Explained>
         </section>
 
-        <Explained title={explanations.report[0]} text={explanations.report[1]} className="mt-5 rounded-[28px] border border-orange-500/30 bg-[#0e0f11] p-5 sm:p-8">
+        <Explained title={explanations.report[0]} text={explanations.report[1]} className="mt-5 rounded-[28px] border border-orange-500/30 bg-[#0e0f11] p-5">
           <div className="mb-7 pr-10"><p className="text-[10px] font-black tracking-[.2em] text-orange-400">GROWTH REPORT SAMPLE</p><h2 className="mt-1 text-2xl font-black">全期間の成長レポート</h2></div>
           <OverallGrowthReport records={sampleRecords}/>
         </Explained>
 
-        <div className="mt-10 rounded-3xl bg-orange-500 p-6 text-black sm:flex sm:items-center sm:justify-between sm:p-8"><div><p className="text-[10px] font-black tracking-[.2em]">START YOUR JOURNEY</p><h2 className="mt-2 text-2xl font-black">次は、あなたの成長を記録しよう。</h2></div><Link href="https://forms.gle/9KLAq5PSkBudhbyL9" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-4 text-sm font-black text-white sm:mt-0">無料体験を予約する<ArrowRight size={17}/></Link></div>
+        <div className="mt-10 rounded-3xl bg-orange-500 p-6 text-black"><div><p className="text-[10px] font-black tracking-[.2em]">START YOUR JOURNEY</p><h2 className="mt-2 text-2xl font-black">次は、あなたの成長を記録しよう。</h2></div><Link href="https://forms.gle/9KLAq5PSkBudhbyL9" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-4 text-sm font-black text-white">無料体験を予約する<ArrowRight size={17}/></Link></div>
       </div>
     </main>
   );
@@ -131,7 +131,7 @@ function Explained({ title, text, children, className = "" }: { title: string; t
   return <div className={`group/explain relative ${className}`}>
     {children}
     <button type="button" aria-label={`${title}の説明を見る`} className="absolute right-3 top-3 z-20 grid h-7 w-7 place-items-center rounded-full border border-orange-400/45 bg-black/70 text-xs font-black text-orange-300 transition hover:bg-orange-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-orange-300">?</button>
-    <div className="pointer-events-none absolute inset-x-3 top-12 z-30 translate-y-2 rounded-2xl border border-orange-400/50 bg-[#090a0c]/95 p-4 opacity-0 shadow-2xl shadow-black/60 backdrop-blur-md transition duration-200 group-hover/explain:translate-y-0 group-hover/explain:opacity-100 group-focus-within/explain:translate-y-0 group-focus-within/explain:opacity-100 sm:left-auto sm:max-w-sm">
+    <div className="pointer-events-none absolute inset-x-3 top-12 z-30 translate-y-2 rounded-2xl border border-orange-400/50 bg-[#090a0c]/95 p-4 opacity-0 shadow-2xl shadow-black/60 backdrop-blur-md transition duration-200 group-hover/explain:translate-y-0 group-hover/explain:opacity-100 group-focus-within/explain:translate-y-0 group-focus-within/explain:opacity-100">
       <p className="text-[9px] font-black tracking-[.18em] text-orange-400">この機能について</p><strong className="mt-1 block text-sm text-white">{title}</strong><p className="mt-2 text-xs leading-6 text-white/65">{text}</p>
     </div>
   </div>;
