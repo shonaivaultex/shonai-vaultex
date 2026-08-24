@@ -7,7 +7,7 @@ import LogoutButton from "@/app/components/LogoutButton";
 import { type ScheduleItem } from "@/app/components/SchedulePanel";
 import MypageSettings from "@/app/components/MypageSettings";
 import MypageTutorial, { MYPAGE_TUTORIAL_VERSION } from "@/app/components/MypageTutorial";
-import MypageDeferredContent, { loadMypageDeferredData, MypageDeferredSkeleton, MypageStats, MypageStatsSkeleton } from "./MypageDeferredContent";
+import MypageDeferredContent, { LatestNewsSummary, loadMypageDeferredData, MypageDeferredSkeleton, MypageStats, MypageStatsSkeleton } from "./MypageDeferredContent";
 
 function japanMonthKeys() {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
@@ -140,9 +140,14 @@ export default async function MyPage() {
                 })}
               </div>
             </div>
-            <div className="mt-10 hidden border-t border-white/[.07] pt-6 lg:flex lg:items-end lg:justify-between lg:gap-6">
-              <div><p className="text-[9px] font-black tracking-[.26em] text-white/20">ATHLETE JOURNEY</p><p className="mt-2 max-w-sm text-sm font-bold leading-6 text-white/35">予定を決める。挑戦する。記録して、次につなげる。</p></div>
-              <span className="select-none text-right text-[10px] font-black tracking-[.22em] text-orange-400/35">SHONAI<br/>VAULTEX</span>
+            <div className="mt-8 hidden border-t border-white/[.07] pt-5 lg:block">
+              <Suspense fallback={<div className="h-[78px] animate-pulse rounded-2xl border border-white/[.07] bg-white/[.025]"/>}>
+                <LatestNewsSummary dataPromise={deferredDataPromise}/>
+              </Suspense>
+              <div className="mt-4 flex items-end justify-between gap-6 px-1">
+                <div><p className="text-[9px] font-black tracking-[.26em] text-white/20">ATHLETE JOURNEY</p><p className="mt-1 max-w-sm text-xs font-bold leading-5 text-white/30">予定を決める。挑戦する。記録して、次につなげる。</p></div>
+                <span className="select-none text-right text-[9px] font-black tracking-[.22em] text-orange-400/30">SHONAI<br/>VAULTEX</span>
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-2 border-t border-white/10 lg:border-l lg:border-t-0">

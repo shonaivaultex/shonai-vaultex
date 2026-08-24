@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, ChevronRight, Medal, Plus, ScanLine, Sparkles, Trophy } from "lucide-react";
+import { BarChart3, Bell, ChevronRight, Medal, Plus, ScanLine, Sparkles, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase-server";
 import { eventKindMap, unitMap } from "@/lib/performance-events";
 import { evaluateAthleteScan, type AthleteMeasurement, type AthleteStandard, type TypeSettings } from "@/lib/athlete-scan";
@@ -126,6 +126,57 @@ export async function MypageStats({ dataPromise }: { dataPromise: Promise<Deferr
     <Link href="/mypage/growth-report" className="border-r border-white/10 p-5 transition hover:bg-white/[.035] sm:p-7"><p className="text-[10px] font-black tracking-[.14em] text-white/30">THIS MONTH</p><strong className="mt-2 block text-3xl tracking-[-.04em]">{data.currentMonthRecordCount}<small className="ml-1 text-xs text-white/35">RECORDS</small></strong></Link>
     <a href="#news" className="p-5 transition hover:bg-white/[.035] sm:p-7"><p className="text-[10px] font-black tracking-[.14em] text-white/30">TO CHECK</p><strong className={`mt-2 block text-3xl tracking-[-.04em] ${data.unreadCount ? "text-orange-400" : ""}`}>{data.unreadCount}<small className="ml-1 text-xs text-white/35">ITEMS</small></strong></a>
   </>;
+}
+
+export async function LatestNewsSummary({ dataPromise }: { dataPromise: Promise<DeferredData> }) {
+  const data = await dataPromise;
+  const orderedItems = [...data.newsItems].sort(
+    (a, b) =>
+      Number(b.unread) - Number(a.unread) ||
+      new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
+  const latestItem = orderedItems[0];
+
+  if (!latestItem) {
+    return (
+      <div className="rounded-2xl border border-white/[.07] bg-black/15 px-4 py-4">
+        <div className="flex items-center gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-orange-500/10 text-orange-400">
+            <Bell size={17}/>
+          </span>
+          <div>
+            <p className="text-[9px] font-black tracking-[.2em] text-white/25">NEWS</p>
+            <p className="mt-1 text-xs font-bold text-white/35">新しいお知らせはありません</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const unreadCount = orderedItems.filter((item) => item.unread).length;
+  return (
+    <Link
+      href={latestItem.href ?? "#news-desktop"}
+      className={`group block rounded-2xl border px-4 py-4 transition ${latestItem.unread ? "border-orange-400/30 bg-orange-400/[.07] hover:border-orange-300/50" : "border-white/[.07] bg-black/15 hover:border-white/20"}`}
+    >
+      <div className="flex items-start gap-3">
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${latestItem.unread ? "bg-orange-500/15 text-orange-300" : "bg-white/[.05] text-white/30"}`}>
+          <Bell size={17}/>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center justify-between gap-3">
+            <span className="text-[9px] font-black tracking-[.2em] text-white/30">LATEST NEWS</span>
+            {unreadCount > 0 ? <span className="shrink-0 rounded-full bg-orange-500/15 px-2 py-1 text-[9px] font-black text-orange-300">未読 {unreadCount}件</span> : null}
+          </span>
+          <strong className="mt-1.5 block truncate text-sm text-white/80">{latestItem.title}</strong>
+          <span className="mt-1 flex items-center justify-between gap-3 text-[10px] text-white/30">
+            <time>{new Date(latestItem.date).toLocaleDateString("ja-JP")}</time>
+            <span className="inline-flex items-center gap-1 font-black text-orange-300/70">確認する<ChevronRight size={12} className="transition group-hover:translate-x-0.5"/></span>
+          </span>
+        </span>
+      </div>
+    </Link>
+  );
 }
 
 export function MypageStatsSkeleton() {
