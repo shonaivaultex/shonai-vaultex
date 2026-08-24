@@ -25,5 +25,5 @@ export default function NavigationProgress() {
   }, [loading]);
 
   if (!loading) return null;
-  return <div className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-1 overflow-hidden bg-orange-950/40" role="progressbar" aria-label="画面を読み込んでいます"><span className="navigation-progress block h-full w-1/3 bg-orange-500 shadow-[0_0_14px_rgba(249,115,22,0.9)]" /></div>;
+  return <div className="pointer-events-none fixed inset-x-0 z-[100] h-1 overflow-hidden bg-orange-950/40" style={{ top: "env(safe-area-inset-top, 0px)" }} role="progressbar" aria-label="画面を読み込んでいます"><span className="navigation-progress block h-full w-1/3 bg-orange-500 shadow-[0_0_14px_rgba(249,115,22,0.9)]" /></div>;
 }

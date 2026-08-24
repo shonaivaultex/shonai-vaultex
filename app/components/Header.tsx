@@ -5,8 +5,11 @@ import { primaryNavigation } from "./site";
 
 export default function Header() {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#090a0c]/90 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
+    <header
+      className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#090a0c]/90 backdrop-blur-md"
+      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+    >
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-3 min-[390px]:px-5 sm:px-8 lg:px-10">
         <Brand />
 
         <nav aria-label="Main navigation" className="hidden items-center gap-6 lg:flex">
@@ -29,7 +32,10 @@ export default function Header() {
         </Link>
         <details className="group relative lg:hidden">
           <summary aria-label="メニューを開く" className="grid size-11 cursor-pointer list-none place-items-center border border-white/20 bg-black/20 marker:hidden"><Menu size={21} /></summary>
-          <div className="fixed inset-x-0 top-16 border-t border-white/10 bg-[#090a0c] shadow-2xl">
+          <div
+            className="fixed inset-x-0 border-t border-white/10 bg-[#090a0c] shadow-2xl"
+            style={{ top: "calc(4rem + env(safe-area-inset-top, 0px))" }}
+          >
             <nav aria-label="Mobile navigation" className="mx-auto max-w-7xl px-5 pb-8 pt-4 sm:px-8">
               {primaryNavigation.map((item) => <Link key={item.label} href={item.href} className="flex items-center justify-between border-b border-white/10 py-4 text-xl font-black tracking-[-0.03em] hover:text-orange-400">{item.label}<ArrowRight aria-hidden="true" size={18} className="text-orange-500"/></Link>)}
               <Link href="/mypage" className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-orange-500 py-4 text-xs font-black tracking-[0.14em]"><UserRound aria-hidden="true" size={16}/>MY PAGE</Link>
@@ -45,7 +51,7 @@ function Brand() {
   return (
    <Link
   href="/"
-  className="flex items-center gap-1 py-2"
+  className="flex min-w-0 items-center gap-1 py-2"
 >
 
   <Image
@@ -53,18 +59,19 @@ function Brand() {
   alt="SHONAI VAULTEX"
   width={62}
   height={62}
+  className="h-12 w-12 shrink-0 min-[390px]:h-[62px] min-[390px]:w-[62px]"
 />
 
   <div
-  className="scale-90"
+  className="min-w-0 scale-90 origin-left"
 >
   <p
-  className="text-2xl font-black tracking-[0.25em]"
+  className="whitespace-nowrap text-xl font-black tracking-[0.2em] min-[390px]:text-2xl min-[390px]:tracking-[0.25em]"
 >
     SHONAI
   </p>
 
-  <p className="text-xl font-black tracking-[0.3em] text-orange-500">
+  <p className="whitespace-nowrap text-lg font-black tracking-[0.25em] text-orange-500 min-[390px]:text-xl min-[390px]:tracking-[0.3em]">
     VAULTEX
   </p>
 </div>

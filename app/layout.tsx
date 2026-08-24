@@ -77,7 +77,7 @@ export default function RootLayout({
   <PWARegister />
   <NavigationProgress />
   <Header />
-  <div className="flex-1">{children}</div>
+  <div className="flex-1" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>{children}</div>
   <Footer />
 </body>
     </html>
