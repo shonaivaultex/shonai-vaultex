@@ -4,8 +4,17 @@ import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
-import { performanceEvents, type PerformanceKind } from "@/lib/performance-events";
-import { createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
+import {
+  performanceEvents,
+  type PerformanceKind,
+} from "@/lib/performance-events";
+import {
+  createVideoPath,
+  formatVideoSize,
+  PERFORMANCE_VIDEO_BUCKET,
+  uploadVideoWithProgress,
+  validateVideo,
+} from "@/lib/performance-awareness";
 import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
 import { controlTestByCode } from "@/lib/control-test";
 
@@ -39,7 +48,9 @@ export default function EditPerformancePage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("performance_records")
-        .select("category, value, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path")
+        .select(
+          "category, value, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path",
+        )
         .eq("id", id)
         .single();
 
@@ -52,8 +63,19 @@ export default function EditPerformancePage() {
       setCategory(data.category ?? "");
       setValue(String(data.value ?? ""));
       setDate(data.date ?? "");
-      setRecordKind(data.record_kind ?? (performanceEvents.find((event) => event.name === data.category)?.kind ?? "control-test"));
-      setAwarenessTags(data.awareness_categories?.length ? data.awareness_categories : data.awareness_category ? [data.awareness_category] : []);
+      setRecordKind(
+        data.record_kind ??
+          performanceEvents.find((event) => event.name === data.category)
+            ?.kind ??
+          "control-test",
+      );
+      setAwarenessTags(
+        data.awareness_categories?.length
+          ? data.awareness_categories
+          : data.awareness_category
+            ? [data.awareness_category]
+            : [],
+      );
       setAwarenessNote(data.awareness_note ?? "");
       setVideoPath(data.video_path ?? null);
       setLoading(false);
@@ -80,7 +102,9 @@ export default function EditPerformancePage() {
     setSaving(true);
 
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       setSaving(false);
       alert("ログインが必要です。");
@@ -92,10 +116,20 @@ export default function EditPerformancePage() {
       setUploadProgress(0);
       nextVideoPath = createVideoPath(user.id, newVideo);
       try {
-        await uploadVideoWithProgress(supabase, nextVideoPath, newVideo, setUploadProgress);
+        await uploadVideoWithProgress(
+          supabase,
+          nextVideoPath,
+          newVideo,
+          setUploadProgress,
+        );
       } catch (uploadError) {
         setSaving(false);
-        alert("動画をアップロードできませんでした：" + (uploadError instanceof Error ? uploadError.message : "不明なエラー"));
+        alert(
+          "動画をアップロードできませんでした：" +
+            (uploadError instanceof Error
+              ? uploadError.message
+              : "不明なエラー"),
+        );
         return;
       }
     }
@@ -116,18 +150,34 @@ export default function EditPerformancePage() {
     setSaving(false);
 
     if (error) {
-      if (newVideo && nextVideoPath) await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([nextVideoPath]);
+      if (newVideo && nextVideoPath)
+        await supabase.storage
+          .from(PERFORMANCE_VIDEO_BUCKET)
+          .remove([nextVideoPath]);
       alert(error.message);
       return;
     }
 
     if (recordKind === "control-test") {
-      const { data: measurement } = await supabase.from("control_test_measurements").select("id, test_code, metrics").eq("performance_record_id", id).maybeSingle();
+      const { data: measurement } = await supabase
+        .from("control_test_measurements")
+        .select("id, test_code, metrics")
+        .eq("performance_record_id", id)
+        .maybeSingle();
       if (measurement) {
         const definition = controlTestByCode[measurement.test_code];
         const numericValue = Number(value);
         if (definition && Number.isFinite(numericValue) && numericValue > 0) {
-          await supabase.from("control_test_measurements").update({ primary_value: numericValue, metrics: { ...(measurement.metrics ?? {}), [definition.primaryMetric]: numericValue } }).eq("id", measurement.id);
+          await supabase
+            .from("control_test_measurements")
+            .update({
+              primary_value: numericValue,
+              metrics: {
+                ...(measurement.metrics ?? {}),
+                [definition.primaryMetric]: numericValue,
+              },
+            })
+            .eq("id", measurement.id);
         }
       }
     }
@@ -136,7 +186,13 @@ export default function EditPerformancePage() {
       await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([videoPath]);
     }
 
-    router.push(recordKind === "athletics" ? "/mypage/athletics" : recordKind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests");
+    router.push(
+      recordKind === "athletics"
+        ? "/mypage/athletics"
+        : recordKind === "unofficial-athletics"
+          ? "/mypage/unofficial-athletics"
+          : "/mypage/control-tests",
+    );
   };
 
   if (loading) {
@@ -179,38 +235,170 @@ export default function EditPerformancePage() {
               種目
             </label>
             <select
-  id="category"
-  value={category}
-  onChange={(e) => setCategory(e.target.value)}
-  required
-  className="w-full rounded-xl border border-zinc-700 bg-[#111] px-4 py-3 text-white outline-none focus:border-[#ff7a00] focus:ring-2 focus:ring-[#ff7a00]/30"
->
-  {events.map((eventName) => (
-    <option
-      key={eventName}
-      value={eventName}
-      className="bg-[#111]"
-    >
-      {eventName}
-    </option>
-  ))}
-</select>
+              id="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              required
+              className="w-full rounded-xl border border-zinc-700 bg-[#111] px-4 py-3 text-white outline-none focus:border-[#ff7a00] focus:ring-2 focus:ring-[#ff7a00]/30"
+            >
+              {events.map((eventName) => (
+                <option key={eventName} value={eventName} className="bg-[#111]">
+                  {eventName}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div><span className="mb-2 block text-sm font-bold text-zinc-200">意識したこと（任意・複数選択可）</span><AwarenessTagSelector value={awarenessTags} onChange={setAwarenessTags} /></div>
+          {recordKind !== "control-test" && (
+            <div>
+              <span className="mb-2 block text-sm font-bold text-zinc-200">
+                記録の種類
+              </span>
+              <div className="grid grid-cols-2 gap-2 rounded-xl border border-zinc-700 bg-[#111] p-1">
+                <button
+                  type="button"
+                  onClick={() => setRecordKind("unofficial-athletics")}
+                  className={`rounded-lg px-3 py-3 text-sm font-black transition ${recordKind === "unofficial-athletics" ? "bg-emerald-500 text-black" : "text-zinc-500"}`}
+                >
+                  練習記録
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecordKind("athletics")}
+                  className={`rounded-lg px-3 py-3 text-sm font-black transition ${recordKind === "athletics" ? "bg-[#ff7a00] text-black" : "text-zinc-500"}`}
+                >
+                  本番記録
+                </button>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-zinc-500">
+                切り替えて保存すると、記録の表示先・PB・ランキング集計も選んだ種類へ移ります。
+              </p>
+            </div>
+          )}
 
           <div>
-            <label htmlFor="awareness-note" className="mb-2 block text-sm font-bold text-zinc-200">何をどう意識しましたか？（任意）</label>
-            <textarea id="awareness-note" value={awarenessNote} onChange={(event) => setAwarenessNote(event.target.value)} maxLength={200} rows={3} placeholder="例：最後までリズムを変えずに走った" className="w-full resize-none rounded-xl border border-zinc-700 bg-[#111] px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-[#ff7a00]" />
-            <span className="mt-1 block text-right text-xs text-zinc-500">{awarenessNote.length}/200</span>
+            <span className="mb-2 block text-sm font-bold text-zinc-200">
+              意識したこと（任意・複数選択可）
+            </span>
+            <AwarenessTagSelector
+              value={awarenessTags}
+              onChange={setAwarenessTags}
+            />
           </div>
 
           <div>
-            <label htmlFor="video" className="mb-2 block text-sm font-bold text-zinc-200">動画（任意・100MBまで）</label>
-            {videoPath && !removeVideo && !newVideo && <button type="button" onClick={() => setRemoveVideo(true)} className="mb-3 text-sm font-bold text-red-400 hover:text-red-300">現在の動画を削除</button>}
-            {removeVideo && !newVideo && <p className="mb-3 text-sm text-zinc-400">保存すると現在の動画を削除します。</p>}
-            <input key={videoInputKey} id="video" type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" disabled={saving} onChange={(event) => { const selected = event.target.files?.[0] ?? null; const validationError = selected ? validateVideo(selected) : null; setUploadProgress(0); if (validationError) { alert(validationError); setNewVideo(null); event.target.value = ""; return; } setNewVideo(selected); if (selected) setRemoveVideo(false); }} className="block w-full rounded-xl border border-dashed border-zinc-700 bg-[#111] px-4 py-3 text-sm text-zinc-400 file:mr-4 file:rounded-lg file:border-0 file:bg-[#ff7a00] file:px-3 file:py-2 file:font-bold file:text-black disabled:opacity-50" />
-            {newVideo && <div className="mt-3 rounded-xl border border-zinc-700 bg-black/20 p-3"><div className="flex items-center justify-between gap-3 text-xs"><span className="min-w-0 truncate text-zinc-400">{newVideo.name}</span><div className="flex shrink-0 items-center gap-3"><strong className="text-orange-400">{formatVideoSize(newVideo.size)} / 100MB</strong><button type="button" disabled={saving} onClick={() => { setNewVideo(null); setUploadProgress(0); setVideoInputKey((value) => value + 1); }} className="inline-flex items-center gap-1 rounded-lg border border-red-500/30 px-2.5 py-1.5 font-bold text-red-300 disabled:opacity-40"><Trash2 size={13} />動画を削除</button></div></div>{saving && <div className="mt-3"><div className="mb-1 flex justify-between text-xs text-zinc-400"><span>{uploadProgress < 100 ? "動画をアップロード中" : "動画の処理完了"}</span><span>{uploadProgress}%</span></div><div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#ff7a00] transition-[width]" style={{ width: `${uploadProgress}%` }} /></div><p className="mt-2 text-xs text-zinc-500">完了するまでこの画面を閉じないでください。</p></div>}</div>}
+            <label
+              htmlFor="awareness-note"
+              className="mb-2 block text-sm font-bold text-zinc-200"
+            >
+              何をどう意識しましたか？（任意）
+            </label>
+            <textarea
+              id="awareness-note"
+              value={awarenessNote}
+              onChange={(event) => setAwarenessNote(event.target.value)}
+              maxLength={200}
+              rows={3}
+              placeholder="例：最後までリズムを変えずに走った"
+              className="w-full resize-none rounded-xl border border-zinc-700 bg-[#111] px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-[#ff7a00]"
+            />
+            <span className="mt-1 block text-right text-xs text-zinc-500">
+              {awarenessNote.length}/200
+            </span>
+          </div>
+
+          <div>
+            <label
+              htmlFor="video"
+              className="mb-2 block text-sm font-bold text-zinc-200"
+            >
+              動画（任意・100MBまで）
+            </label>
+            {videoPath && !removeVideo && !newVideo && (
+              <button
+                type="button"
+                onClick={() => setRemoveVideo(true)}
+                className="mb-3 text-sm font-bold text-red-400 hover:text-red-300"
+              >
+                現在の動画を削除
+              </button>
+            )}
+            {removeVideo && !newVideo && (
+              <p className="mb-3 text-sm text-zinc-400">
+                保存すると現在の動画を削除します。
+              </p>
+            )}
+            <input
+              key={videoInputKey}
+              id="video"
+              type="file"
+              accept="video/mp4,video/quicktime,video/webm,video/x-m4v"
+              disabled={saving}
+              onChange={(event) => {
+                const selected = event.target.files?.[0] ?? null;
+                const validationError = selected
+                  ? validateVideo(selected)
+                  : null;
+                setUploadProgress(0);
+                if (validationError) {
+                  alert(validationError);
+                  setNewVideo(null);
+                  event.target.value = "";
+                  return;
+                }
+                setNewVideo(selected);
+                if (selected) setRemoveVideo(false);
+              }}
+              className="block w-full rounded-xl border border-dashed border-zinc-700 bg-[#111] px-4 py-3 text-sm text-zinc-400 file:mr-4 file:rounded-lg file:border-0 file:bg-[#ff7a00] file:px-3 file:py-2 file:font-bold file:text-black disabled:opacity-50"
+            />
+            {newVideo && (
+              <div className="mt-3 rounded-xl border border-zinc-700 bg-black/20 p-3">
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="min-w-0 truncate text-zinc-400">
+                    {newVideo.name}
+                  </span>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <strong className="text-orange-400">
+                      {formatVideoSize(newVideo.size)} / 100MB
+                    </strong>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => {
+                        setNewVideo(null);
+                        setUploadProgress(0);
+                        setVideoInputKey((value) => value + 1);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-500/30 px-2.5 py-1.5 font-bold text-red-300 disabled:opacity-40"
+                    >
+                      <Trash2 size={13} />
+                      動画を削除
+                    </button>
+                  </div>
+                </div>
+                {saving && (
+                  <div className="mt-3">
+                    <div className="mb-1 flex justify-between text-xs text-zinc-400">
+                      <span>
+                        {uploadProgress < 100
+                          ? "動画をアップロード中"
+                          : "動画の処理完了"}
+                      </span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-[#ff7a00] transition-[width]"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-zinc-500">
+                      完了するまでこの画面を閉じないでください。
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -253,7 +441,11 @@ export default function EditPerformancePage() {
             disabled={saving}
             className="w-full rounded-xl bg-[#ff7a00] px-4 py-4 text-sm font-black tracking-widest text-black transition hover:bg-[#ff921f] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {saving ? (newVideo && uploadProgress < 100 ? `動画アップロード中 ${uploadProgress}%` : "保存中...") : "保存する"}
+            {saving
+              ? newVideo && uploadProgress < 100
+                ? `動画アップロード中 ${uploadProgress}%`
+                : "保存中..."
+              : "保存する"}
           </button>
         </form>
       </div>
