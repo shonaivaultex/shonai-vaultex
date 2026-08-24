@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import {
   CalendarDays,
   Check,
+  CircleCheck,
   ChevronLeft,
   ChevronRight,
   Flag,
@@ -254,6 +255,7 @@ export default function MyCalendar({
   const [goal, setGoal] = useState<CalendarGoal | null>(initialGoal);
   const [goalOpen, setGoalOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [restSaving, setRestSaving] = useState(false);
   const [mobileCalendarView, setMobileCalendarView] = useState<
     "week" | "month"
   >("week");
@@ -342,6 +344,12 @@ export default function MyCalendar({
       new Date(first.getFullYear(), first.getMonth(), first.getDate() + index),
   );
   const selectedItems = byDate[selectedDate] ?? [];
+  const selectedRestEntry = entries.find(
+    (entry) =>
+      !entry.schedule_id &&
+      entry.entry_date === selectedDate &&
+      entry.entry_type === "rest",
+  );
   const calendarGoals = useMemo(
     () =>
       goal
@@ -463,6 +471,58 @@ export default function MyCalendar({
       .eq("author_id", userId);
     if (error) return alert(error.message);
     router.refresh();
+  }
+  async function toggleRestDay() {
+    if (restSaving) return;
+    setRestSaving(true);
+    const supabase = createClient();
+    try {
+      if (selectedRestEntry) {
+        const { error } = await supabase
+          .from("personal_calendar_entries")
+          .delete()
+          .eq("id", selectedRestEntry.id)
+          .eq("user_id", userId);
+        if (error) throw error;
+        setEntries((items) =>
+          items.filter((item) => item.id !== selectedRestEntry.id),
+        );
+      } else {
+        const { data, error } = await supabase
+          .from("personal_calendar_entries")
+          .insert({
+            user_id: userId,
+            schedule_id: null,
+            entry_date: selectedDate,
+            all_day: true,
+            starts_at: null,
+            ends_at: null,
+            entry_type: "rest",
+            title: "REST",
+            location: null,
+            journal: null,
+            awareness_categories: [],
+            record_value: null,
+            record_unit: null,
+            performance_record_id: null,
+            video_path: null,
+            color: "slate",
+          })
+          .select("*")
+          .single();
+        if (error) throw error;
+        setEntries((items) => [...items, { ...data, video_url: null } as Entry]);
+      }
+      router.refresh();
+    } catch (caught) {
+      alert(
+        caught instanceof Error
+          ? caught.message
+          : "RESTを更新できませんでした。",
+      );
+    } finally {
+      setRestSaving(false);
+    }
   }
   const goalDays = goal
     ? Math.ceil(
@@ -893,6 +953,20 @@ export default function MyCalendar({
             </h2>
           </div>
           <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void toggleRestDay()}
+              disabled={restSaving}
+              aria-pressed={Boolean(selectedRestEntry)}
+              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-black transition disabled:opacity-50 ${selectedRestEntry ? "border-sky-300 bg-sky-300 text-black" : "border-white/15 bg-white/[.03] text-white/60 hover:border-sky-300/50 hover:text-sky-200"}`}
+            >
+              <span
+                className={`grid h-5 w-5 place-items-center rounded-md border ${selectedRestEntry ? "border-black/20 bg-black/10" : "border-white/25"}`}
+              >
+                {selectedRestEntry ? <CircleCheck size={15} /> : null}
+              </span>
+              {restSaving ? "更新中" : "REST"}
+            </button>
             <Link
               href={`/performance?kind=unofficial-athletics&date=${selectedDate}&from=calendar`}
               className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-black text-black"
