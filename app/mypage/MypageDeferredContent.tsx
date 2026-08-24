@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Plus, ScanLine, Sparkles } from "lucide-react";
+import { BarChart3, ChevronRight, Medal, Plus, ScanLine, Sparkles, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase-server";
 import { eventKindMap, unitMap } from "@/lib/performance-events";
 import { evaluateAthleteScan, type AthleteMeasurement, type AthleteStandard, type TypeSettings } from "@/lib/athlete-scan";
@@ -133,7 +133,7 @@ export function MypageStatsSkeleton() {
 }
 
 export function MypageDeferredSkeleton() {
-  return <div className="mt-5 space-y-6" aria-label="成長情報を読み込んでいます"><div className="h-52 animate-pulse rounded-3xl border border-orange-500/20 bg-[#111]"/><div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]"><div className="h-64 animate-pulse rounded-2xl bg-[#111]"/><div className="h-64 animate-pulse rounded-2xl bg-[#111]"/></div></div>;
+  return <div className="mt-5 space-y-6" aria-label="成長情報を読み込んでいます"><div className="h-52 animate-pulse rounded-3xl border border-orange-500/20 bg-[#111]"/><div className="grid grid-cols-2 gap-2.5 md:hidden"><div className="col-span-2 h-24 animate-pulse rounded-2xl bg-[#111]"/><div className="h-24 animate-pulse rounded-2xl bg-[#111]"/><div className="h-24 animate-pulse rounded-2xl bg-[#111]"/></div><div className="hidden gap-6 md:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]"><div className="h-64 animate-pulse rounded-2xl bg-[#111]"/><div className="h-64 animate-pulse rounded-2xl bg-[#111]"/></div></div>;
 }
 
 export default async function MypageDeferredContent({
@@ -157,9 +157,27 @@ export default async function MypageDeferredContent({
         <Link href="/mypage/control-tests" className="mt-3 flex items-center justify-center gap-1 text-xs font-bold text-white/50 transition hover:text-orange-300">CONTROL TESTの履歴・詳細<ChevronRight size={14}/></Link>
       </section>
     </div>
-    <div className="mt-7 grid items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]">
-      <MonthlyGrowthReport records={data.growthRecords} personalBests={data.personalBests} currentMonth={currentMonth} previousMonth={previousMonth}/>
+    <section className="mt-5 md:hidden" aria-labelledby="mobile-review-menu">
+      <div className="flex items-end justify-between gap-3 px-1">
+        <div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">REVIEW &amp; RECORDS</p><h2 id="mobile-review-menu" className="mt-1 text-xl font-black">振り返りメニュー</h2></div>
+        <span className="text-[10px] text-white/30">タップして開く</span>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2.5">
+        <Link href="/mypage/growth-report" className="col-span-2 flex min-h-24 items-center gap-4 rounded-2xl border border-orange-400/35 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,.18),transparent_48%),#111] px-4 text-white">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-orange-500 text-black"><BarChart3 size={21}/></span>
+          <span className="min-w-0 flex-1"><span className="block text-[10px] font-black tracking-[.14em] text-orange-300">GROWTH REPORT</span><strong className="mt-1 block">成長レポートを見る</strong><span className="mt-1 block text-xs text-white/40">記録推移・PB・意識を振り返る</span></span>
+          <ChevronRight size={18} className="shrink-0 text-orange-300"/>
+        </Link>
+        <Link href="/mypage/unofficial-athletics" className="flex min-h-24 flex-col justify-between rounded-2xl border border-white/10 bg-[#111] p-4 text-white"><Medal size={20} className="text-emerald-300"/><span><strong className="block text-sm">練習記録</strong><span className="mt-1 block text-[10px] text-white/35">意識・動画・振り返り</span></span></Link>
+        <Link href="/mypage/athletics" className="flex min-h-24 flex-col justify-between rounded-2xl border border-white/10 bg-[#111] p-4 text-white"><Trophy size={20} className="text-orange-300"/><span><strong className="block text-sm">本番記録</strong><span className="mt-1 block text-[10px] text-white/35">大会記録・PB</span></span></Link>
+        <Link href="/mypage/ranking" className="flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#111] px-4 text-sm font-black text-white">ランキング<ChevronRight size={17} className="text-white/25"/></Link>
+        <Link href="/mypage/control-tests" className="flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#111] px-4 text-sm font-black text-white">CONTROL TEST<ChevronRight size={17} className="text-white/25"/></Link>
+      </div>
       <div id="news"><NewsPanel initialItems={data.newsItems} userId={userId}/></div>
+    </section>
+    <div className="mt-7 hidden items-start gap-6 md:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]">
+      <MonthlyGrowthReport records={data.growthRecords} personalBests={data.personalBests} currentMonth={currentMonth} previousMonth={previousMonth}/>
+      <div id="news-desktop"><NewsPanel initialItems={data.newsItems} userId={userId}/></div>
     </div>
   </>;
 }

@@ -121,7 +121,23 @@ export default function NewsPanel({
   );
   return (
     <>
-      <section className="mt-10 rounded-2xl border border-white/10 bg-[#111] p-5 text-white sm:p-6">
+      <button
+        type="button"
+        onClick={() => setShowAll(true)}
+        className={`mt-3 flex min-h-20 w-full items-center gap-4 rounded-2xl border px-4 text-left text-white transition active:scale-[.99] md:hidden ${unread ? "border-red-400/35 bg-red-400/[.07]" : "border-white/10 bg-[#111]"}`}
+        aria-label={`お知らせを開く${unread ? `、新着${unread}件` : ""}`}
+      >
+        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${unread ? "bg-red-400/15 text-red-300" : "bg-orange-500/15 text-orange-400"}`}>
+          <Bell size={21} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10px] font-black tracking-[.16em] text-white/35">NEWS</span>
+          <strong className="mt-1 block">{unread ? `新着のお知らせ ${unread}件` : "お知らせを見る"}</strong>
+          <span className="mt-1 block truncate text-xs text-white/40">{orderedItems[0]?.title}</span>
+        </span>
+        <ChevronRight size={18} className="shrink-0 text-white/30" />
+      </button>
+      <section className="mt-10 hidden rounded-2xl border border-white/10 bg-[#111] p-5 text-white sm:p-6 md:block">
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-black">
             <Bell className="text-orange-400" size={20} />

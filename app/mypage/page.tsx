@@ -124,28 +124,6 @@ export default async function MyPage() {
             <h2 className="mt-5 text-3xl font-black tracking-[-.04em] sm:text-4xl lg:text-5xl">{player.name}</h2>
             <p className="mt-2 text-sm font-bold text-white/40">{player.event ?? "種目未設定"}</p>
             {coachRole ? <Link href="/coach/dashboard" prefetch className="mt-7 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-300 transition hover:bg-emerald-400/15">COACH DASHBOARD <ArrowUpRight size={15}/></Link> : null}
-            <Link href={`/mypage/my-calendar?date=${todayKey}`} className="group mt-8 hidden rounded-2xl border border-emerald-400/20 bg-emerald-400/[.05] p-5 transition hover:border-emerald-400/45 hover:bg-emerald-400/[.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 lg:block">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300"><NotebookPen size={20}/></span><span className="min-w-0"><span className="block text-[10px] font-black tracking-[.2em] text-emerald-300">MY CALENDAR</span><strong className="mt-1 block text-base">1週間の予定を確認・記録</strong></span></div>
-                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-black text-emerald-300">開く<ChevronRight size={15} className="transition group-hover:translate-x-1"/></span>
-              </div>
-              <div className="mt-4 rounded-xl border border-white/[.07] bg-black/20 px-4 py-3">
-                <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-black tracking-[.15em] text-white/35">1週間の予定表</span><span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] font-black text-emerald-300">{weekMyCalendarItems.length}件</span></div>
-                <div className="mt-3 grid grid-cols-7 gap-1.5">
-                  {weekMyCalendarSchedule.map((date) => {
-                    const firstItem = date.items[0];
-                    return (
-                      <div key={date.dateKey} className={`min-w-0 rounded-lg border px-2 py-2 transition ${date.dateKey === todayKey ? "border-orange-400/45 bg-orange-400/10" : "border-white/[.07] bg-black/15"}`}>
-                        <span className={`block text-[9px] font-black ${date.weekday === "日" ? "text-rose-300" : date.weekday === "土" ? "text-sky-300" : "text-white/30"}`}>{date.weekday}</span>
-                        <strong className="mt-0.5 block leading-none">{date.day}</strong>
-                        {firstItem ? <><span className={`mt-2 block h-1.5 w-1.5 rounded-full ${firstItem.schedule_type === "competition" ? "bg-orange-400" : "bg-emerald-400"}`}/><span className="mt-1.5 block truncate text-[9px] font-bold text-white/65">{firstItem.title}</span>{date.items.length > 1 ? <span className="mt-1 block text-[8px] text-white/30">ほか{date.items.length - 1}件</span> : null}</> : <span className="mt-2 block text-[9px] text-white/20">予定なし</span>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              {activeGoal ? <div className="mt-3 flex min-w-0 items-center gap-2 text-xs text-white/45"><Target size={14} className="shrink-0 text-orange-400"/><span className="truncate">次の目標：{activeGoal.title}</span><span className="ml-auto shrink-0">{activeGoal.target_date.replaceAll("-", "/")}</span></div> : <div className="mt-3 text-xs text-white/35">予定や練習記録をカレンダーでまとめて確認</div>}
-            </Link>
             <div className="mt-auto hidden pt-10 lg:block">
               <div className="flex items-end justify-between gap-4">
                 <div><p className="text-[10px] font-black tracking-[.2em] text-orange-300">CLUB SCHEDULE</p><strong className="mt-1 block text-sm">これから1週間</strong></div>
@@ -172,7 +150,15 @@ export default async function MyPage() {
                 </Link>
                 {unansweredScheduleCount ? <Link href="/mypage/schedules" className="rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-2 text-[10px] font-black text-orange-300">出欠未回答 {unansweredScheduleCount}件</Link> : null}
               </div>
-              <Link href="/mypage/my-calendar" className="group mt-4 flex min-h-12 w-full items-center justify-between rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm font-black text-emerald-200 transition hover:border-emerald-300/55 hover:bg-emerald-400/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70"><span className="inline-flex items-center gap-2"><CalendarDays size={18}/>マイカレンダーを開く</span><ChevronRight size={18} className="transition group-hover:translate-x-1"/></Link>
+              <Link href="/mypage/my-calendar" className="group mt-4 block rounded-2xl border border-emerald-400/25 bg-black/20 p-3 transition hover:border-emerald-300/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70">
+                <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-black tracking-[.15em] text-white/35">これから1週間</span><span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-300">{weekMyCalendarItems.length}件<ChevronRight size={14} className="transition group-hover:translate-x-1"/></span></div>
+                <div className="mt-3 grid grid-cols-7 gap-1">
+                  {weekMyCalendarSchedule.map((date) => {
+                    const firstItem = date.items[0];
+                    return <span key={date.dateKey} className={`min-w-0 rounded-lg border px-1.5 py-2 ${date.dateKey === todayKey ? "border-orange-400/45 bg-orange-400/10" : "border-white/[.07] bg-white/[.015]"}`}><span className={`block text-[8px] font-black ${date.weekday === "日" ? "text-rose-300" : date.weekday === "土" ? "text-sky-300" : "text-white/30"}`}>{date.weekday}</span><strong className="mt-0.5 block text-sm leading-none">{date.day}</strong>{firstItem ? <><span className={`mt-2 block h-1.5 w-1.5 rounded-full ${firstItem.schedule_type === "competition" ? "bg-orange-400" : "bg-emerald-400"}`}/><span className="mt-1 block truncate text-[8px] font-bold text-white/55">{firstItem.title}</span></> : <span className="mt-2 block text-[8px] text-white/15">なし</span>}</span>;
+                  })}
+                </div>
+              </Link>
               <div className="mt-5 rounded-2xl border border-emerald-400/15 bg-emerald-400/[.04] p-4">
                 <div className="flex items-center justify-between gap-3"><div><p className="text-[9px] font-black tracking-[.18em] text-emerald-300">TODAY&apos;S TRAINING</p><strong className="mt-1 block text-sm">今日の練習</strong></div><span className="rounded-full bg-white/[.06] px-2.5 py-1 text-[10px] font-black text-white/45">{todayTrainingItems.length}件</span></div>
                 {todayTrainingItems.length ? <div className="mt-3 space-y-2">{todayTrainingItems.slice(0, 3).map((item) => { const attendanceStatus = item.personal ? "個人予定" : attendanceByScheduleId.get(item.id) === "attending" ? "参加" : attendanceByScheduleId.get(item.id) === "undecided" ? "未定" : "出欠未回答"; return <Link key={`${item.personal ? "personal" : "club"}-${item.id}`} href={`/mypage/my-calendar?date=${todayKey}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-white/[.07] bg-black/20 px-3 py-2.5 transition hover:border-emerald-400/30"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400"/><span className="min-w-0 flex-1"><strong className="block truncate text-sm">{item.title}</strong><span className="mt-0.5 block truncate text-[10px] text-white/40">{todayScheduleTime(item)}{item.location ? ` ・ ${item.location}` : ""}</span></span><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black ${attendanceStatus === "参加" ? "bg-emerald-400/15 text-emerald-300" : attendanceStatus === "出欠未回答" ? "bg-orange-400/15 text-orange-300" : "bg-white/[.07] text-white/40"}`}>{attendanceStatus}</span></Link>; })}{todayTrainingItems.length > 3 ? <Link href={`/mypage/my-calendar?date=${todayKey}`} className="block pt-1 text-center text-[10px] font-black text-emerald-300">ほか{todayTrainingItems.length - 3}件を表示</Link> : null}</div> : <Link href={`/mypage/my-calendar?date=${todayKey}`} className="mt-3 flex items-center justify-between rounded-xl border border-dashed border-white/10 px-3 py-3 text-xs text-white/40"><span>今日の予定はありません</span><span className="inline-flex items-center gap-1 font-black text-emerald-300"><Plus size={14}/>個人練習を追加</span></Link>}
@@ -197,7 +183,7 @@ export default async function MyPage() {
       </section>
 
       <Suspense fallback={<MypageDeferredSkeleton/>}><MypageDeferredContent dataPromise={deferredDataPromise} userId={userId} currentMonth={currentMonth} previousMonth={previousMonth}/></Suspense>
-      <div data-tutorial="performance">
+      <div data-tutorial="performance" className="hidden md:block">
       <div className="mb-4 mt-12 flex items-end justify-between"><div><p className="text-[10px] font-black tracking-[.22em] text-orange-400">PERFORMANCE</p><h2 className="mt-1 text-2xl font-black tracking-[-.03em]">記録を振り返る</h2></div><span className="hidden text-xs text-white/25 sm:block">記録・動画・意識</span></div>
       <div className="grid gap-3 lg:grid-cols-3">
         <Link href="/mypage/unofficial-athletics" className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-[#111] p-5 text-white no-underline transition hover:-translate-y-0.5 hover:border-orange-400/60">
