@@ -84,6 +84,16 @@ type PerformanceRecord = {
   video_url: string | null;
   feedback_request?: FeedbackRequest | null;
 };
+type ControlTestScan = {
+  id: string;
+  scan_number: number;
+  measured_on: string;
+  measurements: Array<{
+    test_code: string;
+    primary_value: number;
+    performance_record_id: number | null;
+  }>;
+};
 type DisplayItem = {
   key: string;
   date: string;
@@ -92,6 +102,7 @@ type DisplayItem = {
   entry?: Entry;
   schedule?: ClubSchedule;
   performance?: PerformanceRecord;
+  scan?: ControlTestScan;
   active: boolean;
 };
 type CalendarGoal = {
@@ -201,6 +212,7 @@ export default function MyCalendar({
   schedules,
   activeScheduleIds,
   records,
+  scans,
   periods,
   initialGoal,
   goalHistory,
@@ -213,6 +225,7 @@ export default function MyCalendar({
   schedules: ClubSchedule[];
   activeScheduleIds: number[];
   records: PerformanceRecord[];
+  scans: ControlTestScan[];
   periods: SchedulePeriod[];
   initialGoal: CalendarGoal | null;
   goalHistory: CalendarGoal[];
@@ -282,7 +295,8 @@ export default function MyCalendar({
         }),
       );
     });
-    performanceRecords.forEach((performance) =>
+    const scanRecordIds = new Set(scans.flatMap((scan) => scan.measurements.flatMap((measurement) => measurement.performance_record_id ? [measurement.performance_record_id] : [])));
+    performanceRecords.filter((performance) => !scanRecordIds.has(performance.id)).forEach((performance) =>
       result.push({
         key: `performance-${performance.id}`,
         date: performance.date,
@@ -297,8 +311,16 @@ export default function MyCalendar({
         active: true,
       }),
     );
+    scans.forEach((scan) => result.push({
+      key: `scan-${scan.id}`,
+      date: scan.measured_on,
+      title: `VAULTEX SCAN #${String(scan.scan_number).padStart(2, "0")}`,
+      color: "sky",
+      scan,
+      active: true,
+    }));
     return result;
-  }, [entries, schedules, activeIds, performanceRecords]);
+  }, [entries, schedules, activeIds, performanceRecords, scans]);
   const byDate = useMemo(
     () =>
       displayItems.reduce<Record<string, DisplayItem[]>>((all, item) => {
@@ -1106,10 +1128,11 @@ function DailyItemCard({
   onRemovePerformance: (record: PerformanceRecord) => Promise<void>;
 }) {
   const record = item.performance;
+  const scan = item.scan;
   const tags =
     record?.awareness_categories ?? item.entry?.awareness_categories ?? [];
   const videoUrl = record?.video_url ?? item.entry?.video_url ?? null;
-  const label = record
+  const label = scan ? "CONTROL TEST" : record
     ? record.record_kind === "athletics"
       ? "本番記録"
       : record.record_kind === "control-test"
@@ -1163,6 +1186,8 @@ function DailyItemCard({
               <Trash2 size={16} />
             </button>
           </div>
+        ) : scan ? (
+          <Link href={`/mypage/control-tests/${scan.id}`} className="rounded-lg border border-sky-400/30 px-3 py-2 text-xs font-black text-sky-300">結果を見る</Link>
         ) : (
           <button
             onClick={onEdit}
@@ -1178,6 +1203,12 @@ function DailyItemCard({
           {record.value}
           {unitMap[record.category] ?? ""}
         </p>
+      ) : null}
+      {scan ? (
+        <div className="mt-3 rounded-xl border border-sky-400/20 bg-sky-400/[.05] p-3">
+          <p className="text-xs font-black text-sky-300">{scan.measurements.length}種目をまとめて測定</p>
+          <p className="mt-1 text-[11px] text-white/40">種目ごとではなく、この日のSCANとして記録されています。</p>
+        </div>
       ) : null}
       {tags.length ? (
         <div className="mt-3">
@@ -1236,9 +1267,9 @@ function DailyItemCard({
           />
         </details>
       )}
-      {!record ? (
+      {!record && !scan ? (
         <Link
-          href={`/mypage/ai-navigator?prompt=${encodeURIComponent(`「${item.title}」についてコーチに相談したい`)}`}
+          href={`/mypage/video-feedback?event=${encodeURIComponent(item.title)}&message=${encodeURIComponent(`「${item.title}」について相談したいです。\n今の感覚・状況：`)}`}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-sky-400/35 bg-sky-400/[.06] px-4 py-3 text-sm font-black text-sky-300"
         >
           <MessageCircleQuestion size={17} />

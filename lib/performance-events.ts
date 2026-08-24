@@ -23,6 +23,8 @@ export const performanceEvents: PerformanceEvent[] = [
   { name: "リバウンドジャンプ（5回）", unit: "RJ-index", kind: "control-test" },
   { name: "300m走", unit: "秒", kind: "control-test" },
   { name: "150m走", unit: "秒", kind: "control-test" },
+  { name: "垂直跳", unit: "cm", kind: "control-test" },
+  { name: "ドロップジャンプ", unit: "DJ-index", kind: "control-test" },
   { name: "メディシンボール投げ", unit: "m", kind: "control-test" },
   { name: "ベンチプレス", unit: "kg", kind: "control-test" },
   { name: "スクワット", unit: "kg", kind: "control-test" },

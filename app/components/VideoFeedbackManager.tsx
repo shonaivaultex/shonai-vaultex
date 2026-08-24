@@ -11,7 +11,7 @@ import VideoFeedbackConversation, { type VideoFeedbackMessage } from "@/app/comp
 
 type Item = {
   id: number;
-  video_path: string;
+  video_path: string | null;
   video_url: string | null;
   event_name: string;
   awareness_category: string | null;
@@ -37,15 +37,19 @@ const maxBytes = 100 * 1024 * 1024;
 
 export default function VideoFeedbackManager({
   initialItems,
+  initialEventName = "",
+  initialMessage = "",
 }: {
   initialItems: Item[];
+  initialEventName?: string;
+  initialMessage?: string;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [eventName, setEventName] = useState("");
+  const [eventName, setEventName] = useState(initialEventName);
   const [category, setCategory] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage);
   const [urgent, setUrgent] = useState(false);
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -60,7 +64,7 @@ export default function VideoFeedbackManager({
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!file) return;
+    if (!eventName.trim() || (!file && !message.trim())) return;
     setSaving(true);
     setError("");
     setProgress(10);
@@ -73,17 +77,20 @@ export default function VideoFeedbackManager({
       setSaving(false);
       return;
     }
-    const extension = file.name.split(".").pop()?.toLowerCase() || "mp4";
-    const path = `${user.id}/feedback/${crypto.randomUUID()}.${extension}`;
-    setProgress(35);
-    const { error: uploadError } = await supabase.storage
-      .from(PERFORMANCE_VIDEO_BUCKET)
-      .upload(path, file, { contentType: file.type, upsert: false });
-    if (uploadError) {
-      setError(uploadError.message);
-      setSaving(false);
-      setProgress(0);
-      return;
+    let path: string | null = null;
+    if (file) {
+      const extension = file.name.split(".").pop()?.toLowerCase() || "mp4";
+      path = `${user.id}/feedback/${crypto.randomUUID()}.${extension}`;
+      setProgress(35);
+      const { error: uploadError } = await supabase.storage
+        .from(PERFORMANCE_VIDEO_BUCKET)
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (uploadError) {
+        setError(uploadError.message);
+        setSaving(false);
+        setProgress(0);
+        return;
+      }
     }
     setProgress(75);
     const { data: savedRequest, error: saveError } = await supabase
@@ -97,7 +104,7 @@ export default function VideoFeedbackManager({
         priority: urgent ? "urgent" : "normal",
       }).select("id").single();
     if (saveError) {
-      await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([path]);
+      if (path) await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([path]);
       setError(saveError.message);
       setSaving(false);
       setProgress(0);
@@ -132,7 +139,7 @@ export default function VideoFeedbackManager({
       alert(error.message);
       return;
     }
-    await supabase.storage
+    if (item.video_path) await supabase.storage
       .from(PERFORMANCE_VIDEO_BUCKET)
       .remove([item.video_path]);
     const attachmentPaths = item.messages.flatMap((message) => message.sender_role === "athlete" && message.attachment_path ? [message.attachment_path] : []);
@@ -145,7 +152,8 @@ export default function VideoFeedbackManager({
         onSubmit={submit}
         className="rounded-2xl border border-sky-500/30 bg-sky-500/[0.04] p-5 sm:p-6"
       >
-        <h2 className="font-black">新しい動画を依頼</h2>
+        <h2 className="font-black">コーチに相談する</h2>
+        <p className="mt-2 text-sm leading-6 text-white/50">文章だけでも相談できます。必要なときだけ動画を添付してください。</p>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <label className="text-sm font-bold">
             種目・動作
@@ -174,13 +182,13 @@ export default function VideoFeedbackManager({
           </label>
         </div>
         <label className="mt-4 block text-sm font-bold">
-          見てほしいポイント（任意）
+          相談内容
           <textarea
             maxLength={500}
             rows={3}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="気になる動作や質問を書いてください"
+            placeholder="今の状況、感じていること、コーチに確認したいこと"
             className="mt-2 w-full resize-none rounded-xl border border-white/15 bg-[#111] px-4 py-3 text-white"
           />
         </label>
@@ -199,7 +207,7 @@ export default function VideoFeedbackManager({
               className="inline-flex items-center gap-2 rounded-lg border border-sky-500/40 px-4 py-2 text-sm font-bold text-sky-300"
             >
               <Upload size={16} />
-              動画を選択
+              動画を添付（任意）
             </button>
             {file && (
               <button
@@ -248,7 +256,7 @@ export default function VideoFeedbackManager({
         )}
         {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
         <button
-          disabled={saving || !file || !eventName.trim()}
+          disabled={saving || !eventName.trim() || (!file && !message.trim())}
           className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-5 py-3 font-black text-black disabled:opacity-40"
         >
           <Send size={17} />
@@ -310,7 +318,7 @@ export default function VideoFeedbackManager({
           </div>
         ) : (
           <p className="mt-4 text-sm text-white/40">
-            動画フィードバックの依頼はまだありません。
+            コーチへの相談履歴はまだありません。
           </p>
         )}
       </section>

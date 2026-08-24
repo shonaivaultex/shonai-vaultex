@@ -57,6 +57,18 @@ export const controlTestDefinitions: ControlTestDefinition[] = [
     primaryMetric: "time", unit: "秒", betterDirection: "lower", sortOrder: 7,
     protocol: { startMethod: "全力で実施。", attempts: "1本のみ。", rest: "この種目をCONTROL TESTの最後に実施する。", measurementMethod: "クラス設定に従い、YOUTH／ELITEは300m、JUNIOR／MASTERSは150mのタイムを測定する。", foulConditions: "要設定", adoptedRecord: "1本の測定タイム。", equipment: "タイム測定器具", notes: "必ず全測定の最後に実施する。" },
   },
+  {
+    code: "vertical_jump", category: "垂直跳", abilityJa: "垂直跳躍力", abilityEn: "VERTICAL JUMP PERFORMANCE",
+    description: "静止状態から上方向へ発揮した跳躍パフォーマンスを確認する。", measurement: "垂直跳", relation: "上方向への跳躍高を実測値として確認する追加測定です。",
+    primaryMetric: "jump_height", unit: "cm", betterDirection: "higher", sortOrder: 8,
+    protocol: { startMethod: "要設定", attempts: "要設定", rest: stationRest, measurementMethod: "ジャンプマット等で跳躍高を測定する。", foulConditions: "要設定", adoptedRecord: "要設定", equipment: "ジャンプマット等", notes: "ATHLETE TYPEへの反映基準は要設定。" },
+  },
+  {
+    code: "drop_jump", category: "ドロップジャンプ", abilityJa: "落下反発パフォーマンス", abilityEn: "DROP JUMP PERFORMANCE",
+    description: "台からの落下後、短い接地から跳躍へつなげる反発パフォーマンスを確認する。", measurement: "ドロップジャンプ", relation: "接地時間と跳躍高から落下後の反発パフォーマンスを確認する追加測定です。",
+    primaryMetric: "dj_index", unit: "DJ-index", betterDirection: "higher", sortOrder: 9,
+    protocol: { startMethod: "台高を含め要設定", attempts: "要設定", rest: stationRest, measurementMethod: "ジャンプマット等で接地時間と跳躍高を測定する。", foulConditions: "要設定", adoptedRecord: "要設定", equipment: "台・ジャンプマット等", notes: "台高とATHLETE TYPEへの反映基準は要設定。" },
+  },
 ];
 
 export const controlTestByCode = Object.fromEntries(controlTestDefinitions.map((item) => [item.code, item]));

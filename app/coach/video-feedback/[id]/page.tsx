@@ -38,9 +38,9 @@ export default async function CoachVideoFeedbackPage({
     .select("name, program_class, grade, event")
     .eq("user_id", request.user_id)
     .maybeSingle();
-  const { data: signed } = await supabase.storage
+  const { data: signed } = request.video_path ? await supabase.storage
     .from(PERFORMANCE_VIDEO_BUCKET)
-    .createSignedUrl(request.video_path, 3600);
+    .createSignedUrl(request.video_path, 3600) : { data: null };
   const { data: messages } = await supabase.from("video_feedback_messages").select("id, sender_id, sender_role, body, created_at, attachment_path, attachment_type, attachment_name, attachment_size, video_feedback_message_reactions(user_id, reaction)").eq("request_id", request.id).order("created_at");
   const coachMessageIds = (messages ?? []).filter((message) => message.sender_role === "coach").map((message) => message.id);
   const attachmentPaths = (messages ?? []).flatMap((message) => message.attachment_path ? [message.attachment_path] : []);
@@ -64,9 +64,9 @@ export default async function CoachVideoFeedbackPage({
         </Link>
         <header className="mt-8 border-l-2 border-sky-500 pl-5">
           <p className="text-xs font-black tracking-[0.2em] text-sky-400">
-            VIDEO ONLY REQUEST
+            COACH CONSULTATION
           </p>
-          <h1 className="mt-2 text-4xl font-black">動画フィードバック</h1>
+          <h1 className="mt-2 text-4xl font-black">コーチ相談</h1>
           <p className="mt-2 text-white/50">
             {athlete?.name ?? "選手"}・
             {athlete?.program_class ?? "クラス未設定"}・{athlete?.grade ?? ""}

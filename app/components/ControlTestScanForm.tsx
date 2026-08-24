@@ -54,7 +54,7 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
       const {data:scan,error:scanError}=await supabase.from("control_test_scans").insert({user_id:user.id,scan_number:0,measured_on:date,version:3,status:"complete",profile_snapshot:profileSnapshot,notes:notes.trim()||null,athlete_standard_version:standardVersion,athlete_evaluated_at:standardVersion?new Date().toISOString():null}).select("id").single();
       if(scanError||!scan){setError(scanError?.message??"SCANを作成できませんでした。");return;}
       const speedDistance = numberOrNull(values.speed_endurance_distance_m ?? "") ?? 300;
-      const equipmentFor = (testCode: string) => testCode.startsWith("shot_") ? (isJunior ? "2kgメディシンボール" : "砲丸") : testCode === "rebound_jump" ? "S-CADE等のジャンプマット" : testCode === "acceleration_30m" ? "光電管" : null;
+      const equipmentFor = (testCode: string) => testCode.startsWith("shot_") ? (isJunior ? "2kgメディシンボール" : "砲丸") : testCode === "rebound_jump" || testCode === "drop_jump" || testCode === "vertical_jump" ? "S-CADE等のジャンプマット" : testCode === "acceleration_30m" ? "光電管" : null;
       const jumpCountFor = (testCode: string) => testCode === "standing_five_bound" ? standingJumpCount : testCode === "rebound_jump" ? rjJumpCount : null;
       const categoryFor = (testCode: string) => performanceCategoryForMeasurement(testCode,{distanceM:speedDistance,jumpCount:jumpCountFor(testCode),equipment:equipmentFor(testCode)});
       const recordRows=entries.map(({definition,primary})=>({user_id:user.id,category:categoryFor(definition.code),value:primary,date,record_kind:"control-test"}));
@@ -66,6 +66,14 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
         if(definition.code==="acceleration_30m"){const accelerationTime=numberOrNull(values.acceleration_time_0_30m??"");if(accelerationTime)metrics.acceleration_time_0_30m=accelerationTime;}
         if(definition.code==="rebound_jump"){
           metrics.trial_count=rjJumpCount;
+        }
+        if(definition.code==="drop_jump"){
+          const dropHeight=numberOrNull(values.drop_jump_drop_height_cm??"");
+          const jumpHeight=numberOrNull(values.drop_jump_jump_height_cm??"");
+          const contactTime=numberOrNull(values.drop_jump_contact_time_ms??"");
+          if(dropHeight)metrics.drop_height_cm=dropHeight;
+          if(jumpHeight)metrics.jump_height_cm=jumpHeight;
+          if(contactTime)metrics.contact_time_ms=contactTime;
         }
         if(definition.code==="speed_endurance_300m"){metrics.distance_m=speedDistance;}
         metrics.protocol_version=3; metrics.attempt_limit=definition.code==="speed_endurance_300m"?1:2;
@@ -95,6 +103,7 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
         </div>:<div className="mt-4 grid gap-3 sm:grid-cols-2">
           <Metric label={definition.code==="acceleration_30m"?"30〜60m計測タイム":definition.code==="speed_endurance_300m"?`${values.speed_endurance_distance_m??"300"}mタイム`:displayName(definition.code,definition.category)} unit={definition.unit} value={values[primaryKey(definition.code,definition.primaryMetric)]??""} onChange={(value)=>set(primaryKey(definition.code,definition.primaryMetric),value)}/>
           {definition.code==="acceleration_30m"&&<Metric label="0〜30m加速区間（任意）" unit="秒" value={values.acceleration_time_0_30m??""} onChange={(value)=>set("acceleration_time_0_30m",value)}/>} {definition.code.startsWith("shot_")&&<Metric label="使用重量" unit="kg" value={values[`${definition.code}_weight`]??""} onChange={(value)=>set(`${definition.code}_weight`,value)}/>} {definition.code==="speed_endurance_300m"&&<Metric label="クラス設定の実施距離" unit="m" value={values.speed_endurance_distance_m??"300"} onChange={(value)=>set("speed_endurance_distance_m",value)} readOnly/>}
+          {definition.code==="drop_jump"?<><Metric label="落下高（任意）" unit="cm" value={values.drop_jump_drop_height_cm??""} onChange={(value)=>set("drop_jump_drop_height_cm",value)}/><Metric label="跳躍高（任意）" unit="cm" value={values.drop_jump_jump_height_cm??""} onChange={(value)=>set("drop_jump_jump_height_cm",value)}/><Metric label="接地時間（任意）" unit="ms" value={values.drop_jump_contact_time_ms??""} onChange={(value)=>set("drop_jump_contact_time_ms",value)}/></>:null}
         </div>}
       </section>)}
       <section className="rounded-2xl border border-white/10 bg-[#111] p-5"><label className="text-sm font-bold">SCANメモ（任意）<textarea value={notes} onChange={(e)=>setNotes(e.target.value)} maxLength={1000} rows={3} className="mt-2 w-full resize-none rounded-xl border border-white/15 bg-[#0d0f12] px-4 py-3 text-white"/></label></section>
