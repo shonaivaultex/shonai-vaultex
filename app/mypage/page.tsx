@@ -119,12 +119,12 @@ export default async function MyPage() {
       <section className="relative mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_85%_10%,rgba(249,115,22,.16),transparent_28%),linear-gradient(145deg,#151515,#0d0d0d_65%)] text-white shadow-[0_28px_90px_rgba(0,0,0,.28)]">
         <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-orange-400 via-orange-600 to-transparent" />
         <div className="grid lg:grid-cols-[1.15fr_1fr]">
-          <div className="p-6 sm:p-8 lg:flex lg:min-h-[590px] lg:flex-col lg:p-10">
+          <div className="relative p-6 sm:p-8 lg:flex lg:flex-col lg:p-10">
             <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-orange-500/35 bg-orange-500/10 px-3 py-1 text-[10px] font-black tracking-[.16em] text-orange-300">{player.program_class ?? "CLASS未設定"}</span><span className="text-xs text-white/35">{player.grade ?? "学年未設定"}</span></div>
             <h2 className="mt-5 text-3xl font-black tracking-[-.04em] sm:text-4xl lg:text-5xl">{player.name}</h2>
             <p className="mt-2 text-sm font-bold text-white/40">{player.event ?? "種目未設定"}</p>
             {coachRole ? <Link href="/coach/dashboard" prefetch className="mt-7 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-300 transition hover:bg-emerald-400/15">COACH DASHBOARD <ArrowUpRight size={15}/></Link> : null}
-            <div className="mt-auto hidden pt-10 lg:block">
+            <div className="mt-12 hidden lg:block">
               <div className="flex items-end justify-between gap-4">
                 <div><p className="text-[10px] font-black tracking-[.2em] text-orange-300">CLUB SCHEDULE</p><strong className="mt-1 block text-sm">これから1週間</strong></div>
                 <Link href="/mypage/schedules" className="inline-flex items-center gap-1 text-[10px] font-black text-white/35 transition hover:text-white">全体を見る<ChevronRight size={13}/></Link>
@@ -139,6 +139,10 @@ export default async function MyPage() {
                   </Link>;
                 })}
               </div>
+            </div>
+            <div className="mt-10 hidden border-t border-white/[.07] pt-6 lg:flex lg:items-end lg:justify-between lg:gap-6">
+              <div><p className="text-[9px] font-black tracking-[.26em] text-white/20">ATHLETE JOURNEY</p><p className="mt-2 max-w-sm text-sm font-bold leading-6 text-white/35">予定を決める。挑戦する。記録して、次につなげる。</p></div>
+              <span className="select-none text-right text-[10px] font-black tracking-[.22em] text-orange-400/35">SHONAI<br/>VAULTEX</span>
             </div>
           </div>
           <div className="grid grid-cols-2 border-t border-white/10 lg:border-l lg:border-t-0">
