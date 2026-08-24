@@ -13,6 +13,7 @@ type StandardChange = {
   notes: string | null;
 };
 type SettingsChange = { kind: "type_settings"; balanced: number; combined: number };
+type ContactSettingsChange = { kind: "contact_settings"; quickMs: number; balancedMs: number; juniorDrop: number; otherDrop: number };
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -41,13 +42,24 @@ export async function POST(request: NextRequest) {
   if (!hasAdminKey()) return NextResponse.json({ error: "Supabase管理用キーが設定されていません。" }, { status: 503 });
 
   try {
-    const body = await request.json() as { change?: StandardChange | SettingsChange; reason?: unknown; confirmed?: unknown };
+    const body = await request.json() as { change?: StandardChange | SettingsChange | ContactSettingsChange; reason?: unknown; confirmed?: unknown };
     const reason = typeof body.reason === "string" ? body.reason.trim() : "";
     if (reason.length < 3 || reason.length > 1000) return NextResponse.json({ error: "変更理由を3〜1000文字で入力してください。" }, { status: 400 });
     if (body.confirmed !== true || !body.change) return NextResponse.json({ error: "影響確認への同意が必要です。" }, { status: 400 });
     const change = body.change;
 
     const admin = createAdminClient();
+    if(change.kind==="contact_settings"){
+      const quick=numeric(change.quickMs,"QUICK上限");const balanced=numeric(change.balancedMs,"BALANCED上限");const junior=numeric(change.juniorDrop,"JUNIOR台高");const other=numeric(change.otherDrop,"その他台高");
+      if(quick==null||balanced==null||junior==null||other==null||balanced<=quick)return NextResponse.json({error:"CONTACT PROFILEの境界値・台高を確認してください。"},{status:400});
+      const {data:current,error:currentError}=await admin.from("contact_profile_settings").select("*").eq("is_current",true).single();
+      if(currentError||!current)throw currentError??new Error("CONTACT PROFILE設定が見つかりません。");
+      const revision=Number(String(current.version).match(/contact-v1\.(\d+)-beta/)?.[1]??0)+1;const nextVersion=`contact-v1.${revision}-beta`;
+      const {error:offError}=await admin.from("contact_profile_settings").update({is_current:false,updated_at:new Date().toISOString()}).eq("version",current.version);if(offError)throw offError;
+      const {error:insertError}=await admin.from("contact_profile_settings").insert({version:nextVersion,quick_upper_ms:quick,balanced_upper_ms:balanced,junior_drop_height_cm:junior,youth_drop_height_cm:other,elite_drop_height_cm:other,masters_drop_height_cm:other,status:"beta",is_current:true,notes:reason});
+      if(insertError){await admin.from("contact_profile_settings").update({is_current:true}).eq("version",current.version);throw insertError;}
+      return NextResponse.json({ok:true,version:nextVersion,label:"CONTACT PROFILE設定"});
+    }
     const { data: currentSet, error: setError } = await admin.from("athlete_scan_standard_sets").select("*").eq("is_current", true).single();
     if (setError || !currentSet) throw setError ?? new Error("現在のSTANDARDが見つかりません。");
     const [{ data: standards, error: standardsError }, { data: settings, error: settingsError }] = await Promise.all([

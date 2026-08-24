@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, BarChart3, ChevronDown, History, Pencil, Save, SlidersHorizontal, Users } from "lucide-react";
 import { abilityKeys, evaluateAthleteScan, type AthleteMeasurement, type AthleteScanEvaluation, type AthleteStandard, type TypeSettings } from "@/lib/athlete-scan";
+import type { ContactProfileSettings } from "@/lib/contact-profile";
 
 type StandardRow = AthleteStandard & { id: number; updated_at: string };
 type ScanRow = { id: string; user_id: string; profile_snapshot: Record<string, unknown>; control_test_measurements: AthleteMeasurement[] | null };
@@ -31,7 +32,7 @@ function scoreList(evaluation: AthleteScanEvaluation) {
   return abilityKeys.flatMap((key) => evaluation.abilities[key].score == null ? [] : [evaluation.abilities[key].score!]);
 }
 
-export default function AthleteStandardAdmin({ version, label, standards, settings, scans, players, history }: { version: string; label: string; standards: StandardRow[]; settings: TypeSettings; scans: ScanRow[]; players: Player[]; history: HistoryRow[] }) {
+export default function AthleteStandardAdmin({ version, label, standards, settings, scans, players, history, contactSettings }: { version: string; label: string; standards: StandardRow[]; settings: TypeSettings; scans: ScanRow[]; players: Player[]; history: HistoryRow[]; contactSettings: ContactProfileSettings | null }) {
   const [gender, setGender] = useState<"male" | "female">("male");
   const [draft, setDraft] = useState<StandardDraft | null>(null);
   const [balanced, setBalanced] = useState(String(settings.balanced_max_spread));
@@ -41,6 +42,10 @@ export default function AthleteStandardAdmin({ version, label, standards, settin
   const [confirmed, setConfirmed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [quickMs,setQuickMs]=useState(String(contactSettings?.quick_upper_ms??188));
+  const [balancedMs,setBalancedMs]=useState(String(contactSettings?.balanced_upper_ms??222));
+  const [juniorDrop,setJuniorDrop]=useState(String(contactSettings?.junior_drop_height_cm??20));
+  const [otherDrop,setOtherDrop]=useState(String(contactSettings?.elite_drop_height_cm??30));
   const playerMap = useMemo(() => new Map(players.map((player) => [player.user_id, player])), [players]);
 
   const candidateStandards = useMemo(() => standards.map((row) => draft && row.id === draft.id ? { ...row, score_100_value: draft.score100 === "" ? null : Number(draft.score100), score_0_value: draft.score0 === "" ? null : Number(draft.score0), status: draft.status, notes: draft.notes || null } : row), [standards, draft]);
@@ -99,6 +104,14 @@ export default function AthleteStandardAdmin({ version, label, standards, settin
     finally { setSaving(false); }
   }
 
+  async function saveContactSettings(){
+    if(!contactSettings||!(Number(quickMs)>0)||!(Number(balancedMs)>Number(quickMs))||!(Number(juniorDrop)>0)||!(Number(otherDrop)>0)){setMessage("CONTACT PROFILE設定値を確認してください。");return;}
+    const reasonText=window.prompt("変更理由を入力してください（3文字以上）", "CONTROL TEST Ver.2設定更新")?.trim()??"";
+    if(reasonText.length<3)return;
+    setSaving(true);setMessage("");
+    try{const response=await fetch("/api/admin/athlete-scan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({change:{kind:"contact_settings",quickMs:Number(quickMs),balancedMs:Number(balancedMs),juniorDrop:Number(juniorDrop),otherDrop:Number(otherDrop)},reason:reasonText,confirmed:true})});const result=await response.json();if(!response.ok)throw new Error(result.error??"保存できませんでした。");setMessage("CONTACT PROFILE設定を保存しました。");window.setTimeout(()=>window.location.reload(),700);}catch(error){setMessage(error instanceof Error?error.message:"保存できませんでした。");}finally{setSaving(false);}
+  }
+
   return <div className="space-y-8">
     <section className="rounded-3xl border border-orange-500/35 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,.15),transparent_35%),#111] p-6 sm:p-8">
       <p className="text-[10px] font-black tracking-[.22em] text-orange-400">VAULTEX ATHLETE SCAN BETA</p><h1 className="mt-2 text-3xl font-black sm:text-5xl">STANDARD CONTROL</h1><p className="mt-3 text-sm text-white/50">{label}（{version}）</p>
@@ -113,6 +126,8 @@ export default function AthleteStandardAdmin({ version, label, standards, settin
     {draft?<section className="rounded-3xl border border-orange-500/35 bg-orange-500/[.045] p-5 sm:p-7"><p className="text-[10px] font-black tracking-[.2em] text-orange-300">EDIT STANDARD</p><h2 className="mt-1 text-xl font-black">{testNames[standards.find((row)=>row.id===draft.id)?.test_code??""]}</h2><div className="mt-5 grid gap-4 sm:grid-cols-2"><Field label="100 STANDARD" value={draft.score100} onChange={(value)=>{setDraft({...draft,score100:value});resetPreview();}}/><Field label="0 STANDARD" value={draft.score0} onChange={(value)=>{setDraft({...draft,score0:value});resetPreview();}}/><label className="text-xs font-bold text-white/55">状態<select value={draft.status} onChange={(event)=>{setDraft({...draft,status:event.target.value as StandardDraft["status"]});resetPreview();}} className="mt-2 w-full rounded-xl border border-white/15 bg-[#090a0c] px-4 py-3 text-white"><option value="active">有効</option><option value="pending">未設定</option><option value="retired">無効</option></select></label><label className="text-xs font-bold text-white/55">備考<input value={draft.notes} onChange={(event)=>{setDraft({...draft,notes:event.target.value});resetPreview();}} maxLength={500} className="mt-2 w-full rounded-xl border border-white/15 bg-[#090a0c] px-4 py-3 text-white"/></label></div><button disabled={!validDraft()} onClick={()=>{setPreviewKind("standard");setConfirmed(false);}} className="mt-5 rounded-xl bg-orange-500 px-5 py-3 text-sm font-black text-black disabled:opacity-40">変更の影響をプレビュー</button></section>:null}
 
     <section className="rounded-3xl border border-cyan-400/20 bg-[#111] p-5 sm:p-7"><div className="flex items-center gap-3"><SlidersHorizontal className="text-cyan-300"/><div><p className="text-[10px] font-black tracking-[.18em] text-cyan-300">ATHLETE TYPE SETTINGS</p><h2 className="text-xl font-black">TYPE判定閾値</h2></div></div><div className="mt-5 grid gap-4 sm:grid-cols-2"><Field label="BALANCED｜3軸最大差" value={balanced} onChange={(value)=>{setBalanced(value);resetPreview();}}/><Field label="COMBINED TYPE｜上位2軸差" value={combined} onChange={(value)=>{setCombined(value);resetPreview();}}/></div><button disabled={!Number.isFinite(Number(balanced))||!Number.isFinite(Number(combined))||Number(balanced)<0||Number(combined)<0} onClick={()=>{setPreviewKind("settings");setConfirmed(false);}} className="mt-5 rounded-xl border border-cyan-400/40 px-5 py-3 text-sm font-black text-cyan-200 disabled:opacity-40">TYPE変更の影響をプレビュー</button></section>
+
+    <section className="rounded-3xl border border-violet-400/25 bg-[#111] p-5 sm:p-7"><p className="text-[10px] font-black tracking-[.18em] text-violet-300">CONTACT PROFILE SETTINGS</p><h2 className="mt-1 text-xl font-black">接地特性の判定・台高</h2><p className="mt-2 text-xs text-white/40">{contactSettings?.version??"未設定"}。接地時間は整数msで判定し、既存SCANの保存済み結果は変更しません。</p><div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Field label="QUICK上限（未満・ms）" value={quickMs} onChange={setQuickMs}/><Field label="BALANCED上限（未満・ms）" value={balancedMs} onChange={setBalancedMs}/><Field label="JUNIOR台高（cm）" value={juniorDrop} onChange={setJuniorDrop}/><Field label="その他クラス台高（cm）" value={otherDrop} onChange={setOtherDrop}/></div><div className="mt-4 grid grid-cols-3 gap-2 text-xs"><Data label="QUICK" value={`< ${quickMs}ms`}/><Data label="BALANCED" value={`${quickMs}〜${Number(balancedMs)-1}ms`}/><Data label="FORCE" value={`≥ ${balancedMs}ms`}/></div><button onClick={saveContactSettings} disabled={saving||!contactSettings} className="mt-5 rounded-xl border border-violet-400/40 px-5 py-3 text-sm font-black text-violet-200 disabled:opacity-40">CONTACT設定を保存</button></section>
 
     {previewKind?<ImpactPreview impact={impact} reason={reason} confirmed={confirmed} saving={saving} message={message} onReason={setReason} onConfirm={setConfirmed} onSave={save}/>:null}
 

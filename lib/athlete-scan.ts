@@ -30,6 +30,13 @@ export type AthleteScanEvaluation = {
   nextGrowth: AthleteAxis | null;
 };
 
+const compositeType = (first: AthleteAxis, second: AthleteAxis) => {
+  const pair = new Set([first, second]);
+  if (pair.has("SPEED") && pair.has("POWER")) return "SPEED × POWER";
+  if (pair.has("SPEED") && pair.has("REACTIVE")) return "SPEED × REACTIVE";
+  return "POWER × REACTIVE";
+};
+
 export type TypeSettings = {
   balanced_max_spread: number | string; composite_max_gap: number | string;
   type_descriptions: Record<string, string> | null;
@@ -117,11 +124,11 @@ export function evaluateAthleteScan(measurements: AthleteMeasurement[], standard
   if (available.length === 3) {
     const spread = available[0][1]-available[2][1];
     if (spread <= Number(settings.balanced_max_spread)) typeCode="BALANCED";
-    else if (available[0][1]-available[1][1] <= Number(settings.composite_max_gap)) typeCode=`${available[0][0]} × ${available[1][0]}`;
+    else if (available[0][1]-available[1][1] <= Number(settings.composite_max_gap)) typeCode=compositeType(available[0][0],available[1][0]);
     else typeCode=available[0][0];
   }
   const typeNames: Record<string,string> = { SPEED:"スピード型",POWER:"パワー型",REACTIVE:"反発型",BALANCED:"バランス型",
-    "SPEED × POWER":"スピード・パワー型","SPEED × REACTIVE":"スピード・反発型","POWER × SPEED":"パワー・スピード型","POWER × REACTIVE":"パワー・反発型","REACTIVE × SPEED":"反発・スピード型","REACTIVE × POWER":"反発・パワー型" };
+    "SPEED × POWER":"スピード・パワー型","SPEED × REACTIVE":"スピード・反発型","POWER × REACTIVE":"パワー・反発型" };
   return { abilities, axes, typeCode, typeNameJa:typeCode ? typeNames[typeCode] : null,
     typeDescription:typeCode ? settings.type_descriptions?.[typeCode] ?? null : null,
     nextGrowth:available.length === 3 ? available[2][0] : null };

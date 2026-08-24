@@ -47,9 +47,9 @@ export const controlTestDefinitions: ControlTestDefinition[] = [
   },
   {
     code: "rebound_jump", category: "リバウンドジャンプ", abilityJa: "反発パフォーマンス", abilityEn: "REACTIVE PERFORMANCE",
-    description: "短い接地で地面からの反発を利用し、腕振りを含めて素早く大きな跳躍につなげる能力を見る。", measurement: "リバウンドジャンプ", relation: "腕振りを含む連続跳躍の反発パフォーマンスを実測値で確認する測定です。",
+    description: "腕振りを使わず、短い接地から連続して跳躍へつなげる反発パフォーマンスを確認する。", measurement: "リバウンドジャンプ", relation: "両手を腰に置いた連続跳躍の反発パフォーマンスを実測値で確認する測定です。",
     primaryMetric: "rj_index", unit: "RJ-index", betterDirection: "higher", sortOrder: 6,
-    protocol: { startMethod: "腕振り自由。", attempts: "JUNIORは3〜5回、その他は5回連続。", rest: stationRest, measurementMethod: "ジャンプマットで連続跳躍を測定し、機器に表示された最大RJ-indexを登録する。", foulConditions: "明確な失敗時のみ原則1回まで再試技。", adoptedRecord: "実施回の中で最も高いRJ-indexを代表値として採用。", equipment: "S-CADE等のジャンプマット", notes: "実施回数はSCANに保存する。腕振りを使用するため、純粋な下肢Reactive Strengthのみを測るとは断定しない。" },
+    protocol: { startMethod: "両手を腰に置き、両足で連続跳躍する。腕振りなし。", attempts: "JUNIORは3〜5回、その他は5回連続。", rest: stationRest, measurementMethod: "ジャンプマットで各跳躍の跳躍高・接地時間・RJ-indexを保存する。", foulConditions: "手が腰から離れる、動作停止、マットから外れる等。", adoptedRecord: "有効試技の最大RJ-index。", equipment: "S-CADE等のジャンプマット", notes: "旧Protocol v1（腕振り自由）とは履歴上区別する。" },
   },
   {
     code: "speed_endurance_300m", category: "SPEED ENDURANCE", abilityJa: "スピード持久力", abilityEn: "SPEED ENDURANCE",
@@ -58,16 +58,16 @@ export const controlTestDefinitions: ControlTestDefinition[] = [
     protocol: { startMethod: "全力で実施。", attempts: "1本のみ。", rest: "この種目をCONTROL TESTの最後に実施する。", measurementMethod: "クラス設定に従い、YOUTH／ELITEは300m、JUNIOR／MASTERSは150mのタイムを測定する。", foulConditions: "要設定", adoptedRecord: "1本の測定タイム。", equipment: "タイム測定器具", notes: "必ず全測定の最後に実施する。" },
   },
   {
-    code: "vertical_jump", category: "垂直跳", abilityJa: "垂直跳躍力", abilityEn: "VERTICAL JUMP PERFORMANCE",
-    description: "静止状態から上方向へ発揮した跳躍パフォーマンスを確認する。", measurement: "垂直跳", relation: "上方向への跳躍高を実測値として確認する追加測定です。",
-    primaryMetric: "jump_height", unit: "cm", betterDirection: "higher", sortOrder: 8,
-    protocol: { startMethod: "要設定", attempts: "要設定", rest: stationRest, measurementMethod: "ジャンプマット等で跳躍高を測定する。", foulConditions: "要設定", adoptedRecord: "要設定", equipment: "ジャンプマット等", notes: "ATHLETE TYPEへの反映基準は要設定。" },
+    code: "vertical_jump", category: "CMJ", abilityJa: "垂直跳躍パフォーマンス", abilityEn: "COUNTERMOVEMENT JUMP",
+    description: "腕振りを使わず、下肢の反動動作から上方向へ発揮した跳躍高を確認する。", measurement: "CMJ（カウンタームーブメントジャンプ）", relation: "上方向への跳躍高を試技ごとに確認する追加測定です。",
+    primaryMetric: "jump_height_cm", unit: "cm", betterDirection: "higher", sortOrder: 8,
+    protocol: { startMethod: "両手を腰に置き、両足で静止してから反動動作を用いて跳ぶ。腕振りなし。", attempts: "最大3本。", rest: stationRest, measurementMethod: "ジャンプマットで各試技の跳躍高を測定する。", foulConditions: "腕が腰から離れた場合など測定条件を満たさない試技。", adoptedRecord: "有効試技の最大跳躍高。", equipment: "S-CADE等のジャンプマット", notes: "VAULTEX SCOREの6能力には含めない。" },
   },
   {
-    code: "drop_jump", category: "ドロップジャンプ", abilityJa: "落下反発パフォーマンス", abilityEn: "DROP JUMP PERFORMANCE",
-    description: "台からの落下後、短い接地から跳躍へつなげる反発パフォーマンスを確認する。", measurement: "ドロップジャンプ", relation: "接地時間と跳躍高から落下後の反発パフォーマンスを確認する追加測定です。",
-    primaryMetric: "dj_index", unit: "DJ-index", betterDirection: "higher", sortOrder: 9,
-    protocol: { startMethod: "台高を含め要設定", attempts: "要設定", rest: stationRest, measurementMethod: "ジャンプマット等で接地時間と跳躍高を測定する。", foulConditions: "要設定", adoptedRecord: "要設定", equipment: "台・ジャンプマット等", notes: "台高とATHLETE TYPEへの反映基準は要設定。" },
+    code: "drop_jump", category: "ドロップジャンプ", abilityJa: "接地反発パフォーマンス", abilityEn: "DROP JUMP",
+    description: "一定の台高から自然に落下し、短い接地から跳躍へつなげるパフォーマンスを確認する。", measurement: "ドロップジャンプ", relation: "代表試技の接地時間からCONTACT PROFILEを確認する追加測定です。",
+    primaryMetric: "rsi", unit: "RSI", betterDirection: "higher", sortOrder: 9,
+    protocol: { startMethod: "両手を腰に置き、台から自然に前へ落下する。腕振りなし・両足接地。", attempts: "最大3本。", rest: stationRest, measurementMethod: "JUNIORは20cm、その他は30cmを標準とし、跳躍高・接地時間・RSIを保存する。", foulConditions: "台から跳び上がる、腕が腰から離れる、片足接地、バランスを崩す等。", adoptedRecord: "有効試技で最も高いRSI。", equipment: "台・S-CADE等のジャンプマット", notes: "CONTACT PROFILEは代表試技の接地時間を使用。6能力スコアには含めない。" },
   },
 ];
 
