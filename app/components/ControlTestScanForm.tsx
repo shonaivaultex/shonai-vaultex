@@ -41,8 +41,13 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError("");
-    const cmjTrials=[1,2,3].flatMap((trial)=>{const jump=numberOrNull(values[`vertical_jump_height_${trial}`]??"");return jump&&jump>0?[{trial,jump}]:[];});
-    const djTrials=[1,2,3].flatMap((trial)=>{const jump=numberOrNull(values[`drop_jump_height_${trial}`]??"");const contact=numberOrNull(values[`drop_jump_contact_${trial}`]??"");const manual=numberOrNull(values[`drop_jump_rsi_${trial}`]??"");const rsi=manual??(jump&&contact?(jump*10)/contact:null);return jump&&contact&&rsi&&rsi>0?[{trial,jump,contact,rsi}]:[];});
+    const cmjBest=numberOrNull(values.vertical_jump_best_height??"");
+    const cmjTrials=cmjBest&&cmjBest>0?[{trial:1,jump:cmjBest}]:[];
+    const djBestRsi=numberOrNull(values.drop_jump_best_rsi??"");
+    const djBestContact=numberOrNull(values.drop_jump_best_contact??"");
+    const djBestJump=djBestRsi&&djBestContact?(djBestRsi*djBestContact)/10:null;
+    const djTrials=djBestRsi&&djBestRsi>0&&djBestContact&&djBestContact>0&&djBestJump?[{trial:1,jump:djBestJump,contact:djBestContact,rsi:djBestRsi}]:[];
+    if ((djBestRsi && !djBestContact) || (!djBestRsi && djBestContact)) { setError("ドロップジャンプは、最大RSIとその試技の接地時間を両方入力してください。"); return; }
     const entries = controlTestDefinitions.flatMap((definition) => {
       const derived=definition.code==="vertical_jump"?(cmjTrials.length?Math.max(...cmjTrials.map((item)=>item.jump)):null):definition.code==="drop_jump"?(djTrials.length?Math.max(...djTrials.map((item)=>item.rsi)):null):null;
       const primary = derived ?? numberOrNull(values[primaryKey(definition.code, definition.primaryMetric)] ?? "");
@@ -81,7 +86,9 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
           if(dropHeight)metrics.drop_height_cm=dropHeight;
           if(jumpHeight)metrics.jump_height_cm=jumpHeight;
           if(contactTime)metrics.contact_time_ms=contactTime;
+          metrics.representative_only=1;
         }
+        if(definition.code==="vertical_jump")metrics.representative_only=1;
         if(definition.code==="speed_endurance_300m"){metrics.distance_m=speedDistance;}
         metrics.protocol_version=definition.code==="rebound_jump"||definition.code==="vertical_jump"||definition.code==="drop_jump"?2:3; metrics.attempt_limit=definition.code==="speed_endurance_300m"?1:definition.code==="vertical_jump"||definition.code==="drop_jump"?3:2;
         if(definition.code==="standing_five_bound")metrics.jump_count=standingJumpCount;
@@ -126,4 +133,7 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
 
 function Metric({label,unit,value,onChange,readOnly=false}:{label:string;unit:string;value:string;onChange:(value:string)=>void;readOnly?:boolean}) { return <label className="block"><span className="text-xs font-bold text-white/65">{label}</span><div className="relative mt-2"><input type="text" inputMode="decimal" value={value} readOnly={readOnly} onChange={(e)=>onChange(e.target.value)} placeholder="例：3.25" className="w-full rounded-xl border border-white/15 bg-[#0d0f12] px-4 py-3 pr-20 text-white outline-none focus:border-orange-500 read-only:cursor-not-allowed read-only:text-white/55"/><span className="pointer-events-none absolute inset-y-0 right-4 grid place-items-center text-xs text-white/35">{unit}</span></div></label>; }
 
-function JumpTrials({kind,values,set,dropHeight}:{kind:"cmj"|"dj";values:Values;set:(key:string,value:string)=>void;dropHeight?:string}) { return <div className="mt-4 space-y-3">{kind==="dj"?<Metric label="落下高" unit="cm" value={dropHeight??"30"} onChange={(value)=>set("drop_jump_drop_height_cm",value)}/>:null}<p className="text-xs text-white/50">両手を腰に置き、腕振りなし。最大3本のうち実施した試技だけ入力してください。</p>{[1,2,3].map((trial)=><div key={trial} className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="mb-3 text-xs font-black text-orange-300">試技 {trial}</p><div className={`grid gap-3 ${kind==="dj"?"sm:grid-cols-3":"sm:grid-cols-1"}`}><Metric label="跳躍高" unit="cm" value={values[`${kind==="cmj"?"vertical_jump":"drop_jump"}_height_${trial}`]??""} onChange={(value)=>set(`${kind==="cmj"?"vertical_jump":"drop_jump"}_height_${trial}`,value)}/>{kind==="dj"?<><Metric label="接地時間" unit="ms" value={values[`drop_jump_contact_${trial}`]??""} onChange={(value)=>set(`drop_jump_contact_${trial}`,value)}/><Metric label="RSI（任意・自動計算可）" unit="" value={values[`drop_jump_rsi_${trial}`]??""} onChange={(value)=>set(`drop_jump_rsi_${trial}`,value)}/></>:null}</div></div>)}</div>; }
+function JumpTrials({kind,values,set,dropHeight}:{kind:"cmj"|"dj";values:Values;set:(key:string,value:string)=>void;dropHeight?:string}) {
+  if(kind==="cmj")return <div className="mt-4 space-y-3"><p className="text-xs text-white/50">両手を腰に置き、腕振りなし。実施した試技のうち、最大跳躍高だけを入力してください。</p><Metric label="最大跳躍高" unit="cm" value={values.vertical_jump_best_height??""} onChange={(value)=>set("vertical_jump_best_height",value)}/></div>;
+  return <div className="mt-4 space-y-3"><p className="text-xs text-white/50">最大RSIが出た1本だけを入力してください。接地時間は同じ試技の値を入力し、CONTACT PROFILEの判定に使用します。</p><div className="grid gap-3 sm:grid-cols-3"><Metric label="落下高" unit="cm" value={dropHeight??"30"} onChange={(value)=>set("drop_jump_drop_height_cm",value)}/><Metric label="最大RSI" unit="" value={values.drop_jump_best_rsi??""} onChange={(value)=>set("drop_jump_best_rsi",value)}/><Metric label="最高値時の接地時間" unit="ms" value={values.drop_jump_best_contact??""} onChange={(value)=>set("drop_jump_best_contact",value)}/></div></div>;
+}

@@ -59,15 +59,15 @@ export const controlTestDefinitions: ControlTestDefinition[] = [
   },
   {
     code: "vertical_jump", category: "CMJ", abilityJa: "垂直跳躍パフォーマンス", abilityEn: "COUNTERMOVEMENT JUMP",
-    description: "腕振りを使わず、下肢の反動動作から上方向へ発揮した跳躍高を確認する。", measurement: "CMJ（カウンタームーブメントジャンプ）", relation: "上方向への跳躍高を試技ごとに確認する追加測定です。",
+    description: "腕振りを使わず、下肢の反動動作から上方向へ発揮した跳躍高を確認する。", measurement: "CMJ（カウンタームーブメントジャンプ）", relation: "上方向への最大跳躍高を確認する追加測定です。",
     primaryMetric: "jump_height_cm", unit: "cm", betterDirection: "higher", sortOrder: 8,
-    protocol: { startMethod: "両手を腰に置き、両足で静止してから反動動作を用いて跳ぶ。腕振りなし。", attempts: "最大3本。", rest: stationRest, measurementMethod: "ジャンプマットで各試技の跳躍高を測定する。", foulConditions: "腕が腰から離れた場合など測定条件を満たさない試技。", adoptedRecord: "有効試技の最大跳躍高。", equipment: "S-CADE等のジャンプマット", notes: "VAULTEX SCOREの6能力には含めない。" },
+    protocol: { startMethod: "両手を腰に置き、両足で静止してから反動動作を用いて跳ぶ。腕振りなし。", attempts: "最大3本。", rest: stationRest, measurementMethod: "ジャンプマットで各試技を測定し、画面には最大跳躍高だけを入力する。", foulConditions: "腕が腰から離れた場合など測定条件を満たさない試技。", adoptedRecord: "有効試技の最大跳躍高。", equipment: "S-CADE等のジャンプマット", notes: "VAULTEX SCOREの6能力には含めない。" },
   },
   {
     code: "drop_jump", category: "ドロップジャンプ", abilityJa: "接地反発パフォーマンス", abilityEn: "DROP JUMP",
     description: "一定の台高から自然に落下し、短い接地から跳躍へつなげるパフォーマンスを確認する。", measurement: "ドロップジャンプ", relation: "代表試技の接地時間からCONTACT PROFILEを確認する追加測定です。",
     primaryMetric: "rsi", unit: "RSI", betterDirection: "higher", sortOrder: 9,
-    protocol: { startMethod: "両手を腰に置き、台から自然に前へ落下する。腕振りなし・両足接地。", attempts: "最大3本。", rest: stationRest, measurementMethod: "JUNIORは20cm、その他は30cmを標準とし、跳躍高・接地時間・RSIを保存する。", foulConditions: "台から跳び上がる、腕が腰から離れる、片足接地、バランスを崩す等。", adoptedRecord: "有効試技で最も高いRSI。", equipment: "台・S-CADE等のジャンプマット", notes: "CONTACT PROFILEは代表試技の接地時間を使用。6能力スコアには含めない。" },
+    protocol: { startMethod: "両手を腰に置き、台から自然に前へ落下する。腕振りなし・両足接地。", attempts: "最大3本。", rest: stationRest, measurementMethod: "JUNIORは20cm、その他は30cmを標準とし、画面には最大RSIとその試技の接地時間だけを入力する。", foulConditions: "台から跳び上がる、腕が腰から離れる、片足接地、バランスを崩す等。", adoptedRecord: "有効試技で最も高いRSI。", equipment: "台・S-CADE等のジャンプマット", notes: "CONTACT PROFILEは代表試技の接地時間を使用。台高が異なる測定値は直接比較しない。6能力スコアには含めない。" },
   },
 ];
 
