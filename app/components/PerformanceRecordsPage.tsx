@@ -6,6 +6,7 @@ import { eventKindMap, isWindLegalForRanking, type PerformanceKind, unitMap } fr
 import SeasonSelector from "@/app/components/SeasonSelector";
 import PerformanceRankingPanel, { PerformanceRankingSkeleton } from "@/app/components/PerformanceRankingPanel";
 import { Suspense, type ReactNode } from "react";
+import { competitionContextForRecord } from "@/lib/performance-competition";
 
 type Props = {
   kind: PerformanceKind;
@@ -40,7 +41,7 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
       .lte("date", `${selectedYear}-12-31`);
   }
 
-  const [{ data: records, error }, { data: yearRows }, { data: goals, error: goalsError }] = await Promise.all([
+  const [{ data: records, error }, { data: yearRows }, { data: goals, error: goalsError }, { data: attendanceRows }, { data: applicationRows }] = await Promise.all([
     recordsQuery,
     supabase
       .from("performance_records")
@@ -52,6 +53,16 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
       .from("performance_goals")
       .select("category, target_value")
       .eq("user_id", userId),
+    supabase
+      .from("schedule_attendance")
+      .select("schedule_id")
+      .eq("user_id", userId)
+      .eq("status", "attending"),
+    supabase
+      .from("competition_applications")
+      .select("schedule_id, events")
+      .eq("user_id", userId)
+      .eq("status", "submitted"),
   ]);
 
   if (error) console.error("RECORD ERROR", error);
@@ -77,10 +88,30 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
     (goals ?? []).map((goal) => [goal.category, Number(goal.target_value)]),
   );
 
+  const participatingScheduleIds = [...new Set([
+    ...(attendanceRows ?? []).map((row) => row.schedule_id),
+    ...(applicationRows ?? []).map((row) => row.schedule_id),
+  ])];
+  const { data: participatingSchedules } = participatingScheduleIds.length
+    ? await supabase
+      .from("schedules")
+      .select("id, title, starts_at, ends_at, schedule_type")
+      .in("id", participatingScheduleIds)
+    : { data: [] };
+  const applicationEventsBySchedule = new Map<number, string[]>(
+    (applicationRows ?? []).map((row) => [row.schedule_id, Array.isArray(row.events) ? row.events : []]),
+  );
+
   const recordsWithDetails = (records ?? []).filter((record) =>
     (record.record_kind ?? eventKindMap[record.category] ?? "control-test") === kind,
   ).map((record) => ({
     ...record,
+    competition_context: kind === "athletics" ? competitionContextForRecord(
+      record.date,
+      record.category,
+      participatingSchedules ?? [],
+      applicationEventsBySchedule,
+    ) : null,
     coach_feedback: feedbackByRecord[record.id] ?? [],
     feedback_request: requestByRecord.get(record.id) ?? null,
   }));

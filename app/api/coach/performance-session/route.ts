@@ -4,6 +4,7 @@ import { createAdminClient, hasAdminKey } from "@/lib/supabase-admin";
 import { competitionDetailMode, eventNamesByKind, isWindAffectedEvent, type PerformanceKind } from "@/lib/performance-events";
 import { bestCompetitionDetail, type CompetitionDetailInput } from "@/lib/competition-details";
 import { mergePerformanceFields, performanceRecordIdentity } from "@/lib/performance-record-merge";
+import { sendCoachRecordNotifications } from "@/lib/coach-record-notifications";
 
 type SubmittedRecord={athleteId:string;value:number;windSpeed:number|null;details?:CompetitionDetailInput[]};
 
@@ -74,6 +75,10 @@ export async function POST(request:NextRequest) {
       const detailRows=(record.details??[]).map((detail)=>({performance_record_id:found.id,detail_type:detailMode,sequence_number:detail.sequenceNumber,round_name:detail.roundName??null,value:detail.value?Number(detail.value):null,wind_speed:detail.windSpeed?Number(detail.windSpeed):null,place:detail.place?Number(detail.place):null,status:detail.status}));
       if(detailRows.length){const {error:detailError}=await admin.from("performance_record_details").upsert(detailRows,{onConflict:"performance_record_id,detail_type,sequence_number"});if(detailError)throw detailError;}
     }
+    await sendCoachRecordNotifications([
+      ...recordsToInsert.map((record)=>({athleteId:record.athleteId,kind,updated:false})),
+      ...recordsToMerge.map(({record})=>({athleteId:record.athleteId,kind,updated:true})),
+    ]);
     return NextResponse.json({ok:true,saved:rows.length,merged:recordsToMerge.length,skipped:0});
   }catch(error){console.error("performance session publish failed",error);return NextResponse.json({error:error instanceof Error?error.message:"一括反映に失敗しました。入力内容は端末に残っています。"},{status:500});}
 }
