@@ -4,7 +4,28 @@ export const dynamic = "force-dynamic";
 
 type CalendarEvent = { uid: string; title: string; startsAt: string; endsAt?: string | null; allDay: boolean; location?: string | null; description?: string | null };
 
-function dateOnly(value: string) { return value.slice(0, 10); }
+const tokyoDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Tokyo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+function dateOnly(value: string) {
+  // Supabase returns timestamptz values in UTC. All-day schedules are entered
+  // as Japan-midnight, so slicing the UTC string moves them to the prior day.
+  // Convert timestamps back to their calendar date in Japan before building ICS.
+  if (value.includes("T") || value.includes(" ")) {
+    const parts = Object.fromEntries(
+      tokyoDateFormatter
+        .formatToParts(new Date(value))
+        .filter((part) => part.type === "year" || part.type === "month" || part.type === "day")
+        .map((part) => [part.type, part.value]),
+    );
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+  return value.slice(0, 10);
+}
 function compactDate(value: string) { return dateOnly(value).replaceAll("-", ""); }
 function dateAfter(value: string) { const date = new Date(`${dateOnly(value)}T00:00:00Z`); date.setUTCDate(date.getUTCDate() + 1); return date.toISOString().slice(0, 10); }
 function compactUtc(value: string) { return new Date(value).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z"); }
