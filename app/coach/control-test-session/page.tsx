@@ -10,8 +10,9 @@ export default async function ControlTestSessionPage() {
   const { data: auth } = await supabase.auth.getClaims();
   const coachId = auth?.claims.sub;
   if (!coachId) redirect("/login?next=/coach/control-test-session");
-  const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", coachId).in("role", ["coach", "admin"]).maybeSingle();
-  if (!role) redirect("/mypage");
+  const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", coachId).in("role", ["coach", "admin"]);
+  if (!roles?.length) redirect("/mypage");
+  const isAdmin = roles.some((item) => item.role === "admin");
 
   const admin = createAdminClient();
   const from = new Date(); from.setDate(from.getDate() - 30);
@@ -22,8 +23,8 @@ export default async function ControlTestSessionPage() {
     admin.from("schedules").select("id,title,starts_at,schedule_type,program_class,schedule_attendance(user_id,status)").gte("starts_at", from.toISOString()).lte("starts_at", to.toISOString()).order("starts_at"),
     admin.from("players").select("user_id,name,program_class,gender,event").eq("member_status", "active").order("name"),
   ]);
-  const schedules = role.role === "admin" ? (scheduleRows ?? []) : (scheduleRows ?? []).filter((item) => !item.program_class || classes.includes(item.program_class));
-  const athletes = role.role === "admin" ? (athleteRows ?? []) : (athleteRows ?? []).filter((item) => item.program_class && classes.includes(item.program_class));
+  const schedules = isAdmin ? (scheduleRows ?? []) : (scheduleRows ?? []).filter((item) => !item.program_class || classes.includes(item.program_class));
+  const athletes = isAdmin ? (athleteRows ?? []) : (athleteRows ?? []).filter((item) => item.program_class && classes.includes(item.program_class));
 
   return <main className="min-h-screen bg-[#090a0c] px-4 pb-24 pt-28 text-white sm:px-8"><div className="mx-auto max-w-7xl">
     <Link href="/coach/dashboard" className="inline-flex items-center gap-2 text-xs font-bold text-white/55 hover:text-orange-400"><ArrowLeft size={16}/>コーチダッシュボード</Link>

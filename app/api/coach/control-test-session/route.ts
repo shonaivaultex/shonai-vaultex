@@ -9,8 +9,9 @@ type SubmittedAthlete={athleteId:string;measurements:SubmittedMeasurement[]};
 export async function POST(request:NextRequest){
   const supabase=await createClient();const {data:{user}}=await supabase.auth.getUser();
   if(!user)return NextResponse.json({error:"ログインが必要です。"},{status:401});
-  const {data:role}=await supabase.from("user_roles").select("role").eq("user_id",user.id).in("role",["coach","admin"]).maybeSingle();
-  if(!role)return NextResponse.json({error:"コーチ権限が必要です。"},{status:403});
+  const {data:roles}=await supabase.from("user_roles").select("role").eq("user_id",user.id).in("role",["coach","admin"]);
+  if(!roles?.length)return NextResponse.json({error:"コーチ権限が必要です。"},{status:403});
+  const isAdmin=roles.some((item)=>item.role==="admin");
   if(!hasAdminKey())return NextResponse.json({error:"本番保存用のサーバー設定が完了していません。"},{status:503});
   try{
     const body=await request.json() as {date?:unknown;scheduleId?:unknown;athletes?:SubmittedAthlete[]};
@@ -20,8 +21,8 @@ export async function POST(request:NextRequest){
     const [{data:players,error:playerError},{data:assignments}]=await Promise.all([admin.from("players").select("user_id,name,program_class,gender,grade,age,birth_date,height_cm,weight_kg,member_status").in("user_id",athleteIds),admin.from("coach_class_assignments").select("program_class").eq("coach_id",user.id)]);
     if(playerError)throw playerError;const assignedClasses=new Set((assignments??[]).map((a)=>a.program_class));
     let scheduledIds=new Set<string>();
-    if(scheduleId){const {data:schedule}=await admin.from("schedules").select("id,author_id,program_class,schedule_attendance(user_id,status)").eq("id",scheduleId).maybeSingle();if(!schedule)return NextResponse.json({error:"測定予定が見つかりません。"},{status:404});const canUse=role.role==="admin"||schedule.author_id===user.id||(schedule.program_class?assignedClasses.has(schedule.program_class):assignedClasses.size>0);if(!canUse)return NextResponse.json({error:"この予定の名簿を使用する権限がありません。"},{status:403});scheduledIds=new Set((schedule.schedule_attendance??[]).filter((a)=>a.status==="attending").map((a)=>a.user_id));}
-    const playerMap=new Map((players??[]).filter((p)=>p.member_status==="active"&&(role.role==="admin"||(p.program_class&&assignedClasses.has(p.program_class)))&&(!scheduleId||scheduledIds.has(p.user_id))).map((p)=>[p.user_id,p]));
+    if(scheduleId){const {data:schedule}=await admin.from("schedules").select("id,author_id,program_class,schedule_attendance(user_id,status)").eq("id",scheduleId).maybeSingle();if(!schedule)return NextResponse.json({error:"測定予定が見つかりません。"},{status:404});const canUse=isAdmin||schedule.author_id===user.id||(schedule.program_class?assignedClasses.has(schedule.program_class):assignedClasses.size>0);if(!canUse)return NextResponse.json({error:"この予定の名簿を使用する権限がありません。"},{status:403});scheduledIds=new Set((schedule.schedule_attendance??[]).filter((a)=>a.status==="attending").map((a)=>a.user_id));}
+    const playerMap=new Map((players??[]).filter((p)=>p.member_status==="active"&&(isAdmin||(p.program_class&&assignedClasses.has(p.program_class)))&&(!scheduleId||scheduledIds.has(p.user_id))).map((p)=>[p.user_id,p]));
     if(playerMap.size!==athleteIds.length)return NextResponse.json({error:"担当外、休会中、または参加名簿にいない選手が含まれています。画面を更新してください。"},{status:403});
     const {data:standardSet}=await admin.from("athlete_scan_standard_sets").select("version").eq("is_current",true).maybeSingle();let saved=0;
     for(const submitted of athletes){const player=playerMap.get(submitted.athleteId);if(!player)continue;const clean=submitted.measurements.flatMap((m)=>{const definition=controlTestByCode[m.testCode];const value=Number(m.value);return definition&&Number.isFinite(value)&&value>0&&value<100000?[{...m,value,definition}]:[]});if(!clean.length)continue;
