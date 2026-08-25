@@ -41,6 +41,7 @@ import FeedbackRequestButton from "@/app/components/FeedbackRequestButton";
 import CalendarSyncButton from "@/app/components/CalendarSyncButton";
 import SchedulePeriodManager from "@/app/components/SchedulePeriodManager";
 import { mergePerformanceFields } from "@/lib/performance-record-merge";
+import type { AdvancedPerformanceDetails } from "@/lib/advanced-performance-details";
 
 type Entry = {
   id: number;
@@ -90,7 +91,19 @@ type PerformanceRecord = {
   awareness_note: string | null;
   video_path: string | null;
   video_url: string | null;
+  performance_record_details?: CompetitionDetail[] | null;
+  advanced_details?: AdvancedPerformanceDetails | null;
   feedback_request?: FeedbackRequest | null;
+};
+type CompetitionDetail = {
+  id: number;
+  detail_type: "attempt" | "round";
+  sequence_number: number;
+  round_name: string | null;
+  value: number | null;
+  wind_speed: number | null;
+  place: number | null;
+  status: string;
 };
 type ControlTestScan = {
   id: string;
@@ -173,6 +186,13 @@ const goalOutcomeLabels: Record<string, string> = {
 const goalNextActionLabels: Record<string, string> = {
   continue: "同じ目標を継続",
   new_goal: "新しい目標へ",
+};
+const detailStatusLabels: Record<string, string> = {
+  foul: "ファウル",
+  pass: "パス",
+  dns: "欠場",
+  dnf: "途中棄権",
+  dq: "失格",
 };
 const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
 function localDate(date = new Date()) {
@@ -1464,6 +1484,107 @@ function DailyItemCard({
             </p>
           ) : null}
         </div>
+      ) : null}
+      {record?.performance_record_details?.length ? (
+        <details className="mt-3 overflow-hidden rounded-xl border border-orange-500/25 bg-orange-500/[.045]">
+          <summary className="cursor-pointer list-none px-3 py-2.5 text-xs font-black text-orange-300 marker:hidden">
+            詳細記録を見る（{record.performance_record_details.length}件）
+          </summary>
+          <div className="border-t border-white/10 px-3 py-1">
+            {[...record.performance_record_details]
+              .sort((a, b) => a.sequence_number - b.sequence_number)
+              .map((detail) => (
+                <div
+                  key={detail.id}
+                  className="grid grid-cols-[minmax(72px,1fr)_auto] items-center gap-3 border-b border-white/[.07] py-2.5 last:border-0"
+                >
+                  <div>
+                    <strong className="text-xs text-white">
+                      {detail.detail_type === "attempt"
+                        ? `${detail.sequence_number}回目`
+                        : detail.round_name || `${detail.sequence_number}ラウンド目`}
+                    </strong>
+                    {detail.place ? (
+                      <span className="ml-2 text-[10px] text-white/40">
+                        {detail.place}位
+                      </span>
+                    ) : null}
+                  </div>
+                  {detail.status === "valid" ? (
+                    <div className="text-right text-xs">
+                      <strong className="text-white">
+                        {detail.value}
+                        <span className="ml-1 text-[10px]">
+                          {unitMap[record.category] ?? ""}
+                        </span>
+                      </strong>
+                      {formatWindSpeed(detail.wind_speed) ? (
+                        <span className="ml-2 text-[10px] text-sky-300">
+                          {formatWindSpeed(detail.wind_speed)}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <span className="text-[10px] font-bold text-white/45">
+                      {detailStatusLabels[detail.status] ?? detail.status}
+                    </span>
+                  )}
+                </div>
+              ))}
+          </div>
+        </details>
+      ) : null}
+      {record?.advanced_details ? (
+        <details className="mt-3 overflow-hidden rounded-xl border border-orange-500/25 bg-orange-500/[.045]">
+          <summary className="cursor-pointer list-none px-3 py-2.5 text-xs font-black text-orange-300 marker:hidden">
+            詳細記録を見る
+          </summary>
+          <div className="border-t border-white/10 p-3">
+            {record.advanced_details.type === "bar" ? (
+              <div className="space-y-2">
+                {record.advanced_details.heights.map((row, index) => (
+                  <div
+                    key={`${row.height}-${index}`}
+                    className="grid grid-cols-[70px_1fr] gap-3 border-b border-white/[.07] pb-2 last:border-0"
+                  >
+                    <strong className="text-xs text-white">{row.height}m</strong>
+                    <span className="text-xs tracking-[.35em] text-white/70">
+                      {row.attempts
+                        .map((attempt) =>
+                          attempt === "o"
+                            ? "○"
+                            : attempt === "x"
+                              ? "×"
+                              : attempt === "pass"
+                                ? "—"
+                                : "・",
+                        )
+                        .join("")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {record.advanced_details.events.map((event) => (
+                  <div
+                    key={event.event}
+                    className="grid grid-cols-[1fr_auto_auto] gap-2 border-b border-white/[.07] pb-2 text-xs last:border-0"
+                  >
+                    <strong className="text-white">{event.event}</strong>
+                    <span className="text-white/55">{event.value || "—"}</span>
+                    <span className="font-black text-orange-300">
+                      {event.points ?? "—"}点
+                    </span>
+                  </div>
+                ))}
+                <p className="pt-1 text-right text-xs font-black text-emerald-300">
+                  合計 {record.advanced_details.totalPoints}点
+                </p>
+              </div>
+            )}
+          </div>
+        </details>
       ) : null}
       {scan ? (
         <div className="mt-3 rounded-xl border border-sky-400/20 bg-sky-400/[.05] p-3">

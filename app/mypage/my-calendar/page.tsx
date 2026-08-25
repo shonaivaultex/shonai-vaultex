@@ -16,7 +16,7 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
     supabase.from("personal_calendar_entries").select("*").eq("user_id", user.id).order("entry_date"),
     supabase.from("schedule_attendance").select("schedule_id,status").eq("user_id", user.id),
     supabase.from("competition_applications").select("schedule_id,status").eq("user_id", user.id),
-    supabase.from("performance_records").select("id,category,value,wind_speed,date,record_kind,awareness_categories,awareness_note,video_path").eq("user_id", user.id).order("date", { ascending: false }).limit(500),
+    supabase.from("performance_records").select("id,category,value,wind_speed,date,record_kind,awareness_categories,awareness_note,video_path,advanced_details,performance_record_details(id,detail_type,sequence_number,round_name,value,wind_speed,place,status)").eq("user_id", user.id).order("date", { ascending: false }).limit(500),
     supabase.from("control_test_scans").select("id,scan_number,measured_on,control_test_measurements(test_code,primary_value,performance_record_id)").eq("user_id", user.id).eq("status", "complete").order("measured_on", { ascending: false }).limit(100),
     supabase.from("schedule_periods").select("*").eq("author_id", user.id).order("starts_on"),
     supabase.from("personal_calendar_goals").select("*").eq("user_id", user.id).eq("status", "active").maybeSingle(),
