@@ -51,7 +51,7 @@ export async function POST(request:NextRequest) {
     const {data:existing}=await admin.from("performance_records").select("user_id,category").in("user_id",athleteIds).eq("date",date).eq("record_kind",kind);
     const duplicateIds=new Set((existing??[]).filter((item)=>item.category===category).map((item)=>item.user_id));
     const recordsToInsert=clean.filter((record)=>!duplicateIds.has(record.athleteId));
-    const rows=recordsToInsert.map((record)=>({user_id:record.athleteId,category,value:record.value,date,record_kind:kind,wind_speed:record.windSpeed,awareness_note:null,awareness_category:null,awareness_categories:null}));
+    const rows=recordsToInsert.map((record)=>({user_id:record.athleteId,category,value:record.value,date,record_kind:kind,wind_speed:record.windSpeed,awareness_note:null,awareness_category:null,awareness_categories:null,entry_source:"coach",entered_by:user.id}));
     if(rows.length){
       const {data:inserted,error}=await admin.from("performance_records").insert(rows).select("id,user_id");
       if(error)throw error;

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ChevronDown, Flag, Play } from "lucide-react";
 import CoachFeedbackForm from "@/app/components/CoachFeedbackForm";
 import CoachFeedbackActions from "@/app/components/CoachFeedbackActions";
+import CoachPerformanceRecordDelete from "@/app/components/CoachPerformanceRecordDelete";
 import { createClient } from "@/lib/supabase-server";
 import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
 import { performanceEvents, unitMap } from "@/lib/performance-events";
@@ -49,6 +50,7 @@ export default async function CoachAthletePage({ params, searchParams }: { param
       <div className="flex items-start justify-between gap-4"><div><span className="text-xs font-bold text-orange-400">{record.category}</span><strong className="mt-2 block text-3xl">{record.value}<span className="ml-1 text-sm text-white/50">{unitMap[record.category] ?? ""}</span></strong><span className="mt-1 block text-xs text-white/40">{record.date}</span></div>{record.awareness_category && <span className="rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-300">{record.awareness_category}</span>}</div>
       {record.awareness_note && <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-white/65">{record.awareness_note}</p>}
       {record.video_url && <details className="mt-4" open={focusRecordId === record.id && request?.request_type === "video"}><summary className="cursor-pointer text-sm font-bold text-orange-400"><Play className="mr-2 inline" size={15} />動画を見る</summary><video controls playsInline className="mt-3 max-h-[65vh] w-full rounded-xl bg-black object-contain" src={record.video_url} /></details>}
+      {record.entry_source === "coach" && <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-4"><span className="text-[11px] text-white/35">コーチ入力の記録</span><CoachPerformanceRecordDelete recordId={record.id} /></div>}
       {(feedbackByRecord[record.id] ?? []).map((item) => <div key={item.id} className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] p-4"><span className="text-xs font-bold text-emerald-300">コーチフィードバック</span><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-white/75">{item.body}</p><span className="mt-2 block text-xs text-white/30">{new Date(item.created_at).toLocaleString("ja-JP")}</span>{item.coach_id === user.id && <CoachFeedbackActions feedbackId={item.id} initialBody={item.body} />}</div>)}
       <CoachFeedbackForm recordId={record.id} requestId={request?.id ?? null} />
     </article>;
