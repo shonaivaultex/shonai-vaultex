@@ -70,10 +70,14 @@ export const windAffectedEvents = ["100m", "200m", "100mH", "110mH", "走幅跳"
 
 export const competitionAttemptEvents = ["走幅跳", "三段跳", "砲丸投", "円盤投", "ハンマー投", "やり投"] as const;
 export const competitionRoundEvents = ["100m", "200m", "400m", "800m", "1500m", "5000m", "100mH", "110mH", "400mH"] as const;
+export const competitionBarEvents = ["走高跳", "棒高跳"] as const;
+export const competitionCombinedEvents = ["十種競技", "八種競技", "七種競技"] as const;
 
 export function competitionDetailMode(category: string) {
   if ((competitionAttemptEvents as readonly string[]).includes(category)) return "attempt" as const;
   if ((competitionRoundEvents as readonly string[]).includes(category)) return "round" as const;
+  if ((competitionBarEvents as readonly string[]).includes(category)) return "bar" as const;
+  if ((competitionCombinedEvents as readonly string[]).includes(category)) return "combined" as const;
   return null;
 }
 

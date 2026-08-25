@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient, hasAdminKey } from "@/lib/supabase-admin";
 import { createClient } from "@/lib/supabase-server";
 
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const supabase=await createClient(); const {data:{user}}=await supabase.auth.getUser();
+  if(!user)return NextResponse.json({error:"ログインが必要です。"},{status:401});
+  const {data:roles}=await supabase.from("user_roles").select("role").eq("user_id",user.id).in("role",["coach","admin"]);
+  if(!roles?.length||!hasAdminKey())return NextResponse.json({error:"編集する権限がありません。"},{status:403});
+  const id=Number((await params).id); const body=await request.json() as {value?:unknown;windSpeed?:unknown};
+  const value=Number(body.value); const wind=body.windSpeed===null||body.windSpeed===""?null:Number(body.windSpeed);
+  if(!Number.isInteger(id)||id<1||!Number.isFinite(value)||value<=0||value>=100000||wind!==null&&(!Number.isFinite(wind)||Math.abs(wind)>20))return NextResponse.json({error:"記録または風速を確認してください。"},{status:400});
+  const admin=createAdminClient();
+  const {data:record}=await admin.from("performance_records").select("id,entered_by,entry_source").eq("id",id).maybeSingle();
+  if(!record)return NextResponse.json({error:"記録が見つかりません。"},{status:404});
+  if(record.entry_source!=="coach"||record.entered_by!==user.id)return NextResponse.json({error:"自分が入力した記録だけ編集できます。"},{status:403});
+  const {error}=await admin.from("performance_records").update({value,wind_speed:wind}).eq("id",id);
+  if(error)return NextResponse.json({error:"記録を編集できませんでした。"},{status:500});
+  return NextResponse.json({ok:true});
+}
+
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -15,9 +32,10 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   if (!Number.isInteger(recordId) || recordId < 1) return NextResponse.json({ error: "記録が見つかりません。" }, { status: 400 });
 
   const admin = createAdminClient();
-  const { data: record } = await admin.from("performance_records").select("id,user_id,entry_source").eq("id", recordId).maybeSingle();
+  const { data: record } = await admin.from("performance_records").select("id,user_id,entry_source,entered_by").eq("id", recordId).maybeSingle();
   if (!record) return NextResponse.json({ error: "記録が見つかりません。" }, { status: 404 });
   if (record.entry_source !== "coach") return NextResponse.json({ error: "選手本人が入力した記録はコーチ側から削除できません。" }, { status: 403 });
+  if (record.entered_by !== user.id && !roles.some((item) => item.role === "admin")) return NextResponse.json({ error: "自分が入力した記録だけ削除できます。" }, { status: 403 });
 
   const isAdmin = roles.some((item) => item.role === "admin");
   if (!isAdmin) {

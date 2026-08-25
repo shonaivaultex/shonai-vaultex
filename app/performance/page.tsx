@@ -10,6 +10,8 @@ import { bestCompetitionDetail, type CompetitionDetailInput } from "@/lib/compet
 import { createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
 import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
 import CompetitionDetailEditor from "@/app/components/CompetitionDetailEditor";
+import { BarAttemptEditor, CombinedEventEditor } from "@/app/components/AdvancedPerformanceEditor";
+import { barSummary, combinedEventCoefficients, type AdvancedPerformanceDetails, type BarHeightRow, type CombinedEventResult } from "@/lib/advanced-performance-details";
 import { mergePerformanceFields } from "@/lib/performance-record-merge";
 
 function today() {
@@ -39,6 +41,8 @@ function PerformanceForm() {
   const [errorMessage, setErrorMessage] = useState("");
   const [detailEnabled, setDetailEnabled] = useState(false);
   const [competitionDetails, setCompetitionDetails] = useState<CompetitionDetailInput[]>([]);
+  const [barHeights, setBarHeights] = useState<BarHeightRow[]>([]);
+  const [combinedResults, setCombinedResults] = useState<CombinedEventResult[]>([]);
   const defaultsLoaded = useRef(false);
 
   const unit = unitMap[category] ?? "";
@@ -48,6 +52,8 @@ function PerformanceForm() {
   function enableDetails() {
     if (!detailMode) return;
     setDetailEnabled(true);
+    if (detailMode === "bar") { setBarHeights([{ height: "", attempts: [null, null, null] }]); return; }
+    if (detailMode === "combined") { setCombinedResults(combinedEventCoefficients(category).map((item) => ({ event: item.event, value: "", points: null }))); return; }
     setCompetitionDetails(detailMode === "attempt"
       ? Array.from({ length: 6 }, (_, index) => ({ sequenceNumber: index + 1, value: "", windSpeed: "", status: "valid" as const }))
       : [{ sequenceNumber: 1, roundName: "予選", value: "", windSpeed: "", place: "", status: "valid" }]);
@@ -148,8 +154,12 @@ function PerformanceForm() {
     event.preventDefault();
     setErrorMessage("");
 
-    const bestDetail = detailEnabled && detailMode ? bestCompetitionDetail(competitionDetails, detailMode === "round") : null;
-    const numericValue = bestDetail?.numericValue ?? Number(value);
+    const bestDetail = detailEnabled && (detailMode === "attempt" || detailMode === "round") ? bestCompetitionDetail(competitionDetails, detailMode === "round") : null;
+    const bar = detailEnabled && detailMode === "bar" ? barSummary(barHeights) : null;
+    const combinedTotal = detailEnabled && detailMode === "combined" ? combinedResults.reduce((sum, item) => sum + (item.points ?? 0), 0) : null;
+    const combinedComplete = detailMode !== "combined" || combinedResults.length > 0 && combinedResults.every((item) => item.value !== "" && item.points !== null);
+    if (detailEnabled && detailMode === "combined" && !combinedComplete) { setErrorMessage("混成競技の合計を保存するには、全種目の記録を入力してください。途中経過は画面上で小計として確認できます。"); return; }
+    const numericValue = bestDetail?.numericValue ?? bar?.bestHeight ?? combinedTotal ?? Number(value);
     if (!Number.isFinite(numericValue) || numericValue <= 0) {
       setErrorMessage("記録には0より大きい数値を入力してください。");
       return;
@@ -207,11 +217,12 @@ function PerformanceForm() {
         awareness_categories: awarenessTags.length ? awarenessTags : null,
         awareness_note: awarenessNote.trim() || null,
         video_path: videoPath,
+        advanced_details: detailEnabled && detailMode === "bar" ? ({ type: "bar", heights: barHeights, bestHeight: bar!.bestHeight, endedByThreeMisses: bar!.endedByThreeMisses } satisfies AdvancedPerformanceDetails) : detailEnabled && detailMode === "combined" ? ({ type: "combined", discipline: category, formulaVersion: "WA_COMBINED_2025", events: combinedResults, totalPoints: combinedTotal ?? 0, complete: combinedComplete } satisfies AdvancedPerformanceDetails) : null,
       };
       const { data: existingRecord, error: lookupError } = kind === "control-test"
         ? { data: null, error: null }
         : await supabase.from("performance_records")
-          .select("id, awareness_category, awareness_categories, awareness_note, video_path, wind_speed")
+          .select("id, awareness_category, awareness_categories, awareness_note, video_path, wind_speed, advanced_details")
           .eq("user_id", user.id).eq("category", category).eq("record_kind", kind).eq("date", date).eq("value", numericValue).maybeSingle();
       if (lookupError) throw lookupError;
       const saveQuery = existingRecord
@@ -225,7 +236,7 @@ function PerformanceForm() {
         return;
       }
 
-      if (detailEnabled && detailMode && savedRecord) {
+      if (detailEnabled && (detailMode === "attempt" || detailMode === "round") && savedRecord) {
         const detailRows = competitionDetails.flatMap((detail) => {
           const detailValue = Number(detail.value);
           const valid = detail.status === "valid" && Number.isFinite(detailValue) && detailValue > 0;
@@ -297,7 +308,7 @@ function PerformanceForm() {
               <span className="text-sm font-bold text-white">種目</span>
               <select
                 value={category}
-                onChange={(event) => { setCategory(event.target.value); setDetailEnabled(false); setCompetitionDetails([]); if (!isWindAffectedEvent(event.target.value)) setWindSpeed(""); }}
+                onChange={(event) => { setCategory(event.target.value); setDetailEnabled(false); setCompetitionDetails([]); setBarHeights([]); setCombinedResults([]); if (!isWindAffectedEvent(event.target.value)) setWindSpeed(""); }}
                 className="mt-3 w-full rounded-xl border border-white/15 bg-[#101216] px-4 py-4 text-white outline-none transition focus:border-orange-500"
               >
                 {eventOptions.map((option) => (
@@ -308,7 +319,7 @@ function PerformanceForm() {
               </select>
             </label>
 
-            {detailMode ? <div>{!detailEnabled ? <button type="button" onClick={enableDetails} className="w-full rounded-xl border border-orange-500/35 bg-orange-500/[0.06] px-4 py-4 text-sm font-black text-orange-300">{detailMode === "attempt" ? "1〜6回目も記録する" : "予選・準決勝・決勝も記録する"}</button> : <><CompetitionDetailEditor mode={detailMode} details={competitionDetails} onChange={setCompetitionDetails} unit={unit} needsWind={needsWind}/><button type="button" onClick={() => { setDetailEnabled(false); setCompetitionDetails([]); }} className="mt-2 text-xs font-bold text-white/40">詳細入力をやめる</button></>}</div> : null}
+            {detailMode ? <div>{!detailEnabled ? <button type="button" onClick={enableDetails} className="text-xs font-bold text-orange-300/75 underline decoration-orange-400/30 underline-offset-4 transition hover:text-orange-300">＋ 詳しい記録を入力（任意）</button> : <>{detailMode === "bar" ? <BarAttemptEditor rows={barHeights} onChange={setBarHeights}/> : detailMode === "combined" ? <CombinedEventEditor discipline={category} results={combinedResults} onChange={setCombinedResults}/> : <CompetitionDetailEditor mode={detailMode} details={competitionDetails} onChange={setCompetitionDetails} unit={unit} needsWind={needsWind}/>}<button type="button" onClick={() => { setDetailEnabled(false); setCompetitionDetails([]); setBarHeights([]); setCombinedResults([]); }} className="mt-2 text-xs font-bold text-white/40">通常の記録だけ入力する</button></>}</div> : null}
 
             {needsWind && !detailEnabled ? <label className="block">
               <span className="text-sm font-bold text-white">風速 {kind === "athletics" ? <span className="text-orange-400">（必須）</span> : <span className="text-white/40">（任意）</span>}</span>

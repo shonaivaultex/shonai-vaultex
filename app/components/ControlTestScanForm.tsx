@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, LoaderCircle, Save } from "lucide-react";
+import { ArrowLeft, Check, LoaderCircle, Plus, Save, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 import { controlTestDefinitions, performanceCategoryForMeasurement } from "@/lib/control-test";
 import { classifyContactProfile, type ContactProfileSettings } from "@/lib/contact-profile";
@@ -37,6 +37,7 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
   }));
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
+  const [attemptsByCode,setAttemptsByCode]=useState<Record<string,string[]>>({});
   const set=(key:string,value:string)=>setValues((current)=>({...current,[key]:value}));
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -49,7 +50,9 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
     const djTrials=djBestRsi&&djBestRsi>0&&djBestContact&&djBestContact>0&&djBestJump?[{trial:1,jump:djBestJump,contact:djBestContact,rsi:djBestRsi}]:[];
     if ((djBestRsi && !djBestContact) || (!djBestRsi && djBestContact)) { setError("ドロップジャンプは、最大RSIとその試技の接地時間を両方入力してください。"); return; }
     const entries = controlTestDefinitions.flatMap((definition) => {
-      const derived=definition.code==="vertical_jump"?(cmjTrials.length?Math.max(...cmjTrials.map((item)=>item.jump)):null):definition.code==="drop_jump"?(djTrials.length?Math.max(...djTrials.map((item)=>item.rsi)):null):null;
+      const enteredAttempts=(attemptsByCode[definition.code]??[]).map(numberOrNull).filter((item):item is number=>item!==null&&Number.isFinite(item)&&item>0);
+      const attemptBest=enteredAttempts.length?(definition.betterDirection==="lower"?Math.min(...enteredAttempts):Math.max(...enteredAttempts)):null;
+      const derived=definition.code==="vertical_jump"?(cmjTrials.length?Math.max(...cmjTrials.map((item)=>item.jump)):null):definition.code==="drop_jump"?(djTrials.length?Math.max(...djTrials.map((item)=>item.rsi)):null):attemptBest;
       const primary = derived ?? numberOrNull(values[primaryKey(definition.code, definition.primaryMetric)] ?? "");
       return primary !== null && Number.isFinite(primary) && primary > 0 ? [{ definition, primary }] : [];
     });
@@ -90,9 +93,11 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
         }
         if(definition.code==="vertical_jump")metrics.representative_only=1;
         if(definition.code==="speed_endurance_300m"){metrics.distance_m=speedDistance;}
-        metrics.protocol_version=definition.code==="rebound_jump"||definition.code==="vertical_jump"||definition.code==="drop_jump"?2:3; metrics.attempt_limit=definition.code==="speed_endurance_300m"?1:definition.code==="vertical_jump"||definition.code==="drop_jump"?3:2;
+        const detailedAttempts=(attemptsByCode[definition.code]??[]).map(numberOrNull).filter((item):item is number=>item!==null&&Number.isFinite(item)&&item>0);
+        detailedAttempts.forEach((attempt,index)=>{metrics[`attempt_${index+1}`]=attempt;});
+        metrics.protocol_version=definition.code==="rebound_jump"||definition.code==="vertical_jump"||definition.code==="drop_jump"?2:3; metrics.attempt_limit=definition.code==="speed_endurance_300m"?1:definition.code==="vertical_jump"||definition.code==="drop_jump"?3:Math.max(2,detailedAttempts.length);
         if(definition.code==="standing_five_bound")metrics.jump_count=standingJumpCount;
-        return {scan_id:scan.id,user_id:user.id,test_code:definition.code,performance_record_id:recordIdByCategory.get(categoryFor(definition.code)),primary_value:primary,metrics,protocol_version:definition.code==="rebound_jump"||definition.code==="vertical_jump"||definition.code==="drop_jump"?2:3,attempt_count:definition.code==="speed_endurance_300m"?1:definition.code==="vertical_jump"?cmjTrials.length:definition.code==="drop_jump"?djTrials.length:2,distance_m:definition.code==="speed_endurance_300m"?speedDistance:null,jump_count:jumpCountFor(definition.code),implement_name:equipmentFor(definition.code),implement_weight_kg:definition.code.startsWith("shot_")?numberOrNull(values[`${definition.code}_weight`]??""):null,equipment:equipmentFor(definition.code)};
+        return {scan_id:scan.id,user_id:user.id,test_code:definition.code,performance_record_id:recordIdByCategory.get(categoryFor(definition.code)),primary_value:primary,metrics,protocol_version:definition.code==="rebound_jump"||definition.code==="vertical_jump"||definition.code==="drop_jump"?2:3,attempt_count:definition.code==="speed_endurance_300m"?1:definition.code==="vertical_jump"?cmjTrials.length:definition.code==="drop_jump"?djTrials.length:detailedAttempts.length||1,distance_m:definition.code==="speed_endurance_300m"?speedDistance:null,jump_count:jumpCountFor(definition.code),implement_name:equipmentFor(definition.code),implement_weight_kg:definition.code.startsWith("shot_")?numberOrNull(values[`${definition.code}_weight`]??""):null,equipment:equipmentFor(definition.code)};
       });
       const {data:savedMeasurements,error:measurementError}=await supabase.from("control_test_measurements").insert(measurementRows).select("id,test_code");
       if(measurementError){await supabase.from("performance_records").delete().in("id",records.map((row)=>row.id));await supabase.from("control_test_scans").delete().eq("id",scan.id);setError(measurementError.message);return;}
@@ -125,6 +130,7 @@ export default function ControlTestScanForm({ initialSettings = {}, programClass
           <Metric label={definition.code==="acceleration_30m"?"30〜60m計測タイム":definition.code==="speed_endurance_300m"?`${values.speed_endurance_distance_m??"300"}mタイム`:displayName(definition.code,definition.category)} unit={definition.unit} value={values[primaryKey(definition.code,definition.primaryMetric)]??""} onChange={(value)=>set(primaryKey(definition.code,definition.primaryMetric),value)}/>
           {definition.code==="acceleration_30m"&&<Metric label="0〜30m加速区間（任意）" unit="秒" value={values.acceleration_time_0_30m??""} onChange={(value)=>set("acceleration_time_0_30m",value)}/>} {definition.code.startsWith("shot_")&&<Metric label="使用重量" unit="kg" value={values[`${definition.code}_weight`]??""} onChange={(value)=>set(`${definition.code}_weight`,value)}/>} {definition.code==="speed_endurance_300m"&&<Metric label="クラス設定の実施距離" unit="m" value={values.speed_endurance_distance_m??"300"} onChange={(value)=>set("speed_endurance_distance_m",value)} readOnly/>}
         </div>}
+        {!["rebound_jump","vertical_jump","drop_jump","speed_endurance_300m"].includes(definition.code) ? <OptionalAttempts definition={definition} attempts={attemptsByCode[definition.code]} onChange={(attempts)=>setAttemptsByCode((current)=>({...current,[definition.code]:attempts}))}/> : null}
       </section>)}
       <section className="rounded-2xl border border-white/10 bg-[#111] p-5"><label className="text-sm font-bold">SCANメモ（任意）<textarea value={notes} onChange={(e)=>setNotes(e.target.value)} maxLength={1000} rows={3} className="mt-2 w-full resize-none rounded-xl border border-white/15 bg-[#0d0f12] px-4 py-3 text-white"/></label></section>
       {error?<p role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</p>:null}<button disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-4 font-black disabled:opacity-50">{saving?<LoaderCircle className="animate-spin" size={18}/>:<Save size={18}/>} {saving?"保存中...":"VAULTEX SCANを保存"}</button><p className="flex items-center gap-2 text-xs text-white/40"><Check size={14} className="text-orange-400"/>測定条件を分けた上で、主要値をPB・グラフ・ランキングへ反映します。</p>
@@ -136,4 +142,9 @@ function Metric({label,unit,value,onChange,readOnly=false}:{label:string;unit:st
 function JumpTrials({kind,values,set,dropHeight}:{kind:"cmj"|"dj";values:Values;set:(key:string,value:string)=>void;dropHeight?:string}) {
   if(kind==="cmj")return <div className="mt-4 space-y-3"><p className="text-xs text-white/50">両手を腰に置き、腕振りなし。実施した試技のうち、最大跳躍高だけを入力してください。</p><Metric label="最大跳躍高" unit="cm" value={values.vertical_jump_best_height??""} onChange={(value)=>set("vertical_jump_best_height",value)}/></div>;
   return <div className="mt-4 space-y-3"><p className="text-xs text-white/50">最大RSIが出た1本だけを入力してください。接地時間は同じ試技の値を入力し、CONTACT PROFILEの判定に使用します。</p><div className="grid gap-3 sm:grid-cols-3"><Metric label="落下高" unit="cm" value={dropHeight??"30"} onChange={(value)=>set("drop_jump_drop_height_cm",value)}/><Metric label="最大RSI" unit="" value={values.drop_jump_best_rsi??""} onChange={(value)=>set("drop_jump_best_rsi",value)}/><Metric label="最高値時の接地時間" unit="ms" value={values.drop_jump_best_contact??""} onChange={(value)=>set("drop_jump_best_contact",value)}/></div></div>;
+}
+
+function OptionalAttempts({definition,attempts,onChange}:{definition:(typeof controlTestDefinitions)[number];attempts?:string[];onChange:(attempts:string[])=>void}) {
+  if(!attempts) return <button type="button" onClick={()=>onChange(["",""])} className="mt-3 text-xs font-bold text-orange-300/75 underline decoration-orange-400/30 underline-offset-4">＋ 詳しい試技を入力（任意）</button>;
+  return <div className="mt-4 rounded-xl border border-orange-500/20 bg-orange-500/[0.035] p-3"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black text-orange-300">試技ごとの記録</p><p className="mt-1 text-[11px] text-white/40">原則2回。必要な場合だけ追加できます。代表値は自動で選びます。</p></div><button type="button" onClick={()=>onChange([])} className="text-[11px] text-white/40">閉じる</button></div><div className="mt-3 space-y-2">{attempts.map((attempt,index)=><div key={index} className="flex items-center gap-2"><span className="w-14 text-xs font-bold text-white/45">{index+1}回目</span><input inputMode="decimal" value={attempt} onChange={(event)=>onChange(attempts.map((item,itemIndex)=>itemIndex===index?event.target.value:item))} placeholder="記録" className="min-w-0 flex-1 rounded-lg border border-white/15 bg-[#0d0f12] px-3 py-2 text-white"/><span className="w-16 text-xs text-white/35">{definition.unit}</span>{attempts.length>2?<button type="button" aria-label={`${index+1}回目を削除`} onClick={()=>onChange(attempts.filter((_,itemIndex)=>itemIndex!==index))} className="p-2 text-red-300"><Trash2 size={15}/></button>:null}</div>)}</div><button type="button" onClick={()=>onChange([...attempts,""])} className="mt-3 inline-flex items-center gap-1 rounded-lg border border-orange-400/30 px-3 py-2 text-xs font-black text-orange-300"><Plus size={14}/>試技を追加</button></div>;
 }

@@ -8,6 +8,20 @@ import { sendCoachRecordNotifications } from "@/lib/coach-record-notifications";
 
 type SubmittedRecord={athleteId:string;value:number;windSpeed:number|null;details?:CompetitionDetailInput[]};
 
+export async function GET() {
+  const supabase=await createClient(); const {data:{user}}=await supabase.auth.getUser();
+  if(!user)return NextResponse.json({error:"ログインが必要です。"},{status:401});
+  const {data:roles}=await supabase.from("user_roles").select("role").eq("user_id",user.id).in("role",["coach","admin"]);
+  if(!roles?.length||!hasAdminKey())return NextResponse.json({error:"確認する権限がありません。"},{status:403});
+  const admin=createAdminClient();
+  const {data:records,error}=await admin.from("performance_records").select("id,user_id,category,value,date,record_kind,wind_speed,created_at").eq("entry_source","coach").eq("entered_by",user.id).order("created_at",{ascending:false}).limit(30);
+  if(error)return NextResponse.json({error:"反映済み記録を取得できませんでした。"},{status:500});
+  const ids=[...new Set((records??[]).map((item)=>item.user_id))];
+  const {data:players}=ids.length?await admin.from("players").select("user_id,name").in("user_id",ids):{data:[]};
+  const names=new Map((players??[]).map((item)=>[item.user_id,item.name]));
+  return NextResponse.json({records:(records??[]).map((item)=>({...item,athleteName:names.get(item.user_id)??"選手"}))});
+}
+
 function sanitizeDetails(details:CompetitionDetailInput[]|undefined,mode:"attempt"|"round"|null){
   if(!mode||!Array.isArray(details)||!details.length)return [];
   const seen=new Set<number>();
@@ -41,7 +55,8 @@ export async function POST(request:NextRequest) {
     const kind=body.kind; const category=typeof body.category==="string"?body.category:""; const date=typeof body.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(body.date)?body.date:null;
     const records=Array.isArray(body.records)?body.records:[]; const scheduleId=body.scheduleId?Number(body.scheduleId):null;
     if((kind!=="athletics"&&kind!=="unofficial-athletics")||!eventNamesByKind(kind).includes(category)||!date||!records.length||records.length>100)return NextResponse.json({error:"区分・種目・日付・入力件数を確認してください。"},{status:400});
-    const detailMode=kind==="athletics"?competitionDetailMode(category):null;
+    const selectedDetailMode=kind==="athletics"?competitionDetailMode(category):null;
+    const detailMode=selectedDetailMode==="attempt"||selectedDetailMode==="round"?selectedDetailMode:null;
     const clean=records.flatMap((record)=>{const details=sanitizeDetails(record.details,detailMode);const best=details.length?bestCompetitionDetail(details,detailMode==="round"):null;const value=Number(best?.numericValue??record.value);const candidateWind=best?.windSpeed?.trim()?Number(best.windSpeed):record.windSpeed;const wind=candidateWind===null?null:Number(candidateWind);if(!record.athleteId||!Number.isFinite(value)||value<=0||value>=100000)return[];if(kind==="athletics"&&isWindAffectedEvent(category)&&(wind===null||!Number.isFinite(wind)||Math.abs(wind)>20))return[];return[{athleteId:record.athleteId,value,windSpeed:Number.isFinite(wind)?wind:null,details}];});
     if(!clean.length)return NextResponse.json({error:"有効な記録がありません。風速が必要な種目も確認してください。"},{status:400});
     const admin=createAdminClient(); const athleteIds=[...new Set(clean.map((r)=>r.athleteId))];
