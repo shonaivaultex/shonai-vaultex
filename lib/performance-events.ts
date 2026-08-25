@@ -65,3 +65,23 @@ export const eventKindMap = Object.fromEntries(
 export const unitMap = Object.fromEntries(
   performanceEvents.map((event) => [event.name, event.unit]),
 ) as Record<string, string>;
+
+export const windAffectedEvents = ["100m", "200m", "100mH", "110mH", "走幅跳", "三段跳"] as const;
+
+export function isWindAffectedEvent(category: string) {
+  return (windAffectedEvents as readonly string[]).includes(category);
+}
+
+export function isWindLegalForRanking(category: string, windSpeed: number | string | null | undefined) {
+  if (!isWindAffectedEvent(category) || windSpeed === null || windSpeed === undefined || windSpeed === "") return true;
+  const value = Number(windSpeed);
+  return Number.isFinite(value) && value <= 2;
+}
+
+export function formatWindSpeed(windSpeed: number | string | null | undefined) {
+  if (windSpeed === null || windSpeed === undefined || windSpeed === "") return null;
+  const value = Number(windSpeed);
+  if (!Number.isFinite(value)) return null;
+  const formatted = `${value > 0 ? "+" : value < 0 ? "−" : "±"}${Math.abs(value).toFixed(1)}m/s`;
+  return value > 2 ? `${formatted}（追い風参考）` : formatted;
+}

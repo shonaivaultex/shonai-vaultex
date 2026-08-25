@@ -25,7 +25,7 @@ export async function GET() {
 
   const [{ data: player }, { data: records, error }] = await Promise.all([
     supabase.from("players").select("name, grade, event, program_class").eq("user_id", user.id).single(),
-    supabase.from("performance_records").select("id, date, category, value, record_kind, awareness_category, awareness_categories, awareness_note, video_path").eq("user_id", user.id).order("date", { ascending: false }).order("id", { ascending: false }),
+    supabase.from("performance_records").select("id, date, category, value, wind_speed, record_kind, awareness_category, awareness_categories, awareness_note, video_path").eq("user_id", user.id).order("date", { ascending: false }).order("id", { ascending: false }),
   ]);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -38,13 +38,14 @@ export async function GET() {
     return result;
   }, {});
 
-  const headers = ["日付", "記録区分", "種目", "記録", "単位", "意識カテゴリ", "意識メモ", "動画", "コーチフィードバック"];
+  const headers = ["日付", "記録区分", "種目", "記録", "単位", "風速(m/s)", "意識カテゴリ", "意識メモ", "動画", "コーチフィードバック"];
   const rows = (records ?? []).map((record) => [
     record.date,
     kindLabels[record.record_kind] ?? record.record_kind,
     record.category,
     record.value,
     unitMap[record.category] ?? "",
+    record.wind_speed,
     (record.awareness_categories?.length ? record.awareness_categories : record.awareness_category ? [record.awareness_category] : []).join("・"),
     record.awareness_note,
     record.video_path ? "あり" : "なし",

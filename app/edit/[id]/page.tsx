@@ -6,6 +6,7 @@ import { Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 import {
   performanceEvents,
+  isWindAffectedEvent,
   type PerformanceKind,
 } from "@/lib/performance-events";
 import {
@@ -25,6 +26,7 @@ export default function EditPerformancePage() {
 
   const [category, setCategory] = useState("");
   const [value, setValue] = useState("");
+  const [windSpeed, setWindSpeed] = useState("");
   const [date, setDate] = useState("");
   const [recordKind, setRecordKind] = useState<PerformanceKind>("control-test");
   const [awarenessTags, setAwarenessTags] = useState<string[]>([]);
@@ -49,7 +51,7 @@ export default function EditPerformancePage() {
       const { data, error } = await supabase
         .from("performance_records")
         .select(
-          "category, value, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path",
+          "category, value, wind_speed, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path",
         )
         .eq("id", id)
         .single();
@@ -62,6 +64,7 @@ export default function EditPerformancePage() {
 
       setCategory(data.category ?? "");
       setValue(String(data.value ?? ""));
+      setWindSpeed(data.wind_speed === null || data.wind_speed === undefined ? "" : String(data.wind_speed));
       setDate(data.date ?? "");
       setRecordKind(
         data.record_kind ??
@@ -91,6 +94,11 @@ export default function EditPerformancePage() {
 
     if (awarenessNote.length > 200) {
       alert("意識メモは200文字以内にしてください。");
+      return;
+    }
+    const numericWind = windSpeed.trim() === "" ? null : Number(windSpeed);
+    if (isWindAffectedEvent(category) && recordKind === "athletics" && (numericWind === null || !Number.isFinite(numericWind))) {
+      alert("この種目の本番記録には風速を入力してください。");
       return;
     }
     const videoError = newVideo ? validateVideo(newVideo) : null;
@@ -138,6 +146,7 @@ export default function EditPerformancePage() {
       .update({
         category,
         value,
+        wind_speed: isWindAffectedEvent(category) ? numericWind : null,
         date,
         record_kind: recordKind,
         awareness_category: awarenessTags[0] || null,
@@ -237,7 +246,7 @@ export default function EditPerformancePage() {
             <select
               id="category"
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => { setCategory(e.target.value); if (!isWindAffectedEvent(e.target.value)) setWindSpeed(""); }}
               required
               className="w-full rounded-xl border border-zinc-700 bg-[#111] px-4 py-3 text-white outline-none focus:border-[#ff7a00] focus:ring-2 focus:ring-[#ff7a00]/30"
             >
@@ -418,6 +427,17 @@ export default function EditPerformancePage() {
               className="w-full rounded-xl border border-zinc-700 bg-[#111] px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-[#ff7a00] focus:ring-2 focus:ring-[#ff7a00]/30"
             />
           </div>
+
+          {isWindAffectedEvent(category) ? <div>
+            <label htmlFor="wind-speed" className="mb-2 block text-sm font-bold text-zinc-200">
+              風速 {recordKind === "athletics" ? <span className="text-orange-400">（必須）</span> : <span className="text-zinc-500">（任意）</span>}
+            </label>
+            <div className="relative">
+              <input id="wind-speed" type="number" inputMode="decimal" step="0.1" value={windSpeed} onChange={(event) => setWindSpeed(event.target.value)} placeholder="例：+1.2 / -0.4" className="w-full rounded-xl border border-zinc-700 bg-[#111] px-4 py-3 pr-16 text-white outline-none focus:border-[#ff7a00]" />
+              <span className="pointer-events-none absolute inset-y-0 right-4 grid place-items-center text-sm text-zinc-500">m/s</span>
+            </div>
+            {windSpeed !== "" && Number(windSpeed) > 2 ? <p className="mt-2 text-sm font-bold text-amber-300">追い風参考記録（ランキング対象外）</p> : <p className="mt-2 text-xs text-zinc-500">+2.0m/sまでランキング対象です。</p>}
+          </div> : null}
 
           <div>
             <label

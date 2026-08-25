@@ -31,7 +31,12 @@ import {
 } from "@/lib/performance-awareness";
 import { schedulePhase, schedulePhases } from "@/lib/schedule-phases";
 import type { SchedulePeriod } from "@/lib/schedule-periods";
-import { eventNamesByKind, unitMap } from "@/lib/performance-events";
+import {
+  eventNamesByKind,
+  formatWindSpeed,
+  isWindAffectedEvent,
+  unitMap,
+} from "@/lib/performance-events";
 import FeedbackRequestButton from "@/app/components/FeedbackRequestButton";
 import CalendarSyncButton from "@/app/components/CalendarSyncButton";
 import SchedulePeriodManager from "@/app/components/SchedulePeriodManager";
@@ -77,6 +82,7 @@ type PerformanceRecord = {
   id: number;
   category: string;
   value: number;
+  wind_speed: number | null;
   date: string;
   record_kind: string | null;
   awareness_categories: string[] | null;
@@ -1273,10 +1279,19 @@ function DailyItemCard({
         )}
       </div>
       {record ? (
-        <p className="mt-3 text-lg font-black text-emerald-300">
-          {record.value}
-          {unitMap[record.category] ?? ""}
-        </p>
+        <div className="mt-3">
+          <p className="text-lg font-black text-emerald-300">
+            {record.value}
+            {unitMap[record.category] ?? ""}
+          </p>
+          {isWindAffectedEvent(record.category) && record.wind_speed !== null ? (
+            <p
+              className={`mt-1 text-xs font-bold ${record.wind_speed > 2 ? "text-amber-300" : "text-sky-300"}`}
+            >
+              風 {formatWindSpeed(record.wind_speed)}
+            </p>
+          ) : null}
+        </div>
       ) : null}
       {scan ? (
         <div className="mt-3 rounded-xl border border-sky-400/20 bg-sky-400/[.05] p-3">
@@ -1861,6 +1876,9 @@ function EntryEditor({
   const [recordValue, setRecordValue] = useState(
     entry?.record_value?.toString() ?? linkedRecord?.value.toString() ?? "",
   );
+  const [windSpeed, setWindSpeed] = useState(
+    linkedRecord?.wind_speed === null || linkedRecord?.wind_speed === undefined ? "" : String(linkedRecord.wind_speed),
+  );
   const [recordUnit, setRecordUnit] = useState(
     entry?.record_unit ??
       (linkedRecord ? (unitMap[linkedRecord.category] ?? "") : ""),
@@ -1929,6 +1947,9 @@ function EntryEditor({
       return setError("記録には0より大きい数値を入力してください。");
     if (recordValue && !recordCategory)
       return setError("パフォーマンスへ反映する種目を選択してください。");
+    const numericWind = windSpeed.trim() === "" ? null : Number(windSpeed);
+    if (recordValue && recordKind === "athletics" && isWindAffectedEvent(recordCategory) && (numericWind === null || !Number.isFinite(numericWind)))
+      return setError("この種目の本番記録には風速を入力してください。");
     const videoError = video ? validateVideo(video) : null;
     if (videoError) return setError(videoError);
     setSaving(true);
@@ -1947,6 +1968,7 @@ function EntryEditor({
           user_id: userId,
           category: recordCategory,
           value: numericValue,
+          wind_speed: isWindAffectedEvent(recordCategory) ? numericWind : null,
           date: entryDate,
           record_kind: recordKind,
           awareness_category: tags[0] || null,
@@ -1964,7 +1986,7 @@ function EntryEditor({
         const { data: performanceData, error: performanceError } =
           await performanceQuery
             .select(
-              "id, category, value, date, record_kind, awareness_categories, awareness_note, video_path",
+              "id, category, value, wind_speed, date, record_kind, awareness_categories, awareness_note, video_path",
             )
             .single();
         if (performanceError) throw performanceError;
@@ -2342,6 +2364,7 @@ function EntryEditor({
                 setRecordCategory(category);
                 setRecordUnit(unitMap[category] ?? "");
                 if (!category) setRecordValue("");
+                if (!isWindAffectedEvent(category)) setWindSpeed("");
               }}
               className="mt-2 w-full rounded-xl border border-emerald-500/35 bg-[#111] px-4 py-3"
             >
@@ -2353,6 +2376,11 @@ function EntryEditor({
               ))}
             </select>
           </label>
+          {isWindAffectedEvent(recordCategory) ? <label className="sm:col-span-2">
+            <span className="text-xs font-bold text-white/55">風速 {recordKind === "athletics" ? "（必須）" : "（任意）"}</span>
+            <div className="relative mt-2"><input type="number" inputMode="decimal" step="0.1" value={windSpeed} onChange={(event) => setWindSpeed(event.target.value)} placeholder="例：+1.2 / -0.4" className="w-full rounded-xl border border-sky-500/35 bg-black/30 px-4 py-3 pr-16" /><span className="pointer-events-none absolute inset-y-0 right-4 grid place-items-center text-xs text-white/40">m/s</span></div>
+            {windSpeed !== "" && Number(windSpeed) > 2 ? <span className="mt-2 block text-xs font-bold text-amber-300">追い風参考（ランキング対象外）</span> : null}
+          </label> : null}
           <div>
             <span className="text-xs font-bold text-white/55">
               記録（パフォーマンスにも保存）
@@ -2401,6 +2429,11 @@ function EntryEditor({
                 if (selected) {
                   setRecordCategory(selected.category);
                   setRecordValue(selected.value.toString());
+                  setWindSpeed(
+                    selected.wind_speed === null
+                      ? ""
+                      : selected.wind_speed.toString(),
+                  );
                   setRecordUnit(unitMap[selected.category] ?? "");
                   if (
                     selected.record_kind === "athletics" ||

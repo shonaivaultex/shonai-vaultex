@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 import { Activity, ArrowLeft, Check, ChevronRight, LoaderCircle, Medal, Save, Trash2, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
-import { eventNamesByKind, type PerformanceKind, unitMap } from "@/lib/performance-events";
+import { eventNamesByKind, isWindAffectedEvent, type PerformanceKind, unitMap } from "@/lib/performance-events";
 import { createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
 import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
 
@@ -25,6 +25,7 @@ function PerformanceForm() {
   const eventOptions = eventNamesByKind(kind);
   const [category, setCategory] = useState(eventOptions[0]);
   const [value, setValue] = useState("");
+  const [windSpeed, setWindSpeed] = useState("");
   const [date, setDate] = useState(initialDate);
   const [awarenessTags, setAwarenessTags] = useState<string[]>([]);
   const [awarenessNote, setAwarenessNote] = useState("");
@@ -34,7 +35,8 @@ function PerformanceForm() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
 
-const unit = unitMap[category] ?? "";
+  const unit = unitMap[category] ?? "";
+  const needsWind = isWindAffectedEvent(category);
 
   if (!hasSelectedKind) {
     const choices = [
@@ -104,6 +106,11 @@ const unit = unitMap[category] ?? "";
       setErrorMessage("記録には0より大きい数値を入力してください。");
       return;
     }
+    const numericWind = windSpeed.trim() === "" ? null : Number(windSpeed);
+    if (needsWind && kind === "athletics" && (numericWind === null || !Number.isFinite(numericWind))) {
+      setErrorMessage("この種目の本番記録には風速を入力してください。");
+      return;
+    }
     if (awarenessNote.length > 200) {
       setErrorMessage("意識メモは200文字以内にしてください。");
       return;
@@ -144,6 +151,7 @@ const unit = unitMap[category] ?? "";
         user_id: user.id,
         category,
         value: numericValue,
+        wind_speed: needsWind ? numericWind : null,
         date,
         record_kind: kind,
         awareness_category: awarenessTags[0] || null,
@@ -195,7 +203,7 @@ const unit = unitMap[category] ?? "";
               <span className="text-sm font-bold text-white">種目</span>
               <select
                 value={category}
-                onChange={(event) => setCategory(event.target.value)}
+                onChange={(event) => { setCategory(event.target.value); if (!isWindAffectedEvent(event.target.value)) setWindSpeed(""); }}
                 className="mt-3 w-full rounded-xl border border-white/15 bg-[#101216] px-4 py-4 text-white outline-none transition focus:border-orange-500"
               >
                 {eventOptions.map((option) => (
@@ -205,6 +213,15 @@ const unit = unitMap[category] ?? "";
                 ))}
               </select>
             </label>
+
+            {needsWind ? <label className="block">
+              <span className="text-sm font-bold text-white">風速 {kind === "athletics" ? <span className="text-orange-400">（必須）</span> : <span className="text-white/40">（任意）</span>}</span>
+              <div className="relative mt-3">
+                <input type="number" inputMode="decimal" step="0.1" value={windSpeed} onChange={(event) => setWindSpeed(event.target.value)} placeholder="例：+1.2 / -0.4" className="w-full rounded-xl border border-white/15 bg-[#101216] px-4 py-4 pr-20 text-lg font-bold text-white outline-none transition placeholder:text-white/25 focus:border-orange-500" />
+                <span className="pointer-events-none absolute inset-y-0 right-5 grid place-items-center text-sm font-bold text-white/40">m/s</span>
+              </div>
+              {windSpeed !== "" && Number(windSpeed) > 2 ? <p className="mt-2 text-sm font-bold text-amber-300">追い風参考記録（ランキング対象外）</p> : <p className="mt-2 text-xs text-white/40">追い風は「+」、向かい風は「-」で入力。+2.0m/sまでランキング対象です。</p>}
+            </label> : null}
 
             <label className="block">
               <span className="text-sm font-bold text-white">記録</span>

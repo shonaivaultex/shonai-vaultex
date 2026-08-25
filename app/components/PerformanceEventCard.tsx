@@ -2,11 +2,13 @@ import PerformanceChart from "@/app/components/PerformanceChart";
 import TargetGoalEditor from "@/app/components/TargetGoalEditor";
 import PerformanceHistoryModal from "@/app/components/PerformanceHistoryModal";
 import type { ReactNode } from "react";
+import { formatWindSpeed } from "@/lib/performance-events";
 
 type PerformanceRecord = {
   id: number;
   value: number | string;
   date: string;
+  wind_speed?: number | string | null;
   awareness_category?: string | null;
   awareness_note?: string | null;
   video_path?: string | null;
@@ -20,7 +22,7 @@ type PerformanceEventCardProps = {
   records: PerformanceRecord[];
   target: number | null;
   userId: string;
-  scopeLabel?: "PB" | "SB";
+  scopeLabel?: "PB" | "SB" | "参考最高";
   rankingContent?: ReactNode;
   ranking?: { overall_rank: number; overall_total: number; overall_top_percent: number; class_rank: number | null; class_total: number | null; class_top_percent: number | null; program_class: string | null; gender: "male" | "female" } | null;
   leaderboard?: Array<{ ranking_scope: "overall" | "class"; leaderboard_position: number; display_name: string; best_value: number | string; is_current_user: boolean }>;
@@ -125,6 +127,7 @@ export default function PerformanceEventCard({
             <strong className="mt-2 block text-2xl leading-none sm:text-3xl">
               {best.value}<span className="ml-1.5 text-sm text-white/60">{unit}</span>
             </strong>
+            {formatWindSpeed(best.wind_speed) ? <span className={`mt-2 block text-xs font-bold ${Number(best.wind_speed) > 2 ? "text-amber-300" : "text-white/45"}`}>{formatWindSpeed(best.wind_speed)}</span> : null}
           </div>
           <div className="rounded-xl bg-white/[0.045] p-4">
             <span className="mb-2 block text-[11px] font-extrabold tracking-[0.12em] text-orange-400">目標</span>

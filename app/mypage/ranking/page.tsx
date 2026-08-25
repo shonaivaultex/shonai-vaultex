@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, ChevronRight, Medal, TrendingUp, Trophy } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
-import { eventNamesByKind, unitMap } from "@/lib/performance-events";
+import { eventNamesByKind, isWindAffectedEvent, unitMap } from "@/lib/performance-events";
 
 type RankingRow = {
   ranking_scope: "overall" | "class";
@@ -95,6 +95,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
   const year = new Date().getFullYear();
   const selectedYear = period === "season" ? year : null;
   const unit = unitMap[category] ?? "";
+  const showsWindRule = mode === "position" && isWindAffectedEvent(category);
 
   const currentMonth = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" }).slice(0, 7) + "-01";
   const { data, error } = mode === "growth"
@@ -116,6 +117,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
         <p className="text-[10px] font-black tracking-[.28em] text-orange-400">VAULTEX RANKING</p>
         <h1 className="mt-2 text-4xl font-black tracking-[-.05em] sm:text-6xl">現在地を、次の力に。</h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-white/50">{mode === "position" ? "本番記録だけで集計しています。順位は評価ではなく、次の目標を考えるための現在地です。" : "前月と今月の平均を比べ、継続して伸びた選手を表示します。順位よりも、自分の変化を楽しむためのランキングです。"}</p>
+        {showsWindRule ? <p className="mt-2 text-xs font-bold text-sky-300/80">風速 +2.0m/s以下の記録がランキング対象です。風速未入力の既存記録は互換性のため含まれます。</p> : null}
       </header>
 
       <nav className="mt-7 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-[#111] p-2" aria-label="ランキング種類">

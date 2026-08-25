@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Plus } from "lucide-react";
 import PerformanceEventCard from "@/app/components/PerformanceEventCard";
 import { createClient } from "@/lib/supabase-server";
-import { eventKindMap, type PerformanceKind, unitMap } from "@/lib/performance-events";
+import { eventKindMap, isWindLegalForRanking, type PerformanceKind, unitMap } from "@/lib/performance-events";
 import SeasonSelector from "@/app/components/SeasonSelector";
 import PerformanceRankingPanel, { PerformanceRankingSkeleton } from "@/app/components/PerformanceRankingPanel";
 import { Suspense, type ReactNode } from "react";
@@ -29,7 +29,7 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
 
   const recordsQuery = supabase
     .from("performance_records")
-    .select("id, category, value, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path")
+    .select("id, category, value, wind_speed, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path")
     .eq("user_id", userId)
     .or(`record_kind.eq.${kind},record_kind.is.null`)
     .order("date", { ascending: false });
@@ -99,7 +99,9 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
 
   const eventGroups = Object.entries(recordsByCategory).map(([category, categoryRecords]) => {
     const isTimeEvent = ["秒", "分"].includes(unitMap[category]);
-    const best = categoryRecords.reduce((currentBest, record) => {
+    const rankingEligibleRecords = categoryRecords.filter((record) => isWindLegalForRanking(category, record.wind_speed));
+    const bestPool = rankingEligibleRecords.length ? rankingEligibleRecords : categoryRecords;
+    const best = bestPool.reduce((currentBest, record) => {
       const value = Number(record.value);
       const bestValue = Number(currentBest.value);
       return isTimeEvent ? (value < bestValue ? record : currentBest) : (value > bestValue ? record : currentBest);
@@ -108,9 +110,10 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
       category,
       records: categoryRecords,
       best,
+      scopeLabel: (rankingEligibleRecords.length ? (selectedYear === null ? "PB" : "SB") : "参考最高") as "PB" | "SB" | "参考最高",
     };
   });
-  const renderEventCard = ({ category, records: eventRecords, best }: (typeof eventGroups)[number]) => (
+  const renderEventCard = ({ category, records: eventRecords, best, scopeLabel }: (typeof eventGroups)[number]) => (
     <PerformanceEventCard
       key={category}
       category={category}
@@ -119,7 +122,7 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
       records={eventRecords}
       target={goalsByCategory.get(category) ?? null}
       userId={userId}
-      scopeLabel={selectedYear === null ? "PB" : "SB"}
+      scopeLabel={scopeLabel}
       rankingContent={<Suspense fallback={<PerformanceRankingSkeleton/>}><PerformanceRankingPanel category={category} kind={kind} selectedYear={selectedYear} bestValue={Number(best.value)} unit={unitMap[category] ?? ""}/></Suspense>}
       focusRecordId={focusRecordId}
     />
