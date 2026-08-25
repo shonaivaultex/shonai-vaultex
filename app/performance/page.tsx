@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useRef, useState } from "react";
 import { Activity, ArrowLeft, Check, ChevronRight, LoaderCircle, Medal, Save, Trash2, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
-import { eventNamesByKind, isWindAffectedEvent, type PerformanceKind, unitMap } from "@/lib/performance-events";
+import { competitionDetailMode, eventNamesByKind, isWindAffectedEvent, type PerformanceKind, unitMap } from "@/lib/performance-events";
+import { bestCompetitionDetail, type CompetitionDetailInput } from "@/lib/competition-details";
 import { createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
 import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
+import CompetitionDetailEditor from "@/app/components/CompetitionDetailEditor";
 
 function today() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
@@ -34,10 +36,21 @@ function PerformanceForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
+  const [detailEnabled, setDetailEnabled] = useState(false);
+  const [competitionDetails, setCompetitionDetails] = useState<CompetitionDetailInput[]>([]);
   const defaultsLoaded = useRef(false);
 
   const unit = unitMap[category] ?? "";
   const needsWind = isWindAffectedEvent(category);
+  const detailMode = kind === "athletics" ? competitionDetailMode(category) : null;
+
+  function enableDetails() {
+    if (!detailMode) return;
+    setDetailEnabled(true);
+    setCompetitionDetails(detailMode === "attempt"
+      ? Array.from({ length: 6 }, (_, index) => ({ sequenceNumber: index + 1, value: "", windSpeed: "", status: "valid" as const }))
+      : [{ sequenceNumber: 1, roundName: "予選", value: "", windSpeed: "", place: "", status: "valid" }]);
+  }
 
   useEffect(() => {
     if (!hasSelectedKind) return;
@@ -134,12 +147,14 @@ function PerformanceForm() {
     event.preventDefault();
     setErrorMessage("");
 
-    const numericValue = Number(value);
+    const bestDetail = detailEnabled && detailMode ? bestCompetitionDetail(competitionDetails, detailMode === "round") : null;
+    const numericValue = bestDetail?.numericValue ?? Number(value);
     if (!Number.isFinite(numericValue) || numericValue <= 0) {
       setErrorMessage("記録には0より大きい数値を入力してください。");
       return;
     }
-    const numericWind = windSpeed.trim() === "" ? null : Number(windSpeed);
+    const selectedWind = bestDetail?.windSpeed ?? windSpeed;
+    const numericWind = selectedWind?.trim() === "" || selectedWind === undefined ? null : Number(selectedWind);
     if (needsWind && kind === "athletics" && (numericWind === null || !Number.isFinite(numericWind))) {
       setErrorMessage("この種目の本番記録には風速を入力してください。");
       return;
@@ -180,7 +195,7 @@ function PerformanceForm() {
         }
       }
 
-      const { error } = await supabase.from("performance_records").insert({
+      const { data: savedRecord, error } = await supabase.from("performance_records").insert({
         user_id: user.id,
         category,
         value: numericValue,
@@ -191,12 +206,30 @@ function PerformanceForm() {
         awareness_categories: awarenessTags.length ? awarenessTags : null,
         awareness_note: awarenessNote.trim() || null,
         video_path: videoPath,
-      });
+      }).select("id").single();
 
       if (error) {
         if (videoPath) await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([videoPath]);
         setErrorMessage(error.message);
         return;
+      }
+
+      if (detailEnabled && detailMode && savedRecord) {
+        const detailRows = competitionDetails.flatMap((detail) => {
+          const detailValue = Number(detail.value);
+          const valid = detail.status === "valid" && Number.isFinite(detailValue) && detailValue > 0;
+          if (detail.status === "valid" && !valid) return [];
+          const detailWind = detail.windSpeed?.trim() ? Number(detail.windSpeed) : null;
+          const place = detail.place?.trim() ? Number(detail.place) : null;
+          return [{ performance_record_id: savedRecord.id, detail_type: detailMode, sequence_number: detail.sequenceNumber, round_name: detailMode === "round" ? detail.roundName : null, value: valid ? detailValue : null, wind_speed: valid && Number.isFinite(detailWind) ? detailWind : null, place: Number.isInteger(place) && Number(place) > 0 ? place : null, status: detail.status }];
+        });
+        const { error: detailsError } = await supabase.from("performance_record_details").insert(detailRows);
+        if (detailsError) {
+          await supabase.from("performance_records").delete().eq("id", savedRecord.id);
+          if (videoPath) await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([videoPath]);
+          setErrorMessage(`大会詳細を保存できませんでした：${detailsError.message}`);
+          return;
+        }
       }
 
       router.push(fromCalendar ? `/mypage/my-calendar?date=${date}` : kind === "athletics" ? "/mypage/athletics" : kind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests");
@@ -249,7 +282,7 @@ function PerformanceForm() {
               <span className="text-sm font-bold text-white">種目</span>
               <select
                 value={category}
-                onChange={(event) => { setCategory(event.target.value); if (!isWindAffectedEvent(event.target.value)) setWindSpeed(""); }}
+                onChange={(event) => { setCategory(event.target.value); setDetailEnabled(false); setCompetitionDetails([]); if (!isWindAffectedEvent(event.target.value)) setWindSpeed(""); }}
                 className="mt-3 w-full rounded-xl border border-white/15 bg-[#101216] px-4 py-4 text-white outline-none transition focus:border-orange-500"
               >
                 {eventOptions.map((option) => (
@@ -260,7 +293,9 @@ function PerformanceForm() {
               </select>
             </label>
 
-            {needsWind ? <label className="block">
+            {detailMode ? <div>{!detailEnabled ? <button type="button" onClick={enableDetails} className="w-full rounded-xl border border-orange-500/35 bg-orange-500/[0.06] px-4 py-4 text-sm font-black text-orange-300">{detailMode === "attempt" ? "1〜6回目も記録する" : "予選・準決勝・決勝も記録する"}</button> : <><CompetitionDetailEditor mode={detailMode} details={competitionDetails} onChange={setCompetitionDetails} unit={unit} needsWind={needsWind}/><button type="button" onClick={() => { setDetailEnabled(false); setCompetitionDetails([]); }} className="mt-2 text-xs font-bold text-white/40">詳細入力をやめる</button></>}</div> : null}
+
+            {needsWind && !detailEnabled ? <label className="block">
               <span className="text-sm font-bold text-white">風速 {kind === "athletics" ? <span className="text-orange-400">（必須）</span> : <span className="text-white/40">（任意）</span>}</span>
               <div className="relative mt-3">
                 <input type="number" inputMode="decimal" step="0.1" value={windSpeed} onChange={(event) => setWindSpeed(event.target.value)} placeholder="例：+1.2 / -0.4" className="w-full rounded-xl border border-white/15 bg-[#101216] px-4 py-4 pr-20 text-lg font-bold text-white outline-none transition placeholder:text-white/25 focus:border-orange-500" />
@@ -269,7 +304,7 @@ function PerformanceForm() {
               {windSpeed !== "" && Number(windSpeed) > 2 ? <p className="mt-2 text-sm font-bold text-amber-300">追い風参考記録（ランキング対象外）</p> : <p className="mt-2 text-xs text-white/40">追い風は「+」、向かい風は「-」で入力。+2.0m/sまでランキング対象です。</p>}
             </label> : null}
 
-            <label className="block">
+            {!detailEnabled ? <label className="block">
               <span className="text-sm font-bold text-white">記録</span>
               <div className="relative mt-3">
                 <input
@@ -287,7 +322,7 @@ function PerformanceForm() {
                   {unit}
                 </span>
               </div>
-            </label>
+            </label> : <p className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.05] px-4 py-3 text-sm text-emerald-300">代表記録は入力した中の最高記録（トラック種目は最速記録）から自動で保存されます。</p>}
 
             <label className="block">
               <span className="text-sm font-bold text-white">測定日</span>

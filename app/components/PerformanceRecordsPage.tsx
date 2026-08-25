@@ -29,7 +29,7 @@ export default async function PerformanceRecordsPage({ kind, title, eyebrow, des
 
   const recordsQuery = supabase
     .from("performance_records")
-    .select("id, category, value, wind_speed, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path")
+    .select("id, category, value, wind_speed, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path, performance_record_details(id, detail_type, sequence_number, round_name, value, wind_speed, place, status)")
     .eq("user_id", userId)
     .or(`record_kind.eq.${kind},record_kind.is.null`)
     .order("date", { ascending: false });
