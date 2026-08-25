@@ -40,6 +40,7 @@ import {
 import FeedbackRequestButton from "@/app/components/FeedbackRequestButton";
 import CalendarSyncButton from "@/app/components/CalendarSyncButton";
 import SchedulePeriodManager from "@/app/components/SchedulePeriodManager";
+import { mergePerformanceFields } from "@/lib/performance-record-merge";
 
 type Entry = {
   id: number;
@@ -2147,10 +2148,22 @@ function EntryEditor({
           awareness_note: journal.trim() || null,
           video_path: videoPath,
         };
+        let matchingPerformance: (PerformanceRecord & { awareness_category?: string | null }) | null = null;
+        if (!resolvedPerformanceId) {
+          const { data: match, error: matchError } = await supabase.from("performance_records")
+            .select("id, category, value, wind_speed, date, record_kind, awareness_category, awareness_categories, awareness_note, video_path")
+            .eq("user_id", userId).eq("category", recordCategory).eq("record_kind", recordKind).eq("date", entryDate).eq("value", numericValue).maybeSingle();
+          if (matchError) throw matchError;
+          matchingPerformance = (match as unknown as PerformanceRecord & { awareness_category?: string | null }) ?? null;
+          if (matchingPerformance) resolvedPerformanceId = matchingPerformance.id;
+        }
+        const mergedPerformanceRow = matchingPerformance
+          ? { ...performanceRow, ...mergePerformanceFields(matchingPerformance, performanceRow) }
+          : performanceRow;
         const performanceQuery = resolvedPerformanceId
           ? supabase
               .from("performance_records")
-              .update(performanceRow)
+              .update(mergedPerformanceRow)
               .eq("id", resolvedPerformanceId)
               .eq("user_id", userId)
           : supabase.from("performance_records").insert(performanceRow);
@@ -2162,7 +2175,7 @@ function EntryEditor({
             .single();
         if (performanceError) throw performanceError;
         resolvedPerformanceId = performanceData.id;
-        if (!performanceId) createdPerformanceId = performanceData.id;
+        if (!performanceId && !matchingPerformance) createdPerformanceId = performanceData.id;
         savedPerformance = {
           ...performanceData,
           video_url: video

@@ -10,6 +10,7 @@ import { bestCompetitionDetail, type CompetitionDetailInput } from "@/lib/compet
 import { createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
 import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
 import CompetitionDetailEditor from "@/app/components/CompetitionDetailEditor";
+import { mergePerformanceFields } from "@/lib/performance-record-merge";
 
 function today() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
@@ -195,7 +196,7 @@ function PerformanceForm() {
         }
       }
 
-      const { data: savedRecord, error } = await supabase.from("performance_records").insert({
+      const incomingRecord = {
         user_id: user.id,
         category,
         value: numericValue,
@@ -206,7 +207,17 @@ function PerformanceForm() {
         awareness_categories: awarenessTags.length ? awarenessTags : null,
         awareness_note: awarenessNote.trim() || null,
         video_path: videoPath,
-      }).select("id").single();
+      };
+      const { data: existingRecord, error: lookupError } = kind === "control-test"
+        ? { data: null, error: null }
+        : await supabase.from("performance_records")
+          .select("id, awareness_category, awareness_categories, awareness_note, video_path, wind_speed")
+          .eq("user_id", user.id).eq("category", category).eq("record_kind", kind).eq("date", date).eq("value", numericValue).maybeSingle();
+      if (lookupError) throw lookupError;
+      const saveQuery = existingRecord
+        ? supabase.from("performance_records").update({ ...incomingRecord, ...mergePerformanceFields(existingRecord, incomingRecord) }).eq("id", existingRecord.id)
+        : supabase.from("performance_records").insert(incomingRecord);
+      const { data: savedRecord, error } = await saveQuery.select("id").single();
 
       if (error) {
         if (videoPath) await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([videoPath]);
@@ -223,13 +234,17 @@ function PerformanceForm() {
           const place = detail.place?.trim() ? Number(detail.place) : null;
           return [{ performance_record_id: savedRecord.id, detail_type: detailMode, sequence_number: detail.sequenceNumber, round_name: detailMode === "round" ? detail.roundName : null, value: valid ? detailValue : null, wind_speed: valid && Number.isFinite(detailWind) ? detailWind : null, place: Number.isInteger(place) && Number(place) > 0 ? place : null, status: detail.status }];
         });
-        const { error: detailsError } = await supabase.from("performance_record_details").insert(detailRows);
+        const { error: detailsError } = await supabase.from("performance_record_details").upsert(detailRows, { onConflict: "performance_record_id,detail_type,sequence_number" });
         if (detailsError) {
-          await supabase.from("performance_records").delete().eq("id", savedRecord.id);
+          if (!existingRecord) await supabase.from("performance_records").delete().eq("id", savedRecord.id);
           if (videoPath) await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([videoPath]);
           setErrorMessage(`大会詳細を保存できませんでした：${detailsError.message}`);
           return;
         }
+      }
+
+      if (existingRecord?.video_path && videoPath && existingRecord.video_path !== videoPath) {
+        await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).remove([existingRecord.video_path]);
       }
 
       router.push(fromCalendar ? `/mypage/my-calendar?date=${date}` : kind === "athletics" ? "/mypage/athletics" : kind === "unofficial-athletics" ? "/mypage/unofficial-athletics" : "/mypage/control-tests");
