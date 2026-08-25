@@ -1,0 +1,33 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import { createClient } from "@/lib/supabase-server";
+import { createAdminClient } from "@/lib/supabase-admin";
+import ControlTestSession from "@/app/components/ControlTestSession";
+
+export default async function ControlTestSessionPage() {
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getClaims();
+  const coachId = auth?.claims.sub;
+  if (!coachId) redirect("/login?next=/coach/control-test-session");
+  const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", coachId).in("role", ["coach", "admin"]).maybeSingle();
+  if (!role) redirect("/mypage");
+
+  const admin = createAdminClient();
+  const from = new Date(); from.setDate(from.getDate() - 30);
+  const to = new Date(); to.setDate(to.getDate() + 120);
+  const { data: assignments } = await admin.from("coach_class_assignments").select("program_class").eq("coach_id", coachId);
+  const classes = (assignments ?? []).map((item) => item.program_class);
+  const [{ data: scheduleRows }, { data: athleteRows }] = await Promise.all([
+    admin.from("schedules").select("id,title,starts_at,schedule_type,program_class,schedule_attendance(user_id,status)").gte("starts_at", from.toISOString()).lte("starts_at", to.toISOString()).order("starts_at"),
+    admin.from("players").select("user_id,name,program_class,gender,event").eq("member_status", "active").order("name"),
+  ]);
+  const schedules = role.role === "admin" ? (scheduleRows ?? []) : (scheduleRows ?? []).filter((item) => !item.program_class || classes.includes(item.program_class));
+  const athletes = role.role === "admin" ? (athleteRows ?? []) : (athleteRows ?? []).filter((item) => item.program_class && classes.includes(item.program_class));
+
+  return <main className="min-h-screen bg-[#090a0c] px-4 pb-24 pt-28 text-white sm:px-8"><div className="mx-auto max-w-7xl">
+    <Link href="/coach/dashboard" className="inline-flex items-center gap-2 text-xs font-bold text-white/55 hover:text-orange-400"><ArrowLeft size={16}/>コーチダッシュボード</Link>
+    <header className="mt-7 border-l-2 border-orange-500 pl-5"><p className="text-xs font-black tracking-[.2em] text-orange-400">LIVE MEASUREMENT</p><h1 className="mt-2 text-3xl font-black sm:text-5xl">CONTROL TEST 測定会</h1><p className="mt-3 text-sm text-white/50">名簿を見ながら入力し、最後にまとめて選手のSCANへ反映します。</p></header>
+    <ControlTestSession athletes={(athletes ?? []).map((a) => ({ id:a.user_id,name:a.name,programClass:a.program_class,gender:a.gender,event:a.event }))} schedules={(schedules ?? []).map((s) => ({ id:s.id,title:s.title,startsAt:s.starts_at,programClass:s.program_class,attendeeIds:(s.schedule_attendance ?? []).filter((a) => a.status === "attending").map((a) => a.user_id) }))}/>
+  </div></main>;
+}
