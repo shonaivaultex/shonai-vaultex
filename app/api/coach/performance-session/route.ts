@@ -5,8 +5,9 @@ import { competitionDetailMode, eventNamesByKind, isWindAffectedEvent, type Perf
 import { bestCompetitionDetail, type CompetitionDetailInput } from "@/lib/competition-details";
 import { mergePerformanceFields, performanceRecordIdentity } from "@/lib/performance-record-merge";
 import { sendCoachRecordNotifications } from "@/lib/coach-record-notifications";
+import { barSummary, combinedEventCoefficients, combinedPoints, type AdvancedPerformanceDetails, type BarHeightRow, type CombinedEventResult } from "@/lib/advanced-performance-details";
 
-type SubmittedRecord={athleteId:string;value:number;windSpeed:number|null;details?:CompetitionDetailInput[]};
+type SubmittedRecord={athleteId:string;value:number;windSpeed:number|null;details?:CompetitionDetailInput[];advancedDetails?:AdvancedPerformanceDetails|null};
 
 export async function GET() {
   const supabase=await createClient(); const {data:{user}}=await supabase.auth.getUser();
@@ -43,6 +44,32 @@ function sanitizeDetails(details:CompetitionDetailInput[]|undefined,mode:"attemp
   });
 }
 
+function sanitizeAdvancedDetails(value:AdvancedPerformanceDetails|null|undefined,mode:"bar"|"combined"|null,category:string):AdvancedPerformanceDetails|null{
+  if(!value||!mode||value.type!==mode)return null;
+  if(mode==="bar"&&value.type==="bar"){
+    const heights=(Array.isArray(value.heights)?value.heights:[]).slice(0,30).flatMap((row)=>{
+      const height=Number(row.height);
+      if(!Number.isFinite(height)||height<=0||height>10||!Array.isArray(row.attempts))return[];
+      const attempts=row.attempts.slice(0,3).map((item)=>item==="o"||item==="x"||item==="pass"?item:null) as BarHeightRow["attempts"];
+      while(attempts.length<3)attempts.push(null);
+      return [{height:String(height),attempts}];
+    });
+    if(!heights.length)return null;
+    const summary=barSummary(heights);
+    if(!summary.bestHeight)return null;
+    return {type:"bar",heights,bestHeight:summary.bestHeight,endedByThreeMisses:summary.endedByThreeMisses};
+  }
+  if(mode==="combined"&&value.type==="combined"){
+    const coefficients=combinedEventCoefficients(category);
+    const supplied=new Map((Array.isArray(value.events)?value.events:[]).map((item)=>[item.event,item]));
+    const events:CombinedEventResult[]=coefficients.map((coefficient)=>{const raw=supplied.get(coefficient.event)?.value??"";const numeric=Number(raw);return {event:coefficient.event,value:Number.isFinite(numeric)&&numeric>0?String(numeric):"",points:Number.isFinite(numeric)&&numeric>0?combinedPoints(coefficient,numeric):null};});
+    const complete=events.every((item)=>item.value!==""&&item.points!==null);
+    if(!complete)return null;
+    return {type:"combined",discipline:category,formulaVersion:"WA_COMBINED_2025",events,totalPoints:events.reduce((sum,item)=>sum+(item.points??0),0),complete:true};
+  }
+  return null;
+}
+
 export async function POST(request:NextRequest) {
   const supabase=await createClient(); const {data:{user}}=await supabase.auth.getUser();
   if(!user)return NextResponse.json({error:"ログインが必要です。"},{status:401});
@@ -57,7 +84,8 @@ export async function POST(request:NextRequest) {
     if((kind!=="athletics"&&kind!=="unofficial-athletics")||!eventNamesByKind(kind).includes(category)||!date||!records.length||records.length>100)return NextResponse.json({error:"区分・種目・日付・入力件数を確認してください。"},{status:400});
     const selectedDetailMode=kind==="athletics"?competitionDetailMode(category):null;
     const detailMode=selectedDetailMode==="attempt"||selectedDetailMode==="round"?selectedDetailMode:null;
-    const clean=records.flatMap((record)=>{const details=sanitizeDetails(record.details,detailMode);const best=details.length?bestCompetitionDetail(details,detailMode==="round"):null;const value=Number(best?.numericValue??record.value);const candidateWind=best?.windSpeed?.trim()?Number(best.windSpeed):record.windSpeed;const wind=candidateWind===null?null:Number(candidateWind);if(!record.athleteId||!Number.isFinite(value)||value<=0||value>=100000)return[];if(kind==="athletics"&&isWindAffectedEvent(category)&&(wind===null||!Number.isFinite(wind)||Math.abs(wind)>20))return[];return[{athleteId:record.athleteId,value,windSpeed:Number.isFinite(wind)?wind:null,details}];});
+    const advancedMode=selectedDetailMode==="bar"||selectedDetailMode==="combined"?selectedDetailMode:null;
+    const clean=records.flatMap((record)=>{const details=sanitizeDetails(record.details,detailMode);const advancedDetails=sanitizeAdvancedDetails(record.advancedDetails,advancedMode,category);const best=details.length?bestCompetitionDetail(details,detailMode==="round"):null;const advancedValue=advancedDetails?.type==="bar"?advancedDetails.bestHeight:advancedDetails?.type==="combined"?advancedDetails.totalPoints:null;const value=Number(best?.numericValue??advancedValue??record.value);const candidateWind=best?.windSpeed?.trim()?Number(best.windSpeed):record.windSpeed;const wind=candidateWind===null?null:Number(candidateWind);if(!record.athleteId||!Number.isFinite(value)||value<=0||value>=100000)return[];if(advancedMode&&!advancedDetails)return[];if(kind==="athletics"&&isWindAffectedEvent(category)&&(wind===null||!Number.isFinite(wind)||Math.abs(wind)>20))return[];return[{athleteId:record.athleteId,value,windSpeed:Number.isFinite(wind)?wind:null,details,advancedDetails}];});
     if(!clean.length)return NextResponse.json({error:"有効な記録がありません。風速が必要な種目も確認してください。"},{status:400});
     const admin=createAdminClient(); const athleteIds=[...new Set(clean.map((r)=>r.athleteId))];
     const [{data:players},{data:assignments}]=await Promise.all([admin.from("players").select("user_id,program_class,member_status").in("user_id",athleteIds),admin.from("coach_class_assignments").select("program_class").eq("coach_id",user.id)]);
@@ -65,12 +93,12 @@ export async function POST(request:NextRequest) {
     if(scheduleId){const {data:schedule}=await admin.from("schedules").select("id,author_id,program_class,schedule_attendance(user_id,status)").eq("id",scheduleId).maybeSingle();if(!schedule)return NextResponse.json({error:"予定が見つかりません。"},{status:404});const canUse=isAdmin||schedule.author_id===user.id||(schedule.program_class?assignedClasses.has(schedule.program_class):assignedClasses.size>0);if(!canUse)return NextResponse.json({error:"この予定の名簿を使用する権限がありません。"},{status:403});scheduledIds=new Set((schedule.schedule_attendance??[]).filter((a)=>a.status==="attending").map((a)=>a.user_id));}
     const allowed=new Set((players??[]).filter((p)=>p.member_status==="active"&&(isAdmin||(p.program_class&&assignedClasses.has(p.program_class)))&&(!scheduleId||scheduledIds.has(p.user_id))).map((p)=>p.user_id));
     if(allowed.size!==athleteIds.length)return NextResponse.json({error:"担当外、休会中、または参加名簿にいない選手が含まれています。画面を更新してください。"},{status:403});
-    const {data:existing,error:existingError}=await admin.from("performance_records").select("id,user_id,category,value,awareness_category,awareness_categories,awareness_note,video_path,wind_speed").in("user_id",athleteIds).eq("date",date).eq("record_kind",kind).eq("category",category);
+    const {data:existing,error:existingError}=await admin.from("performance_records").select("id,user_id,category,value,awareness_category,awareness_categories,awareness_note,video_path,wind_speed,advanced_details").in("user_id",athleteIds).eq("date",date).eq("record_kind",kind).eq("category",category);
     if(existingError)throw existingError;
     const existingByIdentity=new Map((existing??[]).map((item)=>[performanceRecordIdentity({userId:item.user_id,kind,category,date,value:Number(item.value)}),item]));
     const recordsToInsert=clean.filter((record)=>!existingByIdentity.has(performanceRecordIdentity({userId:record.athleteId,kind,category,date,value:record.value})));
     const recordsToMerge=clean.flatMap((record)=>{const found=existingByIdentity.get(performanceRecordIdentity({userId:record.athleteId,kind,category,date,value:record.value}));return found?[{record,found}]:[];});
-    const rows=recordsToInsert.map((record)=>({user_id:record.athleteId,category,value:record.value,date,record_kind:kind,wind_speed:record.windSpeed,awareness_note:null,awareness_category:null,awareness_categories:null,entry_source:"coach",entered_by:user.id}));
+    const rows=recordsToInsert.map((record)=>({user_id:record.athleteId,category,value:record.value,date,record_kind:kind,wind_speed:record.windSpeed,advanced_details:record.advancedDetails,awareness_note:null,awareness_category:null,awareness_categories:null,entry_source:"coach",entered_by:user.id}));
     if(rows.length){
       const {data:inserted,error}=await admin.from("performance_records").insert(rows).select("id,user_id");
       if(error)throw error;
@@ -84,7 +112,7 @@ export async function POST(request:NextRequest) {
       }
     }
     for(const {record,found} of recordsToMerge){
-      const merged=mergePerformanceFields(found,{wind_speed:record.windSpeed});
+      const merged={...mergePerformanceFields(found,{wind_speed:record.windSpeed}),advanced_details:record.advancedDetails??found.advanced_details??null};
       const {error:updateError}=await admin.from("performance_records").update(merged).eq("id",found.id);
       if(updateError)throw updateError;
       const detailRows=(record.details??[]).map((detail)=>({performance_record_id:found.id,detail_type:detailMode,sequence_number:detail.sequenceNumber,round_name:detail.roundName??null,value:detail.value?Number(detail.value):null,wind_speed:detail.windSpeed?Number(detail.windSpeed):null,place:detail.place?Number(detail.place):null,status:detail.status}));
