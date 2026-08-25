@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
   Check,
@@ -262,6 +262,7 @@ export default function MyCalendar({
   const [goalOpen, setGoalOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [restSaving, setRestSaving] = useState(false);
+  const dailyLogRef = useRef<HTMLElement>(null);
   const [mobileCalendarView, setMobileCalendarView] = useState<
     "week" | "month"
   >("week");
@@ -388,6 +389,17 @@ export default function MyCalendar({
   }
   function startNewForDate(key: string) {
     setSelectedDate(key);
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 1279px)").matches
+    ) {
+      window.requestAnimationFrame(() => {
+        dailyLogRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    }
   }
   function moveWeek(amount: number) {
     const next = new Date(
@@ -918,7 +930,7 @@ export default function MyCalendar({
             })}
           </div>
           <p className="mt-3 text-center text-[11px] font-bold text-orange-300/80">
-            日付をタップすると、その日の予定・練習記録を確認できます
+            日付をタップすると、その日の予定・記録・休養をまとめて管理できます
           </p>
           <div className="mt-4 flex flex-wrap gap-3 text-[10px] text-white/45">
             {schedulePhases.map((phase) => (
@@ -945,11 +957,14 @@ export default function MyCalendar({
           />
         </div>
       </div>
-      <section className="rounded-[26px] border border-white/10 bg-[#111] p-5 sm:p-6 xl:sticky xl:top-20">
+      <section
+        ref={dailyLogRef}
+        className="scroll-mt-20 rounded-[26px] border border-white/10 bg-[#111] p-5 sm:p-6 xl:sticky xl:top-20"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-black tracking-[.18em] text-orange-400">
-              DAILY LOG
+              この日の管理
             </p>
             <h2 className="mt-1 text-xl font-black">
               {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(
@@ -958,41 +973,51 @@ export default function MyCalendar({
               )}
             </h2>
           </div>
-          <div className="flex flex-wrap gap-2">
+        </div>
+        <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-3">
+          <p className="mb-2 text-[10px] font-bold text-white/35">
+            この日について行うことを選んでください
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <button
               type="button"
               onClick={() => void toggleRestDay()}
               disabled={restSaving}
               aria-pressed={Boolean(selectedRestEntry)}
-              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-black transition disabled:opacity-50 ${selectedRestEntry ? "border-sky-300 bg-sky-300 text-black" : "border-white/15 bg-white/[.03] text-white/60 hover:border-sky-300/50 hover:text-sky-200"}`}
+              className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-black transition disabled:opacity-50 ${selectedRestEntry ? "border-sky-300 bg-sky-300 text-black" : "border-white/15 bg-white/[.03] text-white/60 hover:border-sky-300/50 hover:text-sky-200"}`}
             >
               <span
                 className={`grid h-5 w-5 place-items-center rounded-md border ${selectedRestEntry ? "border-black/20 bg-black/10" : "border-white/25"}`}
               >
                 {selectedRestEntry ? <CircleCheck size={15} /> : null}
               </span>
-              {restSaving ? "更新中" : "REST"}
+              {restSaving
+                ? "更新中"
+                : selectedRestEntry
+                  ? "休養日を解除"
+                  : "休養日にする"}
             </button>
             <Link
               href={`/performance?kind=unofficial-athletics&date=${selectedDate}&from=calendar`}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-black text-black"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-black text-black"
             >
               <Plus size={15} />
               練習記録を追加
             </Link>
             <Link
               href={`/mypage/my-calendar?periodDate=${selectedDate}#period-management`}
-              className="rounded-lg border border-sky-500/35 p-2 text-sky-300"
-              aria-label="この日から期間カラーを追加"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-sky-500/35 px-3 py-2 text-xs font-black text-sky-300"
+              aria-label="この日から期間を設定"
             >
               <CalendarDays size={18} />
+              期間を設定
             </Link>
             <button
               onClick={startNew}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-orange-500/35 px-3 py-2 text-xs font-black text-orange-300"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-orange-500/35 px-3 py-2 text-xs font-black text-orange-300"
             >
               <Plus size={15} />
-              この日に予定
+              予定・日誌を追加
             </button>
           </div>
         </div>
@@ -1133,14 +1158,6 @@ export default function MyCalendar({
           </div>
         )}
       </section>
-      <button
-        type="button"
-        onClick={startNew}
-        aria-label="選択中の日に予定を追加"
-        className="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-orange-500 text-black shadow-[0_12px_35px_rgba(249,115,22,.35)] sm:hidden"
-      >
-        <Plus size={25} />
-      </button>
       {open && (
         <EntryEditor
           userId={userId}
