@@ -261,6 +261,7 @@ export default function MyCalendar({
   const [goal, setGoal] = useState<CalendarGoal | null>(initialGoal);
   const [goalOpen, setGoalOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [quickPeriodOpen, setQuickPeriodOpen] = useState(false);
   const [restSaving, setRestSaving] = useState(false);
   const dailyLogRef = useRef<HTMLElement>(null);
   const [mobileCalendarView, setMobileCalendarView] = useState<
@@ -1004,14 +1005,15 @@ export default function MyCalendar({
               <Plus size={15} />
               練習記録を追加
             </Link>
-            <Link
-              href={`/mypage/my-calendar?periodDate=${selectedDate}#period-management`}
+            <button
+              type="button"
+              onClick={() => setQuickPeriodOpen(true)}
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-sky-500/35 px-3 py-2 text-xs font-black text-sky-300"
               aria-label="この日から期間を設定"
             >
               <CalendarDays size={18} />
               期間を設定
-            </Link>
+            </button>
             <button
               onClick={startNew}
               className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-orange-500/35 px-3 py-2 text-xs font-black text-orange-300"
@@ -1209,6 +1211,158 @@ export default function MyCalendar({
           }}
         />
       )}
+      {quickPeriodOpen && (
+        <QuickPeriodEditor
+          key={selectedDate}
+          userId={userId}
+          startDate={selectedDate}
+          onClose={() => setQuickPeriodOpen(false)}
+          onSaved={() => {
+            setQuickPeriodOpen(false);
+            router.refresh();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function QuickPeriodEditor({
+  userId,
+  startDate,
+  onClose,
+  onSaved,
+}: {
+  userId: string;
+  startDate: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [phase, setPhase] = useState("build");
+  const [endsOn, setEndsOn] = useState(startDate);
+  const [saving, setSaving] = useState(false);
+
+  function dateAfter(days: number) {
+    const date = new Date(`${startDate}T00:00:00`);
+    date.setDate(date.getDate() + days);
+    return dateKey(date);
+  }
+
+  async function save() {
+    if (endsOn < startDate) {
+      alert("終了日は開始日以降にしてください。");
+      return;
+    }
+    setSaving(true);
+    const { error } = await createClient().from("schedule_periods").insert({
+      author_id: userId,
+      label: null,
+      phase,
+      starts_on: startDate,
+      ends_on: endsOn,
+      audience: "all",
+      program_class: null,
+      updated_at: new Date().toISOString(),
+    });
+    setSaving(false);
+    if (error) {
+      alert(`期間を保存できませんでした。${error.message}`);
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <div className="fixed inset-0 z-[130] overflow-y-auto bg-black/80 p-4 backdrop-blur-sm">
+      <div className="mx-auto my-8 max-w-lg rounded-[28px] border border-orange-500/35 bg-[#111] p-5 shadow-2xl sm:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black tracking-[.2em] text-orange-400">
+              QUICK PERIOD
+            </p>
+            <h2 className="mt-1 text-xl font-black">期間カラーを設定</h2>
+            <p className="mt-1 text-xs text-white/40">
+              {startDate.replaceAll("-", "/")}から色を付けます
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full bg-white/10 p-2 text-white/60"
+            aria-label="閉じる"
+          >
+            <X size={19} />
+          </button>
+        </div>
+
+        <div className="mt-5">
+          <p className="text-xs font-bold text-white/45">何期にしますか？</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {schedulePhases.slice(1).map((item) => {
+              const selected = phase === item.value;
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => setPhase(item.value)}
+                  className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-black transition ${selected ? item.badge : "border-white/10 bg-white/[.025] text-white/50"}`}
+                >
+                  <i className={`h-2.5 w-2.5 rounded-full ${item.dot}`} />
+                  {item.label}
+                  {selected ? <Check size={15} /> : null}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <p className="text-xs font-bold text-white/45">いつまでですか？</p>
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            {[
+              { label: "1日", days: 0 },
+              { label: "1週間", days: 6 },
+              { label: "2週間", days: 13 },
+              { label: "4週間", days: 27 },
+            ].map((option) => {
+              const value = dateAfter(option.days);
+              return (
+                <button
+                  key={option.label}
+                  type="button"
+                  onClick={() => setEndsOn(value)}
+                  className={`rounded-xl border px-2 py-3 text-xs font-black ${endsOn === value ? "border-orange-400 bg-orange-500/15 text-orange-200" : "border-white/10 text-white/45"}`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+          <label className="mt-3 block">
+            <span className="text-[10px] text-white/35">終了日を直接選ぶ</span>
+            <input
+              type="date"
+              min={startDate}
+              value={endsOn}
+              onChange={(event) => setEndsOn(event.target.value)}
+              className="mt-1 w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3 [color-scheme:dark]"
+            />
+          </label>
+        </div>
+
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => void save()}
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3.5 font-black text-black disabled:opacity-50"
+        >
+          <Check size={18} />
+          {saving ? "保存中…" : `${schedulePhase(phase).label}として保存`}
+        </button>
+        <p className="mt-3 text-center text-[10px] text-white/30">
+          後から日付を選ぶと編集・削除できます
+        </p>
+      </div>
     </div>
   );
 }
