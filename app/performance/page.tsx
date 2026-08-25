@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useEffect, useRef, useState } from "react";
 import { Activity, ArrowLeft, Check, ChevronRight, LoaderCircle, Medal, Save, Trash2, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 import { eventNamesByKind, isWindAffectedEvent, type PerformanceKind, unitMap } from "@/lib/performance-events";
@@ -34,9 +34,42 @@ function PerformanceForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
+  const defaultsLoaded = useRef(false);
 
   const unit = unitMap[category] ?? "";
   const needsWind = isWindAffectedEvent(category);
+
+  useEffect(() => {
+    if (!hasSelectedKind) return;
+    defaultsLoaded.current = false;
+    let savedCategory: string | undefined;
+    let savedTags: string[] = [];
+    try {
+      const saved = window.localStorage.getItem(`vaultex-record-defaults:${kind}`);
+      if (saved) {
+        const parsed = JSON.parse(saved) as { category?: string; awarenessTags?: string[] };
+        if (parsed.category && eventNamesByKind(kind).includes(parsed.category)) savedCategory = parsed.category;
+        if (Array.isArray(parsed.awarenessTags)) savedTags = parsed.awarenessTags.slice(0, 7);
+      }
+    } catch {
+      // 入力候補を復元できなくても、記録追加自体は通常どおり利用できます。
+    }
+    const frame = window.requestAnimationFrame(() => {
+      if (savedCategory) setCategory(savedCategory);
+      if (savedTags.length) setAwarenessTags(savedTags);
+      defaultsLoaded.current = true;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [hasSelectedKind, kind]);
+
+  useEffect(() => {
+    if (!hasSelectedKind || !defaultsLoaded.current) return;
+    try {
+      window.localStorage.setItem(`vaultex-record-defaults:${kind}`, JSON.stringify({ category, awarenessTags }));
+    } catch {
+      // 保存容量やプライベートブラウズの制限時は、自動入力だけ無効にします。
+    }
+  }, [awarenessTags, category, hasSelectedKind, kind]);
 
   if (!hasSelectedKind) {
     const choices = [
@@ -198,7 +231,20 @@ function PerformanceForm() {
           onSubmit={saveRecord}
           className="mt-10 rounded-2xl border border-white/10 bg-white/[0.035] p-6 shadow-2xl shadow-black/30 sm:p-8"
         >
+          <ol aria-label="入力手順" className="mb-8 grid grid-cols-3 gap-2 border-b border-white/10 pb-6">
+            {["記録", "振り返り", "動画"].map((label, index) => (
+              <li key={label} className="flex items-center gap-2 text-[11px] font-black tracking-[0.08em] text-white/55 sm:text-xs">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-orange-500/15 text-orange-300">{index + 1}</span>
+                {label}
+              </li>
+            ))}
+          </ol>
           <div className="space-y-6">
+            <div>
+              <p className="text-xs font-black tracking-[0.18em] text-orange-400">STEP 1</p>
+              <h2 className="mt-1 text-xl font-black text-white">記録を入力</h2>
+              <p className="mt-1 text-xs leading-5 text-white/40">前回選んだ種目は次回の入力候補として自動表示されます。</p>
+            </div>
             <label className="block">
               <span className="text-sm font-bold text-white">種目</span>
               <select
@@ -254,13 +300,25 @@ function PerformanceForm() {
               />
             </label>
 
-            <div><span className="text-sm font-bold text-white">意識したこと <span className="font-normal text-white/40">（任意・複数選択可）</span></span><AwarenessTagSelector value={awarenessTags} onChange={setAwarenessTags} /></div>
+            <div className="border-t border-white/10 pt-6">
+              <p className="text-xs font-black tracking-[0.18em] text-orange-400">STEP 2</p>
+              <h2 className="mt-1 text-xl font-black text-white">振り返りを残す <span className="text-sm font-normal text-white/35">（任意）</span></h2>
+              <p className="mt-1 text-xs leading-5 text-white/40">意識タグは前回の選択を引き継ぐので、変わった時だけ選び直せます。</p>
+            </div>
+
+            <div><span className="text-sm font-bold text-white">意識したこと <span className="font-normal text-white/40">（複数選択可）</span></span><AwarenessTagSelector value={awarenessTags} onChange={setAwarenessTags} /></div>
 
             <label className="block">
               <span className="text-sm font-bold text-white">何をどう意識しましたか？ <span className="font-normal text-white/40">（任意）</span></span>
               <textarea value={awarenessNote} onChange={(event) => setAwarenessNote(event.target.value)} maxLength={200} rows={3} placeholder="例：最後までリズムを変えずに走った" className="mt-3 w-full resize-none rounded-xl border border-white/15 bg-[#101216] px-4 py-4 text-white outline-none transition placeholder:text-white/25 focus:border-orange-500" />
               <span className="mt-1 block text-right text-xs text-white/35">{awarenessNote.length}/200</span>
             </label>
+
+            <div className="border-t border-white/10 pt-6">
+              <p className="text-xs font-black tracking-[0.18em] text-orange-400">STEP 3</p>
+              <h2 className="mt-1 text-xl font-black text-white">動画を残す <span className="text-sm font-normal text-white/35">（任意）</span></h2>
+              <p className="mt-1 text-xs leading-5 text-white/40">動画がない日は、そのまま保存して完了できます。</p>
+            </div>
 
             <label className="block">
               <span className="text-sm font-bold text-white">動画を追加 <span className="font-normal text-white/40">（任意・100MBまで）</span></span>

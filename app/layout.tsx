@@ -5,6 +5,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import PWARegister from "./components/PWARegister";
 import NavigationProgress from "./components/NavigationProgress";
+import MypageMobileNav from "./components/MypageMobileNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -78,6 +79,7 @@ export default function RootLayout({
   <NavigationProgress />
   <Header />
   <div className="flex-1" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>{children}</div>
+  <MypageMobileNav />
   <Footer />
 </body>
     </html>

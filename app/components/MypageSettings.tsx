@@ -17,7 +17,7 @@ export default function MypageSettings() {
     <details
       data-tutorial="settings"
       onToggle={(event) => setOpened(event.currentTarget.open)}
-      className="group mt-8 overflow-hidden rounded-2xl border border-white/10 bg-[#111] text-white open:border-orange-500/35"
+      className="group mt-8 scroll-mt-24 overflow-hidden rounded-2xl border border-white/10 bg-[#111] text-white open:border-orange-500/35"
     >
       <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-4 marker:hidden">
         <Settings size={19} className="text-white/45" />

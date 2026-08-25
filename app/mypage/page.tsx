@@ -183,7 +183,7 @@ export default async function MyPage() {
         </div>
       </section>
 
-      <section className="mt-5">
+      <section className="mt-5 hidden sm:block">
         <div className="grid gap-2.5 sm:grid-cols-3">
           <Link data-tutorial="video-action" href="/mypage/video-feedback" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-sky-400/50"><span className="flex items-center gap-3"><Video size={21} className="text-sky-400"/><span>動画を送る</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
           <Link data-tutorial="all-schedules" href="/mypage/schedules" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-orange-400/50"><span className="flex items-center gap-3"><CalendarDays size={21} className="text-orange-400"/><span>全体スケジュール</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
@@ -217,7 +217,9 @@ export default async function MyPage() {
       </Link>
       </div>
 
-      <MypageSettings />
+      <div id="settings" className="scroll-mt-24">
+        <MypageSettings />
+      </div>
 
       <div
         style={{
