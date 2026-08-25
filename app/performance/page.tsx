@@ -226,7 +226,15 @@ function PerformanceForm() {
           .eq("user_id", user.id).eq("category", category).eq("record_kind", kind).eq("date", date).eq("value", numericValue).maybeSingle();
       if (lookupError) throw lookupError;
       const saveQuery = existingRecord
-        ? supabase.from("performance_records").update({ ...incomingRecord, ...mergePerformanceFields(existingRecord, incomingRecord) }).eq("id", existingRecord.id)
+        ? supabase
+            .from("performance_records")
+            .update({
+              ...incomingRecord,
+              ...mergePerformanceFields(existingRecord, incomingRecord),
+              advanced_details:
+                incomingRecord.advanced_details ?? existingRecord.advanced_details ?? null,
+            })
+            .eq("id", existingRecord.id)
         : supabase.from("performance_records").insert(incomingRecord);
       const { data: savedRecord, error } = await saveQuery.select("id").single();
 
