@@ -47,7 +47,9 @@ function PerformanceForm() {
 
   const unit = unitMap[category] ?? "";
   const needsWind = isWindAffectedEvent(category);
-  const detailMode = kind === "athletics" ? competitionDetailMode(category) : null;
+  const detailMode = kind === "athletics" || kind === "unofficial-athletics"
+    ? competitionDetailMode(category)
+    : null;
 
   function enableDetails() {
     if (!detailMode) return;
@@ -327,7 +329,7 @@ function PerformanceForm() {
               </select>
             </label>
 
-            {detailMode ? <div>{!detailEnabled ? <button type="button" onClick={enableDetails} className="text-xs font-bold text-orange-300/75 underline decoration-orange-400/30 underline-offset-4 transition hover:text-orange-300">＋ 詳しい記録を入力（任意）</button> : <>{detailMode === "bar" ? <BarAttemptEditor rows={barHeights} onChange={setBarHeights}/> : detailMode === "combined" ? <CombinedEventEditor discipline={category} results={combinedResults} onChange={setCombinedResults}/> : <CompetitionDetailEditor mode={detailMode} details={competitionDetails} onChange={setCompetitionDetails} unit={unit} needsWind={needsWind}/>}<button type="button" onClick={() => { setDetailEnabled(false); setCompetitionDetails([]); setBarHeights([]); setCombinedResults([]); }} className="mt-2 text-xs font-bold text-white/40">通常の記録だけ入力する</button></>}</div> : null}
+            {detailMode ? <div>{!detailEnabled ? <button type="button" onClick={enableDetails} className="group flex w-full items-center justify-between rounded-xl border border-orange-400/20 bg-orange-500/[0.045] px-4 py-3 text-left transition hover:border-orange-400/45 hover:bg-orange-500/[0.08]"><span><strong className="block text-sm text-orange-300">＋ 詳しい記録を入力</strong><span className="mt-1 block text-xs text-white/40">{detailMode === "attempt" ? "1〜6回目の全試技" : detailMode === "round" ? "予選・準決勝・決勝" : detailMode === "bar" ? "高さごとの1〜3回目" : "混成の各種目と自動得点"}を残せます（任意）</span></span><ChevronRight size={18} className="shrink-0 text-orange-300/60 transition group-hover:translate-x-1"/></button> : <>{detailMode === "bar" ? <BarAttemptEditor rows={barHeights} onChange={setBarHeights}/> : detailMode === "combined" ? <CombinedEventEditor discipline={category} results={combinedResults} onChange={setCombinedResults}/> : <CompetitionDetailEditor mode={detailMode} details={competitionDetails} onChange={setCompetitionDetails} unit={unit} needsWind={needsWind}/>}<button type="button" onClick={() => { setDetailEnabled(false); setCompetitionDetails([]); setBarHeights([]); setCombinedResults([]); }} className="mt-3 text-xs font-bold text-white/40 transition hover:text-white/65">通常の記録だけ入力する</button></>}</div> : null}
 
             {needsWind && !detailEnabled ? <label className="block">
               <span className="text-sm font-bold text-white">風速 {kind === "athletics" ? <span className="text-orange-400">（必須）</span> : <span className="text-white/40">（任意）</span>}</span>
