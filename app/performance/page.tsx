@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, ChevronRight, LoaderCircle, Medal, Save, ScanLine, Trash2, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
-import { competitionDetailMode, eventNamesByKind, isWindAffectedEvent, type PerformanceKind, unitMap } from "@/lib/performance-events";
+import { competitionDetailMode, eventGroupsByKind, eventNamesByKind, isWindAffectedEvent, type PerformanceKind, unitMap } from "@/lib/performance-events";
 import { bestCompetitionDetail, type CompetitionDetailInput } from "@/lib/competition-details";
 import { createVideoPath, formatVideoSize, PERFORMANCE_VIDEO_BUCKET, uploadVideoWithProgress, validateVideo } from "@/lib/performance-awareness";
 import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
@@ -321,12 +321,13 @@ function PerformanceForm() {
                 onChange={(event) => { setCategory(event.target.value); setDetailEnabled(false); setCompetitionDetails([]); setBarHeights([]); setCombinedResults([]); if (!isWindAffectedEvent(event.target.value)) setWindSpeed(""); }}
                 className="mt-3 w-full rounded-xl border border-white/15 bg-[#101216] px-4 py-4 text-white outline-none transition focus:border-orange-500"
               >
-                {eventOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
+                {eventGroupsByKind(kind).map((group) => group.label ? (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.events.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </optgroup>
+                ) : group.events.map((option) => <option key={option} value={option}>{option}</option>))}
               </select>
+              {kind === "unofficial-athletics" ? <span className="mt-2 block text-xs text-emerald-300/70">CONTROL TESTは、ATHLETE SCANとは別に1種目だけでも練習記録として残せます。</span> : null}
             </label>
 
             {detailMode ? <div>{!detailEnabled ? <button type="button" onClick={enableDetails} className="group flex w-full items-center justify-between rounded-xl border border-orange-400/20 bg-orange-500/[0.045] px-4 py-3 text-left transition hover:border-orange-400/45 hover:bg-orange-500/[0.08]"><span><strong className="block text-sm text-orange-300">＋ 詳しい記録を入力</strong><span className="mt-1 block text-xs text-white/40">{detailMode === "attempt" ? "1〜6回目の全試技" : detailMode === "round" ? "予選・準決勝・決勝" : detailMode === "bar" ? "高さごとの1〜3回目" : "混成の各種目と自動得点"}を残せます（任意）</span></span><ChevronRight size={18} className="shrink-0 text-orange-300/60 transition group-hover:translate-x-1"/></button> : <>{detailMode === "bar" ? <BarAttemptEditor rows={barHeights} onChange={setBarHeights}/> : detailMode === "combined" ? <CombinedEventEditor discipline={category} results={combinedResults} onChange={setCombinedResults}/> : <CompetitionDetailEditor mode={detailMode} details={competitionDetails} onChange={setCompetitionDetails} unit={unit} needsWind={needsWind}/>}<button type="button" onClick={() => { setDetailEnabled(false); setCompetitionDetails([]); setBarHeights([]); setCombinedResults([]); }} className="mt-3 text-xs font-bold text-white/40 transition hover:text-white/65">通常の記録だけ入力する</button></>}</div> : null}

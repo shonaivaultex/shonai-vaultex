@@ -17,6 +17,8 @@ export const performanceEvents: PerformanceEvent[] = [
   { name: "砲丸バック投げ", unit: "m", kind: "control-test" },
   { name: "メディシンボールフロント投げ", unit: "m", kind: "control-test" },
   { name: "メディシンボールバック投げ", unit: "m", kind: "control-test" },
+  { name: "3kgメディシンボール フロント投げ", unit: "m", kind: "control-test" },
+  { name: "3kgメディシンボール バック投げ", unit: "m", kind: "control-test" },
   { name: "リバウンドジャンプ", unit: "RJ-index", kind: "control-test" },
   { name: "リバウンドジャンプ（3回）", unit: "RJ-index", kind: "control-test" },
   { name: "リバウンドジャンプ（4回）", unit: "RJ-index", kind: "control-test" },
@@ -24,6 +26,7 @@ export const performanceEvents: PerformanceEvent[] = [
   { name: "300m走", unit: "秒", kind: "control-test" },
   { name: "150m走", unit: "秒", kind: "control-test" },
   { name: "垂直跳", unit: "cm", kind: "control-test" },
+  { name: "CMJ", unit: "cm", kind: "control-test" },
   { name: "ドロップジャンプ", unit: "DJ-index", kind: "control-test" },
   { name: "メディシンボール投げ", unit: "m", kind: "control-test" },
   { name: "ベンチプレス", unit: "kg", kind: "control-test" },
@@ -53,10 +56,37 @@ export const performanceEvents: PerformanceEvent[] = [
   { name: "その他", unit: "", kind: "control-test" },
 ];
 
+export const standaloneControlTestEvents = [
+  "Flying 30m",
+  "立幅跳",
+  "立三段跳",
+  "立五段跳",
+  "3kgメディシンボール フロント投げ",
+  "3kgメディシンボール バック投げ",
+  "砲丸フロント投げ",
+  "砲丸バック投げ",
+  "リバウンドジャンプ",
+  "CMJ",
+  "ドロップジャンプ",
+  "150m走",
+  "300m走",
+] as const;
+
+const namesForStoredKind = (kind: Exclude<PerformanceKind, "unofficial-athletics">) =>
+  performanceEvents.filter((event) => event.kind === kind).map((event) => event.name);
+
+export const eventGroupsByKind = (kind: PerformanceKind) => {
+  if (kind === "unofficial-athletics") {
+    return [
+      { label: "通常の練習種目", events: namesForStoredKind("athletics") },
+      { label: "CONTROL TEST（単発測定）", events: [...standaloneControlTestEvents] },
+    ];
+  }
+  return [{ label: null, events: namesForStoredKind(kind) }];
+};
+
 export const eventNamesByKind = (kind: PerformanceKind) =>
-  performanceEvents
-    .filter((event) => event.kind === (kind === "unofficial-athletics" ? "athletics" : kind))
-    .map((event) => event.name);
+  [...new Set(eventGroupsByKind(kind).flatMap((group) => group.events))];
 
 export const eventKindMap = Object.fromEntries(
   performanceEvents.map((event) => [event.name, event.kind]),
