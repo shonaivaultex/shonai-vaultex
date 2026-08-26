@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useRef, useState } from "react";
-import { Activity, ArrowLeft, Check, ChevronRight, LoaderCircle, Medal, Save, Trash2, Trophy } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, LoaderCircle, Medal, Save, ScanLine, Trash2, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 import { competitionDetailMode, eventNamesByKind, isWindAffectedEvent, type PerformanceKind, unitMap } from "@/lib/performance-events";
 import { bestCompetitionDetail, type CompetitionDetailInput } from "@/lib/competition-details";
@@ -109,9 +109,9 @@ function PerformanceForm() {
       },
       {
         kind: "control-test",
-        title: "コントロールテスト",
-        description: "スプリント・ジャンプ・筋力測定",
-        icon: Activity,
+        title: "VAULTEX ATHLETE SCAN",
+        description: "CONTROL TESTをまとめて測定・記録",
+        icon: ScanLine,
       },
     ] as const;
 

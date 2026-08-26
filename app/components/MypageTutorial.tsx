@@ -24,7 +24,7 @@ const desktopSteps = [
 
 const mobileSteps = [
   { eyebrow: "START HERE", title: "まずホーム画面に追加しよう", body: "VAULTEXをアプリのようにすぐ開けます。予定変更やフィードバックの通知を受け取るためにも、最初にホーム画面への追加をおすすめします。", icon: Smartphone, target: null, install: true },
-  { eyebrow: "MOBILE HOME", title: "ホームは競技生活の総合画面", body: "今日の練習と確認事項を入口に、お知らせ、成長レポート、記録、ランキング、ATHLETE SCANまで確認できます。", icon: Sparkles, target: "mobile-home" },
+  { eyebrow: "MOBILE HOME", title: "ホームは今日の確認に集中", body: "今日の予定と練習、お知らせ、未確認の項目をすぐ確認できます。成長レポートやランキングなどは「その他」にまとめています。", icon: Sparkles, target: "mobile-home" },
   { eyebrow: "CALENDAR", title: "予定と記録はカレンダーへ", body: "マイカレンダーでは自分の予定・日誌を管理できます。全体スケジュールではクラブ予定を確認し、「参加」を押すとマイカレンダーへ反映されます。", icon: CalendarDays, target: "mobile-calendar" },
   { eyebrow: "RECORD", title: "＋から記録を追加", body: "練習記録、本番記録、CONTROL TESTを選んで登録できます。意識・振り返り・動画も一緒に残せます。", icon: Plus, target: "mobile-record" },
   { eyebrow: "CONSULT", title: "相談先を選ぶ", body: "動きを見てほしい時はコーチへ、考えを整理したい時や使い方に迷った時はVAULTEX AIへ相談できます。", icon: Compass, target: "mobile-consult" },
