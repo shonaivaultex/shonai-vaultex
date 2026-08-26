@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { Activity, ArrowLeft, ArrowRight, Bell, Bot, CalendarDays, Check, Compass, Play, Plus, ScanLine, Settings, Share, Smartphone, Sparkles, X } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 
-export const MYPAGE_TUTORIAL_VERSION = 4;
+export const MYPAGE_TUTORIAL_VERSION = 5;
 
 type TutorialRect = { top: number; left: number; right: number; bottom: number; width: number; height: number };
 
-const steps = [
+const desktopSteps = [
   { eyebrow: "START HERE", title: "まずホーム画面に追加しよう", body: "VAULTEXをアプリのようにすぐ開けます。予定変更やフィードバックのプッシュ通知を受け取るためにも、最初にホーム画面への追加をおすすめします。", icon: Smartphone, target: null, install: true },
   { eyebrow: "WELCOME TO SHONAI VAULTEX", title: "マイページを一緒に見てみよう", body: "これから実際の画面を1つずつ照らしながら説明します。いつでも「あとで見る」で閉じられます。", icon: Sparkles, target: null },
   { eyebrow: "STEP 1 / ATHLETE SCAN", title: "身体能力の現在地を確認", body: "CONTROL TESTをまとめて記録すると、身体能力の特徴と変化をATHLETE SCANで振り返れます。初めて測定するときもここから始められます。", icon: ScanLine, target: "athlete-scan" },
@@ -22,6 +22,16 @@ const steps = [
   { eyebrow: "READY", title: "準備完了。まず1つ触ってみよう", body: "最初から全部覚えなくて大丈夫です。分からないことがあればVAULTEX AIに聞けば、いつでも使い方を案内します。", icon: Bot, target: null },
 ] as const;
 
+const mobileSteps = [
+  { eyebrow: "START HERE", title: "まずホーム画面に追加しよう", body: "VAULTEXをアプリのようにすぐ開けます。予定変更やフィードバックの通知を受け取るためにも、最初にホーム画面への追加をおすすめします。", icon: Smartphone, target: null, install: true },
+  { eyebrow: "MOBILE HOME", title: "ホームは競技生活の総合画面", body: "今日の練習と確認事項を入口に、お知らせ、成長レポート、記録、ランキング、ATHLETE SCANまで確認できます。", icon: Sparkles, target: "mobile-home" },
+  { eyebrow: "CALENDAR", title: "予定と記録はカレンダーへ", body: "マイカレンダーでは自分の予定・日誌を管理できます。全体スケジュールではクラブ予定を確認し、「参加」を押すとマイカレンダーへ反映されます。", icon: CalendarDays, target: "mobile-calendar" },
+  { eyebrow: "RECORD", title: "＋から記録を追加", body: "練習記録、本番記録、CONTROL TESTを選んで登録できます。意識・振り返り・動画も一緒に残せます。", icon: Plus, target: "mobile-record" },
+  { eyebrow: "CONSULT", title: "相談先を選ぶ", body: "動きを見てほしい時はコーチへ、考えを整理したい時や使い方に迷った時はVAULTEX AIへ相談できます。", icon: Compass, target: "mobile-consult" },
+  { eyebrow: "OTHER", title: "その他の機能をまとめて確認", body: "成長レポート、ランキング、各種記録、通知設定、マニュアルなどは「その他」から開けます。", icon: Settings, target: "mobile-menu" },
+  { eyebrow: "READY", title: "準備完了。まずホームを見てみよう", body: "最初から全部覚えなくて大丈夫です。分からないことがあればVAULTEX AIがいつでも案内します。", icon: Bot, target: null },
+] as const;
+
 type Props = { autoOpen: boolean; userId: string };
 
 export default function MypageTutorial({ autoOpen, userId }: Props) {
@@ -30,6 +40,7 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [targetRect, setTargetRect] = useState<TutorialRect | null>(null);
+  const [mobile, setMobile] = useState(false);
   const [installState] = useState<"ios" | "android" | "desktop" | "installed">(() => {
     if (typeof window === "undefined") return "desktop";
     const standalone = window.matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
@@ -39,9 +50,18 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
     if (/android/.test(userAgent)) return "android";
     return "desktop";
   });
-  const current = steps[step];
+  const steps = mobile ? mobileSteps : desktopSteps;
+  const current = steps[Math.min(step, steps.length - 1)];
   const Icon = current.icon;
   const last = step === steps.length - 1;
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const update = () => setMobile(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     if (!open || !current.target) {
@@ -99,6 +119,7 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
   const viewportHeight = typeof window === "undefined" ? 800 : window.innerHeight;
   const spotlightRect = current.target ? targetRect : null;
   const cardBelow = spotlightRect ? spotlightRect.bottom + 300 < viewportHeight : false;
+  const cardAbove = spotlightRect ? spotlightRect.top > viewportHeight * 0.62 : false;
 
   return <>
     <button type="button" onClick={replay} className="mt-4 flex w-full items-center justify-between rounded-xl border border-orange-500/25 bg-orange-500/[0.05] px-4 py-3 text-sm text-white/75 transition hover:border-orange-500/50 hover:text-white">
@@ -112,7 +133,7 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
         <div className="fixed inset-x-0 bottom-0 bg-black/85" style={{ top: spotlightRect.bottom }} />
         <div className="pointer-events-none fixed rounded-2xl border-2 border-orange-400 shadow-[0_0_0_4px_rgba(249,115,22,.18),0_0_32px_rgba(249,115,22,.55)]" style={{ top: spotlightRect.top, left: spotlightRect.left, width: spotlightRect.width, height: spotlightRect.height }} />
       </> : <div className="fixed inset-0 bg-black/88 backdrop-blur-sm" />}
-      <div className={`fixed left-1/2 w-[calc(100%-1rem)] max-w-lg -translate-x-1/2 sm:w-[calc(100%-2rem)] ${spotlightRect ? (cardBelow ? "top-auto" : "bottom-2 sm:bottom-4") : "top-1/2 -translate-y-1/2"}`} style={spotlightRect && cardBelow ? { top: Math.max(8, Math.min(spotlightRect.bottom + 16, viewportHeight - 360)) } : undefined}>
+      <div className={`fixed left-1/2 w-[calc(100%-1rem)] max-w-lg -translate-x-1/2 sm:w-[calc(100%-2rem)] ${spotlightRect ? (cardAbove ? "top-2 sm:top-4" : cardBelow ? "top-auto" : "bottom-2 sm:bottom-4") : "top-1/2 -translate-y-1/2"}`} style={spotlightRect && cardBelow && !cardAbove ? { top: Math.max(8, Math.min(spotlightRect.bottom + 16, viewportHeight - 360)) } : undefined}>
         <div className="relative flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-3xl border border-orange-500/45 bg-[#101010] text-white shadow-[0_24px_90px_rgba(0,0,0,.75)] sm:max-h-[calc(100dvh-2rem)]">
           <div className="h-1 bg-white/10"><div className="h-full bg-orange-500 transition-all duration-300" style={{ width: `${((step + 1) / steps.length) * 100}%` }} /></div>
           <button type="button" aria-label="あとで見る" disabled={saving} onClick={dismiss} className="absolute right-4 top-5 rounded-full bg-white/10 p-2 text-white/55 transition hover:text-white disabled:opacity-40"><X size={18} /></button>

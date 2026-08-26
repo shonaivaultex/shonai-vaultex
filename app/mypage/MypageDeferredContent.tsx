@@ -208,9 +208,10 @@ export default async function MypageDeferredContent({
         <Link href="/mypage/control-tests" className="mt-3 flex items-center justify-center gap-1 text-xs font-bold text-white/50 transition hover:text-orange-300">CONTROL TESTの履歴・詳細<ChevronRight size={14}/></Link>
       </section>
     </div>
-    <section className="mt-5 md:hidden" aria-labelledby="mobile-review-menu">
+    <div id="news" className="mt-5 md:hidden"><NewsPanel initialItems={data.newsItems} userId={userId}/></div>
+    <section data-tutorial="mobile-home-dashboard" className="mt-5 md:hidden" aria-labelledby="mobile-review-menu">
       <div className="flex items-end justify-between gap-3 px-1">
-        <div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">REVIEW &amp; RECORDS</p><h2 id="mobile-review-menu" className="mt-1 text-xl font-black">振り返りメニュー</h2></div>
+        <div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">HOME DASHBOARD</p><h2 id="mobile-review-menu" className="mt-1 text-xl font-black">成長・記録・ランキング</h2></div>
         <span className="text-[10px] text-white/30">タップして開く</span>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2.5">
@@ -224,7 +225,6 @@ export default async function MypageDeferredContent({
         <Link href="/mypage/ranking" className="flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#111] px-4 text-sm font-black text-white">ランキング<ChevronRight size={17} className="text-white/25"/></Link>
         <Link href="/mypage/control-tests" className="flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#111] px-4 text-sm font-black text-white">CONTROL TEST<ChevronRight size={17} className="text-white/25"/></Link>
       </div>
-      <div id="news"><NewsPanel initialItems={data.newsItems} userId={userId}/></div>
     </section>
     <div className="mt-7 hidden items-start gap-6 md:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]">
       <MonthlyGrowthReport records={data.growthRecords} personalBests={data.personalBests} currentMonth={currentMonth} previousMonth={previousMonth}/>

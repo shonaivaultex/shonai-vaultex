@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarDays, Users } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 import MyCalendar from "@/app/components/MyCalendar";
@@ -61,6 +61,10 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
         <h1 className="mt-2 text-4xl font-black tracking-[-.04em] sm:text-5xl">自分の競技生活を残す</h1>
         <p className="mt-3 max-w-2xl leading-7 text-white/55">クラブ予定と、学校・自主練習・休養を一つのカレンダーで管理できます。登録した練習記録・意識・動画は、実施日のカレンダーへ自動で反映されます。</p>
       </header>
+      <nav className="mt-6 grid gap-2 sm:grid-cols-2" aria-label="カレンダー切り替え">
+        <div className="rounded-2xl border border-emerald-400/45 bg-emerald-400/10 p-4 text-emerald-200"><span className="flex items-center gap-2 text-sm font-black"><CalendarDays size={18}/>マイカレンダー</span><span className="mt-1 block text-xs text-white/45">自分の予定・練習日誌・目標</span></div>
+        <Link href="/mypage/schedules" className="rounded-2xl border border-white/10 bg-[#111] p-4 text-white transition hover:border-orange-400/45"><span className="flex items-center gap-2 text-sm font-black"><Users size={18} className="text-orange-400"/>全体スケジュール</span><span className="mt-1 block text-xs text-white/45">クラブ予定・大会・出欠を確認</span></Link>
+      </nav>
       <MyCalendar userId={user.id} initialEntries={enrichedEntries} schedules={schedules ?? []} activeScheduleIds={[...activeScheduleIds]} records={enrichedRecords} scans={(scans ?? []).map((scan) => ({ id: scan.id, scan_number: scan.scan_number, measured_on: scan.measured_on, measurements: scan.control_test_measurements ?? [] }))} periods={periods} initialGoal={activeGoal} goalHistory={goalHistory ?? []} initialSelectedDate={initialSelectedDate} initialPeriodId={initialPeriodId} initialPeriodDate={initialPeriodDate}/>
     </div>
   </main>;
