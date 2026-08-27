@@ -76,6 +76,8 @@ export default async function MyPage() {
   const attendanceByScheduleId = new Map((attendingSchedules ?? []).map((attendance) => [attendance.schedule_id, attendance.status]));
   const answeredScheduleIds = new Set((attendingSchedules ?? []).map((attendance) => attendance.schedule_id));
   const attendingScheduleIds = new Set((attendingSchedules ?? []).filter((attendance) => attendance.status === "attending").map((attendance) => attendance.schedule_id));
+  const isVisibleClubSchedule = (schedule: ScheduleItem) =>
+    Boolean(coachRole) || schedule.audience === "all" || schedule.program_class === player.program_class;
   const unansweredScheduleCount = ((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && !answeredScheduleIds.has(schedule.id)).length;
   const personalSchedules: ScheduleItem[] = (personalCalendarEntries ?? []).map((entry) => ({ id: -entry.id, title: entry.title, details: entry.journal, location: entry.location, starts_at: entry.starts_at ?? `${entry.entry_date}T00:00:00+09:00`, ends_at: entry.ends_at, all_day: entry.all_day, schedule_type: entry.entry_type, audience: "all", program_class: null, registration_enabled: false, registration_opens_at: null, registration_deadline: null, personal: true }));
   const nextSchedules = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => appliedCompetitionIds.has(schedule.id) || attendingScheduleIds.has(schedule.id)), ...personalSchedules])
@@ -86,7 +88,7 @@ export default async function MyPage() {
   const weekDateKeys = Array.from({ length: 7 }, (_, index) => addTokyoDays(todayKey, index));
   const weekMyCalendarSchedule = weekDateKeys.map((dateKey) => {
     const date = new Date(`${dateKey}T12:00:00+09:00`);
-    const items = [...((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && occursOnDate(schedule, dateKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && occursOnDate(schedule, dateKey))]
+    const items = [...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && occursOnDate(schedule, dateKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && occursOnDate(schedule, dateKey))]
       .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
     return {
       dateKey,
@@ -95,10 +97,12 @@ export default async function MyPage() {
       items,
     };
   });
-  const weekMyCalendarItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey))), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey)))]).sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
-  const todayTrainingItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => (schedule.audience === "all" || schedule.program_class === player.program_class) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && occursOnDate(schedule, todayKey))])
+  const weekMyCalendarItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey))), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey)))]).sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+  const todayTrainingItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && occursOnDate(schedule, todayKey))])
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
-  const visibleClubSchedules = ((schedules ?? []) as ScheduleItem[]).filter((schedule) => schedule.audience === "all" || schedule.program_class === player.program_class);
+  // The dashboard's "CLUB SCHEDULE" is an overview. Coaches need to see every
+  // class they can manage, just as they do on the full schedule calendar.
+  const visibleClubSchedules = ((schedules ?? []) as ScheduleItem[]).filter(isVisibleClubSchedule);
   const weekSchedule = weekDateKeys.map((dateKey) => {
     const date = new Date(`${dateKey}T12:00:00+09:00`);
     return {
