@@ -143,6 +143,26 @@ type CalendarGoal = {
   reflection?: string | null;
   next_action?: string | null;
 };
+type CalendarInputHistory = {
+  id: number;
+  user_id: string;
+  title: string;
+  entry_date: string;
+  all_day: boolean;
+  start_time: string | null;
+  end_time: string | null;
+  entry_type: string;
+  location: string | null;
+  journal: string | null;
+  awareness_categories: string[];
+  record_kind: string;
+  record_category: string | null;
+  record_value: number | null;
+  wind_speed: number | null;
+  record_unit: string | null;
+  color: string;
+  updated_at: string;
+};
 
 const colors: Record<string, { dot: string; border: string; label: string }> = {
   orange: {
@@ -243,6 +263,8 @@ export default function MyCalendar({
   periods,
   initialGoal,
   goalHistory,
+  initialInputHistory,
+  initialOpen,
   initialSelectedDate,
   initialPeriodId,
   initialPeriodDate,
@@ -256,6 +278,8 @@ export default function MyCalendar({
   periods: SchedulePeriod[];
   initialGoal: CalendarGoal | null;
   goalHistory: CalendarGoal[];
+  initialInputHistory: CalendarInputHistory[];
+  initialOpen?: boolean;
   initialSelectedDate?: string;
   initialPeriodId?: number | null;
   initialPeriodDate?: string;
@@ -276,7 +300,7 @@ export default function MyCalendar({
   const [linkedSchedule, setLinkedSchedule] = useState<ClubSchedule | null>(
     null,
   );
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(initialOpen));
   const [performanceRecords, setPerformanceRecords] = useState(records);
   const [goal, setGoal] = useState<CalendarGoal | null>(initialGoal);
   const [goalOpen, setGoalOpen] = useState(false);
@@ -1187,6 +1211,7 @@ export default function MyCalendar({
           schedule={linkedSchedule}
           records={performanceRecords}
           calendarItems={displayItems}
+          inputHistory={initialInputHistory}
           onClose={close}
           onSaved={(entry, performance) => {
             setEntries((items) => [
@@ -2122,6 +2147,7 @@ function EntryEditor({
   schedule,
   records,
   calendarItems,
+  inputHistory,
   onClose,
   onSaved,
 }: {
@@ -2131,6 +2157,7 @@ function EntryEditor({
   schedule: ClubSchedule | null;
   records: PerformanceRecord[];
   calendarItems: DisplayItem[];
+  inputHistory: CalendarInputHistory[];
   onClose: () => void;
   onSaved: (entry: Entry, performance?: PerformanceRecord) => void;
 }) {
@@ -2193,6 +2220,8 @@ function EntryEditor({
   );
   const initialDateValue = new Date(`${initialDate}T00:00:00`);
   const [calendarOpen, setCalendarOpen] = useState(!schedule);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [history, setHistory] = useState(inputHistory);
   const [pickerMonth, setPickerMonth] = useState(
     new Date(initialDateValue.getFullYear(), initialDateValue.getMonth(), 1),
   );
@@ -2222,6 +2251,35 @@ function EntryEditor({
     setEntryDate(key);
     const selected = new Date(`${key}T00:00:00`);
     setPickerMonth(new Date(selected.getFullYear(), selected.getMonth(), 1));
+  }
+  function applyHistory(item: CalendarInputHistory) {
+    setTitle(item.title);
+    selectEntryDate(item.entry_date);
+    setAllDay(item.all_day);
+    setStartTime(item.start_time?.slice(0, 5) ?? "");
+    setEndTime(item.end_time?.slice(0, 5) ?? "");
+    setType(item.entry_type);
+    setLocation(item.location ?? "");
+    setJournal(item.journal ?? "");
+    setTags(item.awareness_categories ?? []);
+    setRecordKind(item.record_kind === "athletics" ? "athletics" : "unofficial-athletics");
+    setRecordCategory(item.record_category ?? "");
+    setRecordValue(item.record_value === null ? "" : String(item.record_value));
+    setWindSpeed(item.wind_speed === null ? "" : String(item.wind_speed));
+    setRecordUnit(item.record_unit ?? (item.record_category ? unitMap[item.record_category] ?? "" : ""));
+    setColor(item.color in colors ? item.color : "sky");
+    setPerformanceId("");
+    setHistoryOpen(false);
+  }
+  async function deleteHistory(id: number) {
+    const supabase = createClient();
+    const { error: deleteError } = await supabase
+      .from("personal_calendar_input_history")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId);
+    if (deleteError) return setError("入力履歴を削除できませんでした。");
+    setHistory((items) => items.filter((item) => item.id !== id));
   }
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -2338,6 +2396,29 @@ function EntryEditor({
             .upsert(row, { onConflict: "user_id,schedule_id" });
       const { data, error: saveError } = await query.select("*").single();
       if (saveError) throw saveError;
+      if (!schedule) {
+        const { error: historyError } = await supabase
+          .from("personal_calendar_input_history")
+          .insert({
+            user_id: userId,
+            title: title.trim(),
+            entry_date: entryDate,
+            all_day: allDay,
+            start_time: allDay ? null : startTime || null,
+            end_time: allDay ? null : endTime || null,
+            entry_type: type,
+            location: location.trim() || null,
+            journal: journal.trim() || null,
+            awareness_categories: tags,
+            record_kind: recordKind,
+            record_category: recordCategory || null,
+            record_value: numericValue,
+            wind_speed: numericWind,
+            record_unit: numericValue !== null ? recordUnit.trim() || null : null,
+            color,
+          });
+        if (historyError) console.warn("個人予定の入力履歴を保存できませんでした。", historyError.message);
+      }
       if (
         (removeVideo || video) &&
         entry?.video_path &&
@@ -2402,6 +2483,29 @@ function EntryEditor({
             <X />
           </button>
         </div>
+        {!schedule && (
+          <div className="mt-5 overflow-hidden rounded-2xl border border-emerald-400/20 bg-emerald-400/[.04]">
+            <button
+              type="button"
+              onClick={() => setHistoryOpen((value) => !value)}
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+            >
+              <span><strong className="block text-sm text-emerald-200">入力履歴からすぐ追加</strong><span className="mt-0.5 block text-[10px] text-white/40">タイトル・日付・時刻・場所などをまとめて復元</span></span>
+              <span className="flex items-center gap-2 text-xs font-black text-emerald-300">{history.length}件<ChevronRight size={17} className={`transition ${historyOpen ? "rotate-90" : ""}`}/></span>
+            </button>
+            {historyOpen ? <div className="max-h-72 space-y-2 overflow-y-auto border-t border-white/10 p-3">
+              {history.length ? history.map((item) => <div key={item.id} className="flex items-center gap-2 rounded-xl border border-white/[.08] bg-black/25 p-3">
+                <button type="button" onClick={() => applyHistory(item)} className="min-w-0 flex-1 text-left">
+                  <strong className="block truncate text-sm">{item.title}</strong>
+                  <span className="mt-1 block truncate text-[10px] text-white/40">{item.entry_date.replaceAll("-", "/")}{item.all_day ? " ・ 終日" : item.start_time ? ` ・ ${item.start_time.slice(0, 5)}${item.end_time ? `〜${item.end_time.slice(0, 5)}` : ""}` : ""}{item.location ? ` ・ ${item.location}` : ""}</span>
+                </button>
+                <button type="button" onClick={() => applyHistory(item)} className="shrink-0 rounded-lg bg-emerald-400/10 px-3 py-2 text-[10px] font-black text-emerald-200">使う</button>
+                <button type="button" aria-label={`${item.title}の入力履歴を削除`} onClick={() => deleteHistory(item.id)} className="shrink-0 rounded-lg p-2 text-rose-300 transition hover:bg-rose-400/10"><Trash2 size={16}/></button>
+              </div>) : <p className="py-5 text-center text-xs text-white/35">保存済みの入力履歴はありません</p>}
+              <p className="px-1 pt-1 text-[10px] leading-5 text-white/30">履歴を削除しても、登録済みの予定は削除されません。</p>
+            </div> : null}
+          </div>
+        )}
         {!schedule && (
           <div className="mt-5 rounded-2xl border border-white/10 bg-black/20">
             <button

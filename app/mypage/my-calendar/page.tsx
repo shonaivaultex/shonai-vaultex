@@ -6,13 +6,13 @@ import MyCalendar from "@/app/components/MyCalendar";
 import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
 import type { SchedulePeriod } from "@/lib/schedule-periods";
 
-export default async function MyCalendarPage({ searchParams }: { searchParams: Promise<{ period?: string; periodDate?: string; date?: string }> }) {
+export default async function MyCalendarPage({ searchParams }: { searchParams: Promise<{ period?: string; periodDate?: string; date?: string; new?: string }> }) {
   const query = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/mypage/my-calendar");
 
-  const [{ data: entries }, { data: attendance }, { data: applications }, { data: records }, { data: scans }, { data: periodRows }, { data: activeGoal }, { data: goalHistory }] = await Promise.all([
+  const [{ data: entries }, { data: attendance }, { data: applications }, { data: records }, { data: scans }, { data: periodRows }, { data: activeGoal }, { data: goalHistory }, { data: inputHistory }] = await Promise.all([
     supabase.from("personal_calendar_entries").select("*").eq("user_id", user.id).order("entry_date"),
     supabase.from("schedule_attendance").select("schedule_id,status").eq("user_id", user.id),
     supabase.from("competition_applications").select("schedule_id,status").eq("user_id", user.id),
@@ -21,6 +21,7 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
     supabase.from("schedule_periods").select("*").eq("author_id", user.id).order("starts_on"),
     supabase.from("personal_calendar_goals").select("*").eq("user_id", user.id).eq("status", "active").maybeSingle(),
     supabase.from("personal_calendar_goals").select("*").eq("user_id", user.id).neq("status", "active").order("target_date", { ascending: false }).limit(50),
+    supabase.from("personal_calendar_input_history").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(30),
   ]);
 
   const activeScheduleIds = new Set<number>();
@@ -65,7 +66,7 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
         <div className="rounded-2xl border border-emerald-400/45 bg-emerald-400/10 p-4 text-emerald-200"><span className="flex items-center gap-2 text-sm font-black"><CalendarDays size={18}/>マイカレンダー</span><span className="mt-1 block text-xs text-white/45">自分の予定・練習日誌・目標</span></div>
         <Link href="/mypage/schedules" className="rounded-2xl border border-white/10 bg-[#111] p-4 text-white transition hover:border-orange-400/45"><span className="flex items-center gap-2 text-sm font-black"><Users size={18} className="text-orange-400"/>全体スケジュール</span><span className="mt-1 block text-xs text-white/45">クラブ予定・大会・出欠を確認</span></Link>
       </nav>
-      <MyCalendar userId={user.id} initialEntries={enrichedEntries} schedules={schedules ?? []} activeScheduleIds={[...activeScheduleIds]} records={enrichedRecords} scans={(scans ?? []).map((scan) => ({ id: scan.id, scan_number: scan.scan_number, measured_on: scan.measured_on, measurements: scan.control_test_measurements ?? [] }))} periods={periods} initialGoal={activeGoal} goalHistory={goalHistory ?? []} initialSelectedDate={initialSelectedDate} initialPeriodId={initialPeriodId} initialPeriodDate={initialPeriodDate}/>
+      <MyCalendar userId={user.id} initialEntries={enrichedEntries} schedules={schedules ?? []} activeScheduleIds={[...activeScheduleIds]} records={enrichedRecords} scans={(scans ?? []).map((scan) => ({ id: scan.id, scan_number: scan.scan_number, measured_on: scan.measured_on, measurements: scan.control_test_measurements ?? [] }))} periods={periods} initialGoal={activeGoal} goalHistory={goalHistory ?? []} initialInputHistory={inputHistory ?? []} initialOpen={query.new === "1"} initialSelectedDate={initialSelectedDate} initialPeriodId={initialPeriodId} initialPeriodDate={initialPeriodDate}/>
     </div>
   </main>;
 }
