@@ -7,6 +7,7 @@ import LogoutButton from "@/app/components/LogoutButton";
 import { type ScheduleItem } from "@/app/components/SchedulePanel";
 import MypageSettings from "@/app/components/MypageSettings";
 import MypageTutorial, { MYPAGE_TUTORIAL_VERSION } from "@/app/components/MypageTutorial";
+import DailyCheckin, { type DailyCheckinValue } from "@/app/components/DailyCheckin";
 import MypageDeferredContent, { LatestNewsSummary, loadMypageDeferredData, MypageDeferredSkeleton, MypageStats, MypageStatsSkeleton } from "./MypageDeferredContent";
 
 function japanMonthKeys() {
@@ -64,8 +65,9 @@ export default async function MyPage() {
   const personalCalendarPromise = Promise.resolve(supabase.from("personal_calendar_entries").select("id,entry_date,title,location,journal,entry_type,starts_at,ends_at,all_day").eq("user_id", userId).is("schedule_id", null).gte("entry_date", todayKey).order("entry_date").limit(20));
   const todayRecordsPromise = Promise.resolve(supabase.from("performance_records").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("date", todayKey));
   const activeGoalPromise = Promise.resolve(supabase.from("personal_calendar_goals").select("title,target_date").eq("user_id", userId).eq("status", "active").maybeSingle());
+  const dailyCheckinPromise = Promise.resolve(supabase.from("daily_checkins").select("condition_score,fatigue_score,mood_score,note").eq("user_id", userId).eq("checkin_date", todayKey).maybeSingle());
   const deferredDataPromise = loadMypageDeferredData({ userId, gender: playerPromise.then(({ data }) => data?.gender ?? null), currentMonth, previousMonthStart });
-  const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }, { data: attendingSchedules }, { data: personalCalendarEntries }, { count: todayRecordCount }, { data: activeGoal }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise, attendingSchedulesPromise, personalCalendarPromise, todayRecordsPromise, activeGoalPromise]);
+  const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }, { data: attendingSchedules }, { data: personalCalendarEntries }, { count: todayRecordCount }, { data: activeGoal }, { data: dailyCheckin }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise, attendingSchedulesPromise, personalCalendarPromise, todayRecordsPromise, activeGoalPromise, dailyCheckinPromise]);
 
   if (!player) {
     redirect("/profile/create");
@@ -168,6 +170,7 @@ export default async function MyPage() {
                   })}
                 </div>
               </Link>
+              <div className="mt-4"><DailyCheckin userId={userId} date={todayKey} initialValue={(dailyCheckin as DailyCheckinValue | null) ?? null}/></div>
               <div className="mt-5 rounded-2xl border border-emerald-400/15 bg-emerald-400/[.04] p-4">
                 <div className="flex items-center justify-between gap-3"><div><p className="text-[9px] font-black tracking-[.18em] text-emerald-300">TODAY&apos;S TRAINING</p><strong className="mt-1 block text-sm">今日の練習</strong></div><span className="rounded-full bg-white/[.06] px-2.5 py-1 text-[10px] font-black text-white/45">{todayTrainingItems.length}件</span></div>
                 {todayTrainingItems.length ? <div className="mt-3 space-y-2">{todayTrainingItems.slice(0, 3).map((item) => { const attendanceStatus = item.personal ? "個人予定" : attendanceByScheduleId.get(item.id) === "attending" ? "参加" : attendanceByScheduleId.get(item.id) === "undecided" ? "未定" : "出欠未回答"; return <Link key={`${item.personal ? "personal" : "club"}-${item.id}`} href={`/mypage/my-calendar?date=${todayKey}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-white/[.07] bg-black/20 px-3 py-2.5 transition hover:border-emerald-400/30"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400"/><span className="min-w-0 flex-1"><strong className="block truncate text-sm">{item.title}</strong><span className="mt-0.5 block truncate text-[10px] text-white/40">{todayScheduleTime(item)}{item.location ? ` ・ ${item.location}` : ""}</span></span><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black ${attendanceStatus === "参加" ? "bg-emerald-400/15 text-emerald-300" : attendanceStatus === "出欠未回答" ? "bg-orange-400/15 text-orange-300" : "bg-white/[.07] text-white/40"}`}>{attendanceStatus}</span></Link>; })}{todayTrainingItems.length > 3 ? <Link href={`/mypage/my-calendar?date=${todayKey}`} className="block pt-1 text-center text-[10px] font-black text-emerald-300">ほか{todayTrainingItems.length - 3}件を表示</Link> : null}</div> : <Link href={`/mypage/my-calendar?date=${todayKey}`} className="mt-3 flex items-center justify-between rounded-xl border border-dashed border-white/10 px-3 py-3 text-xs text-white/40"><span>今日の予定はありません</span><span className="inline-flex items-center gap-1 font-black text-emerald-300"><Plus size={14}/>個人練習を追加</span></Link>}
