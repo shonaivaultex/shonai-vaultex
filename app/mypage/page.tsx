@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
-import { Activity, ArrowUpRight, CalendarDays, ChevronRight, Medal, MessageCircle, NotebookPen, Plus, Target, Trophy, Video } from "lucide-react";
+import { Activity, ArrowUpRight, ChevronRight, Medal, MessageCircle, NotebookPen, Plus, Target, Trophy, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { type ScheduleItem } from "@/app/components/SchedulePanel";
-import MypageSettings from "@/app/components/MypageSettings";
 import MypageTutorial, { MYPAGE_TUTORIAL_VERSION } from "@/app/components/MypageTutorial";
 import DailyCheckin, { type DailyCheckinValue } from "@/app/components/DailyCheckin";
 import MypageDeferredContent, { LatestNewsSummary, loadMypageDeferredData, MypageDeferredSkeleton, MypageStats, MypageStatsSkeleton } from "./MypageDeferredContent";
@@ -129,7 +128,7 @@ export default async function MyPage() {
             <div className="mt-12 hidden lg:block">
               <div className="flex items-end justify-between gap-4">
                 <div><p className="text-[10px] font-black tracking-[.2em] text-orange-300">CLUB SCHEDULE</p><strong className="mt-1 block text-sm">これから1週間</strong></div>
-                <Link href="/mypage/schedules" className="inline-flex items-center gap-1 text-[10px] font-black text-white/35 transition hover:text-white">全体を見る<ChevronRight size={13}/></Link>
+                <Link data-tutorial="all-schedules" href="/mypage/schedules" className="inline-flex items-center gap-1 text-[10px] font-black text-white/35 transition hover:text-white">全体を見る<ChevronRight size={13}/></Link>
               </div>
               <div className="mt-4 grid grid-cols-7 gap-1.5">
                 {weekSchedule.map((date) => {
@@ -187,9 +186,8 @@ export default async function MyPage() {
       </section>
 
       <section className="mt-5 hidden sm:block">
-        <div className="grid gap-2.5 sm:grid-cols-3">
+        <div className="grid gap-2.5 sm:grid-cols-2">
           <Link data-tutorial="video-action" href="/mypage/video-feedback" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-sky-400/50"><span className="flex items-center gap-3"><Video size={21} className="text-sky-400"/><span>動画を送る</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
-          <Link data-tutorial="all-schedules" href="/mypage/schedules" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-orange-400/50"><span className="flex items-center gap-3"><CalendarDays size={21} className="text-orange-400"/><span>全体スケジュール</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
           <Link data-tutorial="ai-navigator" href="/mypage/ai-navigator" className="group flex min-h-20 items-center justify-between rounded-2xl border border-white/10 bg-[#131313] px-5 font-black text-white transition hover:border-orange-400/50"><span className="flex items-center gap-3"><MessageCircle size={21} className="text-orange-400"/><span>AIに相談</span></span><ChevronRight size={18} className="text-white/25 transition group-hover:translate-x-1"/></Link>
         </div>
       </section>
@@ -214,14 +212,6 @@ export default async function MyPage() {
           <ChevronRight className="text-orange-400 transition group-hover:translate-x-1" aria-hidden="true" />
         </Link>
       </div>
-      <Link href="/mypage/ranking" className="group mt-3 flex items-center justify-between rounded-2xl border border-orange-400/25 bg-orange-400/[.055] px-5 py-4 text-white transition hover:border-orange-400/55 hover:bg-orange-400/[.09]">
-        <span className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-500/15 text-orange-300"><Trophy size={20}/></span><span className="min-w-0"><strong className="block">VAULTEXランキング</strong><span className="mt-0.5 block truncate text-xs text-white/45">男女別・全体／クラス別で本番記録の現在地を見る</span></span></span>
-        <ChevronRight size={18} className="shrink-0 text-orange-300 transition group-hover:translate-x-1"/>
-      </Link>
-      </div>
-
-      <div id="settings" className="scroll-mt-24">
-        <MypageSettings />
       </div>
 
       <div
