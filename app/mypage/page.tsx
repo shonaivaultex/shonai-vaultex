@@ -56,7 +56,7 @@ export default async function MyPage() {
   const todayKey = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
   const todayStart = new Date(`${todayKey}T00:00:00+09:00`).toISOString();
 
-  const playerPromise = Promise.resolve(supabase.from("players").select("*").eq("user_id", userId).single());
+  const playerPromise = Promise.resolve(supabase.from("players").select("name,event,grade,program_class,gender,mypage_tutorial_version").eq("user_id", userId).single());
   const coachRolePromise = Promise.resolve(supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "coach").maybeSingle());
   const schedulesPromise = Promise.resolve(supabase.from("schedules").select("id, title, details, location, starts_at, ends_at, all_day, training_phase, schedule_type, audience, program_class, registration_enabled, registration_opens_at, registration_deadline").or(`starts_at.gte.${todayStart},ends_at.gte.${todayStart}`).order("starts_at").limit(30));
   const competitionApplicationsPromise = Promise.resolve(supabase.from("competition_applications").select("schedule_id").eq("user_id", userId).eq("status", "submitted"));

@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, ChevronDown, Flag, Play } from "lucide-react";
+import { ArrowLeft, ChevronDown, Flag } from "lucide-react";
 import CoachFeedbackForm from "@/app/components/CoachFeedbackForm";
 import CoachFeedbackActions from "@/app/components/CoachFeedbackActions";
 import CoachPerformanceRecordDelete from "@/app/components/CoachPerformanceRecordDelete";
 import { createClient } from "@/lib/supabase-server";
-import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
 import { performanceEvents, unitMap } from "@/lib/performance-events";
+import LazyPerformanceVideo from "@/app/components/LazyPerformanceVideo";
 
 export default async function CoachAthletePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ request?: string }> }) {
   const athleteId = (await params).id;
@@ -24,15 +24,17 @@ export default async function CoachAthletePage({ params, searchParams }: { param
   ]);
   if (error) notFound();
   const recordIds = (records ?? []).map((record) => record.id);
-  const { data: requests } = recordIds.length ? await supabase.from("feedback_requests").select("id, record_id, request_type, message, priority, created_at").in("record_id", recordIds).eq("status", "pending") : { data: [] };
+  const [{ data: requests }, { data: feedback }] = recordIds.length ? await Promise.all([
+    supabase.from("feedback_requests").select("id, record_id, request_type, message, priority, created_at").in("record_id", recordIds).eq("status", "pending"),
+    supabase.from("coach_feedback").select("id, record_id, body, created_at, coach_id").in("record_id", recordIds).order("created_at", { ascending: false }),
+  ]) : [{ data: [] }, { data: [] }];
   const requestByRecord = new Map((requests ?? []).map((item) => [item.record_id, item]));
   const requestLabels: Record<string, string> = { video: "動画を見てほしい", movement: "動作について", awareness: "意識の方向性", improvement: "次回の改善点", other: "その他" };
   const requestMode = Number.isInteger(focusRecordId) && focusRecordId > 0 && requestByRecord.has(focusRecordId);
-  const { data: feedback } = recordIds.length ? await supabase.from("coach_feedback").select("id, record_id, body, created_at, coach_id").in("record_id", recordIds).order("created_at", { ascending: false }) : { data: [] };
   const feedbackByRecord = (feedback ?? []).reduce<Record<number, typeof feedback>>((groups, item) => { (groups[item.record_id] ??= []).push(item); return groups; }, {});
   if (requestMode) Object.keys(feedbackByRecord).forEach((key) => delete feedbackByRecord[Number(key)]);
   const visibleRecords = requestMode ? (records ?? []).filter((record) => record.id === focusRecordId) : (records ?? []);
-  const enriched = await Promise.all(visibleRecords.map(async (record) => { if (!record.video_path) return { ...record, video_url: null }; const { data } = await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).createSignedUrl(record.video_path, 3600); return { ...record, video_url: data?.signedUrl ?? null }; }));
+  const enriched = visibleRecords.map((record) => ({ ...record, video_url: null }));
   const eventOrder = new Map(performanceEvents.map((event, index) => [event.name, index]));
   const recordsByCategory = enriched.reduce<Record<string, typeof enriched>>((groups, record) => {
     (groups[record.category] ??= []).push(record);
@@ -49,7 +51,7 @@ export default async function CoachAthletePage({ params, searchParams }: { param
       {request && <div className="mb-4 rounded-xl border border-sky-500/30 bg-sky-500/[0.08] p-4"><div className="flex items-center justify-between gap-2"><span className="text-xs font-black text-sky-300">フィードバック依頼：{requestLabels[request.request_type]}</span>{request.priority === "urgent" && <span className="rounded-full bg-red-500/15 px-2 py-1 text-[10px] font-bold text-red-300">大会前・優先</span>}</div>{request.message && <p className="mt-2 whitespace-pre-wrap text-sm text-white/75">{request.message}</p>}</div>}
       <div className="flex items-start justify-between gap-4"><div><span className="text-xs font-bold text-orange-400">{record.category}</span><strong className="mt-2 block text-3xl">{record.value}<span className="ml-1 text-sm text-white/50">{unitMap[record.category] ?? ""}</span></strong><span className="mt-1 block text-xs text-white/40">{record.date}</span></div>{record.awareness_category && <span className="rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-300">{record.awareness_category}</span>}</div>
       {record.awareness_note && <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-white/65">{record.awareness_note}</p>}
-      {record.video_url && <details className="mt-4" open={focusRecordId === record.id && request?.request_type === "video"}><summary className="cursor-pointer text-sm font-bold text-orange-400"><Play className="mr-2 inline" size={15} />動画を見る</summary><video controls playsInline className="mt-3 max-h-[65vh] w-full rounded-xl bg-black object-contain" src={record.video_url} /></details>}
+      {record.video_path ? <LazyPerformanceVideo videoPath={record.video_path} /> : null}
       {record.entry_source === "coach" && <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-4"><span className="text-[11px] text-white/35">コーチ入力の記録</span><CoachPerformanceRecordDelete recordId={record.id} /></div>}
       {(feedbackByRecord[record.id] ?? []).map((item) => <div key={item.id} className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] p-4"><span className="text-xs font-bold text-emerald-300">コーチフィードバック</span><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-white/75">{item.body}</p><span className="mt-2 block text-xs text-white/30">{new Date(item.created_at).toLocaleString("ja-JP")}</span>{item.coach_id === user.id && <CoachFeedbackActions feedbackId={item.id} initialBody={item.body} />}</div>)}
       <CoachFeedbackForm recordId={record.id} requestId={request?.id ?? null} />

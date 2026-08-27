@@ -11,7 +11,6 @@ import {
   Link2,
   MessageCircleQuestion,
   Pencil,
-  Play,
   Plus,
   Target,
   Trash2,
@@ -41,6 +40,7 @@ import FeedbackRequestButton from "@/app/components/FeedbackRequestButton";
 import SchedulePeriodManager from "@/app/components/SchedulePeriodManager";
 import { mergePerformanceFields } from "@/lib/performance-record-merge";
 import type { AdvancedPerformanceDetails } from "@/lib/advanced-performance-details";
+import LazyPerformanceVideo from "@/app/components/LazyPerformanceVideo";
 
 type Entry = {
   id: number;
@@ -1427,6 +1427,7 @@ function DailyItemCard({
   const tags =
     record?.awareness_categories ?? item.entry?.awareness_categories ?? [];
   const videoUrl = record?.video_url ?? item.entry?.video_url ?? null;
+  const videoPath = record?.video_path ?? item.entry?.video_path ?? null;
   const label = scan ? "CONTROL TEST" : record
     ? record.record_kind === "athletics"
       ? "本番記録"
@@ -1657,21 +1658,7 @@ function DailyItemCard({
           パフォーマンス記録と連携
         </Link>
       )}
-      {videoUrl && (
-        <details className="mt-3">
-          <summary className="cursor-pointer text-xs font-black text-orange-300">
-            <Play size={13} className="mr-1 inline" />
-            動画を見る
-          </summary>
-          <video
-            controls
-            playsInline
-            preload="metadata"
-            src={videoUrl}
-            className="mt-3 max-h-[50vh] w-full rounded-xl bg-black object-contain"
-          />
-        </details>
-      )}
+      {videoPath ? <LazyPerformanceVideo videoPath={videoPath} initialUrl={videoUrl} /> : null}
       {!record && !scan ? (
         <Link
           href={`/mypage/video-feedback?event=${encodeURIComponent(item.title)}&message=${encodeURIComponent(`「${item.title}」について相談したいです。\n今の感覚・状況：`)}`}

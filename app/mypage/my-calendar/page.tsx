@@ -3,25 +3,25 @@ import { ArrowLeft, CalendarDays, Users } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 import MyCalendar from "@/app/components/MyCalendar";
-import { PERFORMANCE_VIDEO_BUCKET } from "@/lib/performance-awareness";
 import type { SchedulePeriod } from "@/lib/schedule-periods";
 
 export default async function MyCalendarPage({ searchParams }: { searchParams: Promise<{ period?: string; periodDate?: string; date?: string; new?: string }> }) {
   const query = await searchParams;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/mypage/my-calendar");
+  const { data: authData } = await supabase.auth.getClaims();
+  const userId = authData?.claims.sub;
+  if (!userId) redirect("/login?next=/mypage/my-calendar");
 
   const [{ data: entries }, { data: attendance }, { data: applications }, { data: records }, { data: scans }, { data: periodRows }, { data: activeGoal }, { data: goalHistory }, { data: inputHistory }] = await Promise.all([
-    supabase.from("personal_calendar_entries").select("*").eq("user_id", user.id).order("entry_date"),
-    supabase.from("schedule_attendance").select("schedule_id,status").eq("user_id", user.id),
-    supabase.from("competition_applications").select("schedule_id,status").eq("user_id", user.id),
-    supabase.from("performance_records").select("id,category,value,wind_speed,date,record_kind,awareness_categories,awareness_note,video_path,advanced_details,performance_record_details(id,detail_type,sequence_number,round_name,value,wind_speed,place,status)").eq("user_id", user.id).order("date", { ascending: false }).limit(500),
-    supabase.from("control_test_scans").select("id,scan_number,measured_on,control_test_measurements(test_code,primary_value,performance_record_id)").eq("user_id", user.id).eq("status", "complete").order("measured_on", { ascending: false }).limit(100),
-    supabase.from("schedule_periods").select("*").eq("author_id", user.id).order("starts_on"),
-    supabase.from("personal_calendar_goals").select("*").eq("user_id", user.id).eq("status", "active").maybeSingle(),
-    supabase.from("personal_calendar_goals").select("*").eq("user_id", user.id).neq("status", "active").order("target_date", { ascending: false }).limit(50),
-    supabase.from("personal_calendar_input_history").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(30),
+    supabase.from("personal_calendar_entries").select("*").eq("user_id", userId).order("entry_date"),
+    supabase.from("schedule_attendance").select("schedule_id,status").eq("user_id", userId),
+    supabase.from("competition_applications").select("schedule_id,status").eq("user_id", userId),
+    supabase.from("performance_records").select("id,category,value,wind_speed,date,record_kind,awareness_categories,awareness_note,video_path,advanced_details,performance_record_details(id,detail_type,sequence_number,round_name,value,wind_speed,place,status)").eq("user_id", userId).order("date", { ascending: false }).limit(500),
+    supabase.from("control_test_scans").select("id,scan_number,measured_on,control_test_measurements(test_code,primary_value,performance_record_id)").eq("user_id", userId).eq("status", "complete").order("measured_on", { ascending: false }).limit(100),
+    supabase.from("schedule_periods").select("*").eq("author_id", userId).order("starts_on"),
+    supabase.from("personal_calendar_goals").select("*").eq("user_id", userId).eq("status", "active").maybeSingle(),
+    supabase.from("personal_calendar_goals").select("*").eq("user_id", userId).neq("status", "active").order("target_date", { ascending: false }).limit(50),
+    supabase.from("personal_calendar_input_history").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(30),
   ]);
 
   const activeScheduleIds = new Set<number>();
@@ -39,16 +39,8 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
     : { data: [] };
   const feedbackRequestByRecord = new Map((feedbackRequests ?? []).map((request) => [request.record_id, request]));
 
-  const videoPaths = [...new Set([
-    ...(entries ?? []).flatMap((row) => row.video_path ? [row.video_path] : []),
-    ...(records ?? []).flatMap((row) => row.video_path ? [row.video_path] : []),
-  ])];
-  const { data: signedVideos } = videoPaths.length
-    ? await supabase.storage.from(PERFORMANCE_VIDEO_BUCKET).createSignedUrls(videoPaths, 3600)
-    : { data: [] };
-  const videoUrls = new Map((signedVideos ?? []).map((item, index) => [videoPaths[index], item.signedUrl]));
-  const enrichedEntries = (entries ?? []).map((row) => ({ ...row, video_url: row.video_path ? videoUrls.get(row.video_path) ?? null : null }));
-  const enrichedRecords = (records ?? []).map((row) => ({ ...row, video_url: row.video_path ? videoUrls.get(row.video_path) ?? null : null, feedback_request: feedbackRequestByRecord.get(row.id) ?? null }));
+  const enrichedEntries = (entries ?? []).map((row) => ({ ...row, video_url: null }));
+  const enrichedRecords = (records ?? []).map((row) => ({ ...row, video_url: null, feedback_request: feedbackRequestByRecord.get(row.id) ?? null }));
   const periods = (periodRows ?? []) as SchedulePeriod[];
   const initialPeriodId = query.period && /^\d+$/.test(query.period) ? Number(query.period) : null;
   const initialPeriodDate = query.periodDate && /^\d{4}-\d{2}-\d{2}$/.test(query.periodDate) ? query.periodDate : undefined;
@@ -66,7 +58,7 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
         <div className="rounded-2xl border border-emerald-400/45 bg-emerald-400/10 p-4 text-emerald-200"><span className="flex items-center gap-2 text-sm font-black"><CalendarDays size={18}/>マイカレンダー</span><span className="mt-1 block text-xs text-white/45">自分の予定・練習日誌・目標</span></div>
         <Link href="/mypage/schedules" className="rounded-2xl border border-white/10 bg-[#111] p-4 text-white transition hover:border-orange-400/45"><span className="flex items-center gap-2 text-sm font-black"><Users size={18} className="text-orange-400"/>全体スケジュール</span><span className="mt-1 block text-xs text-white/45">クラブ予定・大会・出欠を確認</span></Link>
       </nav>
-      <MyCalendar userId={user.id} initialEntries={enrichedEntries} schedules={schedules ?? []} activeScheduleIds={[...activeScheduleIds]} records={enrichedRecords} scans={(scans ?? []).map((scan) => ({ id: scan.id, scan_number: scan.scan_number, measured_on: scan.measured_on, measurements: scan.control_test_measurements ?? [] }))} periods={periods} initialGoal={activeGoal} goalHistory={goalHistory ?? []} initialInputHistory={inputHistory ?? []} initialOpen={query.new === "1"} initialSelectedDate={initialSelectedDate} initialPeriodId={initialPeriodId} initialPeriodDate={initialPeriodDate}/>
+      <MyCalendar userId={userId} initialEntries={enrichedEntries} schedules={schedules ?? []} activeScheduleIds={[...activeScheduleIds]} records={enrichedRecords} scans={(scans ?? []).map((scan) => ({ id: scan.id, scan_number: scan.scan_number, measured_on: scan.measured_on, measurements: scan.control_test_measurements ?? [] }))} periods={periods} initialGoal={activeGoal} goalHistory={goalHistory ?? []} initialInputHistory={inputHistory ?? []} initialOpen={query.new === "1"} initialSelectedDate={initialSelectedDate} initialPeriodId={initialPeriodId} initialPeriodDate={initialPeriodDate}/>
     </div>
   </main>;
 }
