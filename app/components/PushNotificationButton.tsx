@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { Bell, BellRing, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 
-type Preferences = { notify_feedback: boolean; notify_important: boolean; notify_schedule: boolean; notify_coach_records: boolean };
-const defaults: Preferences = { notify_feedback: true, notify_important: true, notify_schedule: true, notify_coach_records: true };
+type Preferences = { notify_feedback: boolean; notify_important: boolean; notify_schedule: boolean; notify_coach_records: boolean; notify_training_log_reminder: boolean };
+const defaults: Preferences = { notify_feedback: true, notify_important: true, notify_schedule: true, notify_coach_records: true, notify_training_log_reminder: true };
 const options: Array<{ key: keyof Preferences; title: string; detail: string }> = [
   { key: "notify_feedback", title: "フィードバック", detail: "依頼・回答・再質問が届いた時" },
   { key: "notify_important", title: "重要なお知らせ", detail: "重要に設定されたクラブ連絡" },
   { key: "notify_schedule", title: "予定変更", detail: "練習予定の変更・中止" },
   { key: "notify_coach_records", title: "コーチ入力の記録", detail: "コーチが練習・大会記録や測定値を追加した時" },
+  { key: "notify_training_log_reminder", title: "練習の振り返り忘れ", detail: "予定した練習日に記録がまだない時" },
 ];
 
 function decodeKey(value: string) { const padding = "=".repeat((4 - value.length % 4) % 4); const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/"); return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0)); }
@@ -22,7 +23,7 @@ export default function PushNotificationButton() {
     navigator.serviceWorker.ready.then(async (registration) => {
       const subscription = await registration.pushManager.getSubscription(); setEnabled(Boolean(subscription)); setEndpoint(subscription?.endpoint ?? null);
       if (!subscription) return;
-      const { data } = await createClient().from("push_subscriptions").select("notify_feedback, notify_important, notify_schedule, notify_coach_records").eq("endpoint", subscription.endpoint).maybeSingle();
+      const { data } = await createClient().from("push_subscriptions").select("notify_feedback, notify_important, notify_schedule, notify_coach_records, notify_training_log_reminder").eq("endpoint", subscription.endpoint).maybeSingle();
       if (data) setPreferences(data as Preferences);
     }).catch(() => undefined);
   }, [supported]);
