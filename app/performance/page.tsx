@@ -23,12 +23,15 @@ function PerformanceForm() {
   const searchParams = useSearchParams();
   const requestedKind = searchParams.get("kind");
   const requestedDate = searchParams.get("date");
+  const requestedCategory = searchParams.get("category");
+  const quickEntry = searchParams.get("quick") === "1";
   const initialDate = requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) ? requestedDate : today();
   const fromCalendar = searchParams.get("from") === "calendar";
   const hasSelectedKind = requestedKind === "athletics" || requestedKind === "unofficial-athletics" || requestedKind === "control-test";
   const kind: PerformanceKind = hasSelectedKind ? requestedKind : "control-test";
   const eventOptions = eventNamesByKind(kind);
-  const [category, setCategory] = useState(eventOptions[0]);
+  const categoryFromQuery = requestedCategory && eventOptions.includes(requestedCategory) ? requestedCategory : null;
+  const [category, setCategory] = useState(categoryFromQuery ?? eventOptions[0]);
   const [value, setValue] = useState("");
   const [windSpeed, setWindSpeed] = useState("");
   const [date, setDate] = useState(initialDate);
@@ -43,7 +46,9 @@ function PerformanceForm() {
   const [competitionDetails, setCompetitionDetails] = useState<CompetitionDetailInput[]>([]);
   const [barHeights, setBarHeights] = useState<BarHeightRow[]>([]);
   const [combinedResults, setCombinedResults] = useState<CombinedEventResult[]>([]);
+  const [recentCategories, setRecentCategories] = useState<Partial<Record<PerformanceKind, string>>>({});
   const defaultsLoaded = useRef(false);
+  const valueInputRef = useRef<HTMLInputElement>(null);
 
   const unit = unitMap[category] ?? "";
   const needsWind = isWindAffectedEvent(category);
@@ -77,12 +82,31 @@ function PerformanceForm() {
       // 入力候補を復元できなくても、記録追加自体は通常どおり利用できます。
     }
     const frame = window.requestAnimationFrame(() => {
-      if (savedCategory) setCategory(savedCategory);
+      if (categoryFromQuery) setCategory(categoryFromQuery);
+      else if (savedCategory) setCategory(savedCategory);
       if (savedTags.length) setAwarenessTags(savedTags);
       defaultsLoaded.current = true;
+      if (quickEntry) valueInputRef.current?.focus();
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [hasSelectedKind, kind]);
+  }, [categoryFromQuery, hasSelectedKind, kind, quickEntry]);
+
+  useEffect(() => {
+    if (hasSelectedKind) return;
+    const restored: Partial<Record<PerformanceKind, string>> = {};
+    for (const savedKind of ["unofficial-athletics", "athletics"] as const) {
+      try {
+        const saved = window.localStorage.getItem(`vaultex-record-defaults:${savedKind}`);
+        if (!saved) continue;
+        const parsed = JSON.parse(saved) as { category?: string };
+        if (parsed.category && eventNamesByKind(savedKind).includes(parsed.category)) restored[savedKind] = parsed.category;
+      } catch {
+        // 前回値を読めない環境でも、通常の種目選択はそのまま利用できます。
+      }
+    }
+    const frame = window.requestAnimationFrame(() => setRecentCategories(restored));
+    return () => window.cancelAnimationFrame(frame);
+  }, [hasSelectedKind]);
 
   useEffect(() => {
     if (!hasSelectedKind || !defaultsLoaded.current) return;
@@ -130,22 +154,35 @@ function PerformanceForm() {
           </div>
 
           <div className="mt-10 grid gap-3">
-            {choices.map(({ kind: choiceKind, title, description, icon: Icon }) => (
-              <Link
-                key={choiceKind}
-                href={choiceKind === "control-test" ? "/mypage/control-tests/new" : `/performance?kind=${choiceKind}`}
-                className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-[#111] p-5 transition hover:border-orange-500/70 hover:bg-orange-500/[0.06]"
-              >
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-500/15 text-orange-400">
-                  <Icon size={23} aria-hidden="true" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <strong className="block text-lg">{title}</strong>
-                  <span className="mt-1 block text-sm leading-6 text-white/45">{description}</span>
-                </span>
-                <ChevronRight className="shrink-0 text-orange-400 transition group-hover:translate-x-1" aria-hidden="true" />
-              </Link>
-            ))}
+            {choices.map(({ kind: choiceKind, title, description, icon: Icon }) => {
+              const recentCategory = recentCategories[choiceKind];
+              return (
+                <section key={choiceKind} className="overflow-hidden rounded-2xl border border-white/10 bg-[#111] transition hover:border-orange-500/70">
+                  <Link
+                    href={choiceKind === "control-test" ? "/mypage/control-tests/new" : `/performance?kind=${choiceKind}`}
+                    className="group flex items-center gap-4 p-5 transition hover:bg-orange-500/[0.06]"
+                  >
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-500/15 text-orange-400">
+                      <Icon size={23} aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <strong className="block text-lg">{title}</strong>
+                      <span className="mt-1 block text-sm leading-6 text-white/45">{description}</span>
+                    </span>
+                    <ChevronRight className="shrink-0 text-orange-400 transition group-hover:translate-x-1" aria-hidden="true" />
+                  </Link>
+                  {recentCategory ? (
+                    <Link
+                      href={`/performance?kind=${choiceKind}&category=${encodeURIComponent(recentCategory)}&quick=1`}
+                      className="flex items-center justify-between border-t border-white/8 px-5 py-3 text-sm font-bold text-emerald-300 transition hover:bg-emerald-400/[0.06]"
+                    >
+                      <span>前回の「{recentCategory}」をすぐ入力</span>
+                      <ChevronRight size={16} aria-hidden="true" />
+                    </Link>
+                  ) : null}
+                </section>
+              );
+            })}
           </div>
         </div>
       </main>
@@ -155,6 +192,8 @@ function PerformanceForm() {
   async function saveRecord(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage("");
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    const recordOnly = submitter?.value === "record-only";
 
     const bestDetail = detailEnabled && (detailMode === "attempt" || detailMode === "round") ? bestCompetitionDetail(competitionDetails, detailMode === "round") : null;
     const bar = detailEnabled && detailMode === "bar" ? barSummary(barHeights) : null;
@@ -172,11 +211,11 @@ function PerformanceForm() {
       setErrorMessage("この種目の本番記録には風速を入力してください。");
       return;
     }
-    if (awarenessNote.length > 200) {
+    if (!recordOnly && awarenessNote.length > 200) {
       setErrorMessage("意識メモは200文字以内にしてください。");
       return;
     }
-    const videoError = video ? validateVideo(video) : null;
+    const videoError = !recordOnly && video ? validateVideo(video) : null;
     if (videoError) {
       setErrorMessage(videoError);
       return;
@@ -197,7 +236,7 @@ function PerformanceForm() {
       }
 
       let videoPath: string | null = null;
-      if (video) {
+      if (!recordOnly && video) {
         setUploadProgress(0);
         videoPath = createVideoPath(user.id, video);
         try {
@@ -215,9 +254,9 @@ function PerformanceForm() {
         wind_speed: needsWind ? numericWind : null,
         date,
         record_kind: kind,
-        awareness_category: awarenessTags[0] || null,
-        awareness_categories: awarenessTags.length ? awarenessTags : null,
-        awareness_note: awarenessNote.trim() || null,
+        awareness_category: recordOnly ? null : awarenessTags[0] || null,
+        awareness_categories: recordOnly ? null : awarenessTags.length ? awarenessTags : null,
+        awareness_note: recordOnly ? null : awarenessNote.trim() || null,
         video_path: videoPath,
         advanced_details: detailEnabled && detailMode === "bar" ? ({ type: "bar", heights: barHeights, bestHeight: bar!.bestHeight, endedByThreeMisses: bar!.endedByThreeMisses } satisfies AdvancedPerformanceDetails) : detailEnabled && detailMode === "combined" ? ({ type: "combined", discipline: category, formulaVersion: "WA_COMBINED_2025", events: combinedResults, totalPoints: combinedTotal ?? 0, complete: combinedComplete } satisfies AdvancedPerformanceDetails) : null,
       };
@@ -345,6 +384,7 @@ function PerformanceForm() {
               <span className="text-sm font-bold text-white">記録</span>
               <div className="relative mt-3">
                 <input
+                  ref={valueInputRef}
                   type="number"
                   inputMode="decimal"
                   min="0"
@@ -371,6 +411,20 @@ function PerformanceForm() {
                 className="mt-3 w-full rounded-xl border border-white/15 bg-[#101216] px-4 py-4 text-white outline-none transition focus:border-orange-500"
               />
             </label>
+
+            <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.05] p-4">
+              <button
+                type="submit"
+                name="save-intent"
+                value="record-only"
+                disabled={isSaving}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-400 px-4 py-3.5 text-sm font-black text-[#07110d] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSaving ? <LoaderCircle className="animate-spin" size={18} /> : <Check size={18} />}
+                {isSaving ? "保存中..." : "記録だけすぐ保存"}
+              </button>
+              <p className="mt-2 text-center text-xs leading-5 text-emerald-100/55">振り返りと動画は、保存後にいつでも追加できます。</p>
+            </div>
 
             <div className="border-t border-white/10 pt-6">
               <p className="text-xs font-black tracking-[0.18em] text-orange-400">STEP 2</p>
