@@ -11,3 +11,5 @@ export const siteNavigation = [
 export const primaryNavigation = siteNavigation.filter(
   ({ label }) => label !== "HOME",
 );
+
+export const lineOfficialUrl = "https://line.me/R/ti/p/@082fhyco";

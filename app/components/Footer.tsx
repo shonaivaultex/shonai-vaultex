@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { siteNavigation } from "./site";
+import { lineOfficialUrl, siteNavigation } from "./site";
 
 export default function Footer() {
   return (
@@ -34,6 +34,14 @@ export default function Footer() {
             className="flex items-center gap-1 text-xs font-bold tracking-[0.1em] text-white/65 transition-colors hover:text-orange-500"
           >
             EMAIL <ArrowUpRight aria-hidden="true" size={14} />
+          </a>
+          <a
+            href={lineOfficialUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs font-bold tracking-[0.1em] text-white/65 transition-colors hover:text-orange-500"
+          >
+            OFFICIAL LINE <ArrowUpRight aria-hidden="true" size={14} />
           </a>
           <a
   href="https://www.instagram.com/"

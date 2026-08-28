@@ -1,6 +1,6 @@
 "use client";
 
-import { Dumbbell, Mail, MapPin, Phone, Trophy, Users } from "lucide-react";
+import { Dumbbell, Mail, MapPin, MessageCircle, Phone, Trophy, Users } from "lucide-react";
 import Hero from "./components/Hero";
 import LoadingScreen from "./components/LoadingScreen";
 import { useEffect, useState } from "react";
@@ -10,6 +10,7 @@ import { ContactLine } from "./components/ui/ContactLine";
 import { CtaLink } from "./components/ui/CtaLink";
 import { SectionLabel } from "./components/ui/SectionLabel";
 import { Stat } from "./components/ui/Stat";
+import { lineOfficialUrl } from "./components/site";
 const features = [
   { icon: Trophy, title: "挑戦を継続できる環境", text: "練習だけでなく、試合後の振り返りまで支える仕組みで「自分で成長を言語化」できるようにします。" },
   { icon: Users, title: "仲間と共に伸びる文化", text: "上手くいかない日も、仲間とコーチが一緒に改善。比較ではなく、本人の前回より良くなることを重視します。" },
@@ -155,7 +156,7 @@ export default function HomePage() {
 
       <section id="news" className="bg-[#101216] py-24 sm:py-32"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><SectionLabel index="04">NEWS</SectionLabel><h2 className="mt-7 text-3xl font-black tracking-[-0.04em] sm:text-5xl">VAULTEXからのお知らせ</h2><div className="mt-10 border-t border-white/15">{news.length ? news.map((item) => <article key={item.id ?? item.date} className="grid gap-3 border-b border-white/15 py-6 sm:grid-cols-12 sm:items-center sm:px-3"><time className="text-xs font-medium text-white/45 sm:col-span-2">{item.date}</time><span className="text-[10px] font-black tracking-[0.14em] text-orange-500 sm:col-span-2">{item.tag}</span><div className="sm:col-span-8"><h3 className="text-sm font-bold">{item.title}</h3><p className="mt-1 line-clamp-2 text-sm leading-6 text-white/55">{item.body}</p></div></article>) : <p className="py-8 text-sm text-white/45">現在、一般向けのお知らせはありません。</p>}</div></div></section>
 
-      <section id="contact" className="relative overflow-hidden bg-orange-500 py-24 text-[#090a0c] sm:py-32"><div className="pointer-events-none absolute -right-8 -top-28 select-none text-[13rem] font-black leading-none tracking-[-0.1em] text-black/10 sm:text-[22rem]">GO</div><div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><p className="flex items-center gap-3 text-xs font-black tracking-[0.22em]"><span className="text-black/50">05</span><span className="h-px w-8 bg-[#090a0c]" />CONTACT</p><div className="mt-8 grid gap-12 lg:grid-cols-12"><div className="lg:col-span-8"><h2 className="text-4xl font-black leading-[0.95] tracking-[-0.065em] sm:text-7xl">YOUR NEXT<br />MOVE STARTS<br />HERE.</h2><p className="mt-7 max-w-md text-sm font-medium leading-7 text-black/70">体験・見学はいつでも歓迎です。まずは気軽に、SHONAI VAULTEXの空気を感じに来てください。</p><CtaLink href="https://forms.gle/9KLAq5PSkBudhbyL9" className="mt-9">お問い合わせ</CtaLink></div><div className="space-y-6 self-end text-sm font-semibold lg:col-span-4"><ContactLine icon={MapPin}>山形県庄内地域（活動場所はお問い合わせください）</ContactLine><ContactLine icon={Mail}>shonaivaultex@gmail.com</ContactLine><ContactLine icon={Phone}>
+      <section id="contact" className="relative overflow-hidden bg-orange-500 py-24 text-[#090a0c] sm:py-32"><div className="pointer-events-none absolute -right-8 -top-28 select-none text-[13rem] font-black leading-none tracking-[-0.1em] text-black/10 sm:text-[22rem]">GO</div><div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><p className="flex items-center gap-3 text-xs font-black tracking-[0.22em]"><span className="text-black/50">05</span><span className="h-px w-8 bg-[#090a0c]" />CONTACT</p><div className="mt-8 grid gap-12 lg:grid-cols-12"><div className="lg:col-span-8"><h2 className="text-4xl font-black leading-[0.95] tracking-[-0.065em] sm:text-7xl">YOUR NEXT<br />MOVE STARTS<br />HERE.</h2><p className="mt-7 max-w-md text-sm font-medium leading-7 text-black/70">体験・見学はいつでも歓迎です。公式LINEから質問するか、フォームから体験をお申し込みください。</p><div className="mt-9 flex flex-wrap gap-3"><CtaLink href={lineOfficialUrl}>公式LINEで相談する</CtaLink><CtaLink href="https://forms.gle/9KLAq5PSkBudhbyL9" variant="outline">無料体験を申し込む</CtaLink></div></div><div className="space-y-6 self-end text-sm font-semibold lg:col-span-4"><ContactLine icon={MessageCircle}>公式LINE：@082fhyco</ContactLine><ContactLine icon={MapPin}>山形県庄内地域（活動場所はお問い合わせください）</ContactLine><ContactLine icon={Mail}>shonaivaultex@gmail.com</ContactLine><ContactLine icon={Phone}>
 準備中
 </ContactLine></div></div></div></section>
         </main>
