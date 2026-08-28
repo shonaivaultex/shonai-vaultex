@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
-import { Activity, ArrowUpRight, ChevronRight, Medal, MessageCircle, NotebookPen, Plus, Target, Trophy, Video } from "lucide-react";
+import { Activity, ArrowUpRight, Check, ChevronRight, ClipboardPenLine, Medal, MessageCircle, NotebookPen, Plus, Target, Trophy, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { type ScheduleItem } from "@/app/components/SchedulePanel";
@@ -112,6 +112,17 @@ export default async function MyPage() {
       items: visibleClubSchedules.filter((schedule) => occursOnDate(schedule, dateKey)),
     };
   });
+  const todayActions = [
+    unansweredScheduleCount > 0
+      ? { href: "/mypage/schedules", label: `出欠を回答する（${unansweredScheduleCount}件）`, detail: "参加・欠席・未定を選択", tone: "orange" }
+      : null,
+    !dailyCheckin
+      ? { href: "#daily-checkin", label: "今日の状態を記録", detail: "体調・疲労・気分を30秒で入力", tone: "amber" }
+      : null,
+    todayTrainingItems.length > 0 && !todayRecordCount
+      ? { href: `/performance?kind=unofficial-athletics&date=${todayKey}&from=calendar`, label: "今日の練習を記録", detail: "記録・意識・振り返りを残す", tone: "emerald" }
+      : null,
+  ].filter((action): action is NonNullable<typeof action> => Boolean(action));
 
   return (
     <main className="mx-auto my-16 max-w-[1480px] px-4 pb-16 sm:px-7 lg:my-20 xl:px-10">
@@ -121,6 +132,14 @@ export default async function MyPage() {
       </div>
       <MypageTutorial autoOpen={(player.mypage_tutorial_version ?? 0) < MYPAGE_TUTORIAL_VERSION} userId={userId} />
 
+      <section data-tutorial="mobile-home" className="mt-4 rounded-2xl border border-white/10 bg-[#121212] p-4 md:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <div><p className="text-[9px] font-black tracking-[.2em] text-orange-400">TODAY</p><h2 className="mt-1 text-lg font-black">今日やること</h2></div>
+          <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${todayActions.length ? "bg-orange-400/10 text-orange-300" : "bg-emerald-400/10 text-emerald-300"}`}>{todayActions.length ? `${todayActions.length}件` : "完了"}</span>
+        </div>
+        {todayActions.length ? <div className="mt-3 space-y-2">{todayActions.map((action) => <Link key={action.href} href={action.href} className="flex min-h-16 items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.025] px-3 py-2.5 transition active:scale-[.99]"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${action.tone === "emerald" ? "bg-emerald-400/10 text-emerald-300" : "bg-orange-400/10 text-orange-300"}`}><ClipboardPenLine size={17}/></span><span className="min-w-0 flex-1"><strong className="block text-sm">{action.label}</strong><span className="mt-0.5 block text-[10px] text-white/35">{action.detail}</span></span><ChevronRight size={16} className="shrink-0 text-white/25"/></Link>)}</div> : <div className="mt-3 flex items-center gap-3 rounded-xl border border-emerald-400/15 bg-emerald-400/[.04] px-3 py-3"><span className="grid h-8 w-8 place-items-center rounded-full bg-emerald-400/10 text-emerald-300"><Check size={17}/></span><span><strong className="block text-sm">今日の確認は完了</strong><span className="mt-0.5 block text-[10px] text-white/35">必要になったら下のメニューから記録できます</span></span></div>}
+      </section>
+
       <section className="relative mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_85%_10%,rgba(249,115,22,.16),transparent_28%),linear-gradient(145deg,#151515,#0d0d0d_65%)] text-white shadow-[0_28px_90px_rgba(0,0,0,.28)]">
         <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-orange-400 via-orange-600 to-transparent" />
         <div className="grid lg:grid-cols-[1.15fr_1fr]">
@@ -128,7 +147,7 @@ export default async function MyPage() {
             <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-orange-500/35 bg-orange-500/10 px-3 py-1 text-[10px] font-black tracking-[.16em] text-orange-300">{player.program_class ?? "CLASS未設定"}</span><span className="text-xs text-white/35">{player.grade ?? "学年未設定"}</span></div>
             <h2 className="mt-5 text-3xl font-black tracking-[-.04em] sm:text-4xl lg:text-5xl">{player.name}</h2>
             <p className="mt-2 text-sm font-bold text-white/40">{player.event ?? "種目未設定"}</p>
-            {coachRole ? <Link href="/coach/dashboard" prefetch className="mt-7 inline-flex items-center gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-300 transition hover:bg-emerald-400/15">COACH DASHBOARD <ArrowUpRight size={15}/></Link> : null}
+            {coachRole ? <div className="mt-7 grid gap-2 sm:grid-cols-2"><Link href="/coach/dashboard" prefetch className="inline-flex items-center justify-between gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-300 transition hover:bg-emerald-400/15">COACH DASHBOARD <ArrowUpRight size={15}/></Link><Link href="/coach/performance-session" prefetch className="inline-flex items-center justify-between gap-2 rounded-full border border-sky-400/30 bg-sky-400/[.08] px-4 py-2 text-xs font-black text-sky-300 transition hover:bg-sky-400/15">現場で一括入力 <ClipboardPenLine size={15}/></Link></div> : null}
             <div className="mt-12 hidden lg:block">
               <div className="flex items-end justify-between gap-4">
                 <div><p className="text-[10px] font-black tracking-[.2em] text-orange-300">CLUB SCHEDULE</p><strong className="mt-1 block text-sm">これから1週間</strong></div>
@@ -176,7 +195,7 @@ export default async function MyPage() {
                   })}
                 </div>
               </Link>
-              <div className="mt-4"><DailyCheckin userId={userId} date={todayKey} initialValue={(dailyCheckin as DailyCheckinValue | null) ?? null}/></div>
+              <div id="daily-checkin" className="mt-4 scroll-mt-28"><DailyCheckin userId={userId} date={todayKey} initialValue={(dailyCheckin as DailyCheckinValue | null) ?? null}/></div>
               <div className="mt-5 rounded-2xl border border-emerald-400/15 bg-emerald-400/[.04] p-4">
                 <div className="flex items-center justify-between gap-3"><div><p className="text-[9px] font-black tracking-[.18em] text-emerald-300">TODAY&apos;S TRAINING</p><strong className="mt-1 block text-sm">今日の練習</strong></div><span className="rounded-full bg-white/[.06] px-2.5 py-1 text-[10px] font-black text-white/45">{todayTrainingItems.length}件</span></div>
                 {todayTrainingItems.length ? <div className="mt-3 space-y-2">{todayTrainingItems.slice(0, 3).map((item) => { const attendanceStatus = item.personal ? "個人予定" : attendanceByScheduleId.get(item.id) === "attending" ? "参加" : attendanceByScheduleId.get(item.id) === "undecided" ? "未定" : "出欠未回答"; return <Link key={`${item.personal ? "personal" : "club"}-${item.id}`} href={`/mypage/my-calendar?date=${todayKey}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-white/[.07] bg-black/20 px-3 py-2.5 transition hover:border-emerald-400/30"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400"/><span className="min-w-0 flex-1"><strong className="block truncate text-sm">{item.title}</strong><span className="mt-0.5 block truncate text-[10px] text-white/40">{todayScheduleTime(item)}{item.location ? ` ・ ${item.location}` : ""}</span></span><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black ${attendanceStatus === "参加" ? "bg-emerald-400/15 text-emerald-300" : attendanceStatus === "出欠未回答" ? "bg-orange-400/15 text-orange-300" : "bg-white/[.07] text-white/40"}`}>{attendanceStatus}</span></Link>; })}{todayTrainingItems.length > 3 ? <Link href={`/mypage/my-calendar?date=${todayKey}`} className="block pt-1 text-center text-[10px] font-black text-emerald-300">ほか{todayTrainingItems.length - 3}件を表示</Link> : null}</div> : <Link href={`/mypage/my-calendar?date=${todayKey}&new=1`} className="mt-3 flex items-center justify-between rounded-xl border border-dashed border-white/10 px-3 py-3 text-xs text-white/40"><span>今日の予定はありません</span><span className="inline-flex items-center gap-1 font-black text-emerald-300"><Plus size={14}/>個人予定を追加</span></Link>}
