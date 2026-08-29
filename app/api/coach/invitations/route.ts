@@ -69,7 +69,27 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   if (!await requireCoach()) return NextResponse.json({ error: "権限がありません。" }, { status: 403 });
   try {
-    const body = await request.json() as { invitations?: InviteInput[] };
+    const body = await request.json() as { invitations?: InviteInput[]; action?: unknown; userId?: unknown };
+    if (body.action === "generate-link") {
+      if (!hasAdminKey()) return NextResponse.json({ error: "登録リンクの発行にはSupabaseの管理設定が必要です。" }, { status: 503 });
+      const userId = typeof body.userId === "string" ? body.userId : "";
+      if (!userId) return NextResponse.json({ error: "会員を特定できませんでした。" }, { status: 400 });
+
+      const admin = createAdminClient();
+      const { data: userData, error: userError } = await admin.auth.admin.getUserById(userId);
+      const email = userData.user?.email;
+      if (userError || !email) return NextResponse.json({ error: "会員のメールアドレスを確認できませんでした。" }, { status: 404 });
+
+      const origin = new URL(request.url).origin;
+      const { data: generated, error: linkError } = await admin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+        options: { redirectTo: `${origin}/activate` },
+      });
+      const link = generated.properties?.action_link;
+      if (linkError || !link) return NextResponse.json({ error: "登録リンクを発行できませんでした。" }, { status: 500 });
+      return NextResponse.json({ link, email }, { headers: { "Cache-Control": "no-store" } });
+    }
     if (!Array.isArray(body.invitations) || body.invitations.length === 0) return NextResponse.json({ error: "招待する会員を入力してください。" }, { status: 400 });
     if (body.invitations.length > 100) return NextResponse.json({ error: "一度に招待できるのは100名までです。" }, { status: 400 });
     const invitations = body.invitations.map(normalize);

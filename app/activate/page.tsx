@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, KeyRound, LockKeyhole, Mail } from "lucide-react";
@@ -13,13 +13,45 @@ export default function ActivatePage() {
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingLink, setCheckingLink] = useState(true);
+  const [linkActivation, setLinkActivation] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    const supabase = createClient();
+    let active = true;
+
+    async function prepareLink() {
+      const url = new URL(window.location.href);
+      const authCode = url.searchParams.get("code");
+      if (authCode) {
+        const { error } = await supabase.auth.exchangeCodeForSession(authCode);
+        if (!error) window.history.replaceState({}, "", "/activate");
+      }
+      const { data } = await supabase.auth.getSession();
+      if (active && data.session) {
+        setLinkActivation(true);
+        setEmail(data.session.user.email ?? "");
+      }
+      if (active) setCheckingLink(false);
+    }
+
+    prepareLink();
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && session) {
+        setLinkActivation(true);
+        setEmail(session.user.email ?? "");
+        setCheckingLink(false);
+      }
+    });
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, []);
 
   async function handleActivation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage("");
 
-    if (!/^\d{8}$/.test(code)) {
+    if (!linkActivation && !/^\d{8}$/.test(code)) {
       setErrorMessage("メールに記載された8桁の確認コードを入力してください。");
       return;
     }
@@ -36,25 +68,22 @@ export default function ActivatePage() {
 
     setLoading(true);
     const supabase = createClient();
-    let { error: verificationError } = await supabase.auth.verifyOtp({
-      email: email.trim(),
-      token: code,
-      type: "invite",
-    });
-
-    if (verificationError) {
-      const signupVerification = await supabase.auth.verifyOtp({
+    if (!linkActivation) {
+      let { error: verificationError } = await supabase.auth.verifyOtp({
         email: email.trim(),
         token: code,
-        type: "signup",
+        type: "invite",
       });
-      verificationError = signupVerification.error;
-    }
 
-    if (verificationError) {
-      setLoading(false);
-      setErrorMessage("メールアドレスまたは確認コードが正しくありません。最新の招待メールをご確認ください。");
-      return;
+      if (verificationError) {
+        const signupVerification = await supabase.auth.verifyOtp({ email: email.trim(), token: code, type: "signup" });
+        verificationError = signupVerification.error;
+      }
+      if (verificationError) {
+        setLoading(false);
+        setErrorMessage("メールアドレスまたは確認コードが正しくありません。最新の招待メールをご確認ください。");
+        return;
+      }
     }
 
     const { error: passwordError } = await supabase.auth.updateUser({ password });
@@ -75,18 +104,18 @@ export default function ActivatePage() {
       <section className="relative w-full max-w-md border border-white/10 bg-[#101216]/95 p-7 shadow-2xl shadow-black/40 sm:p-10">
         <p className="flex items-center gap-3 text-[11px] font-black tracking-[0.24em] text-orange-400"><span className="h-px w-8 bg-orange-500" /> MEMBER ACTIVATION</p>
         <h1 className="mt-6 text-4xl font-black tracking-[-0.05em]">ACCOUNT<br />SETUP.</h1>
-        <p className="mt-4 text-sm leading-7 text-white/55">招待メールに記載された確認コードを入力して、会員アカウントを有効にしてください。</p>
+        <p className="mt-4 text-sm leading-7 text-white/55">{linkActivation ? "新しいパスワードを設定すると、会員マイページを利用できます。" : "招待メールの確認コード、またはコーチから届いた登録リンクで会員アカウントを有効にしてください。"}</p>
 
         <form onSubmit={handleActivation} className="mt-9 space-y-5">
-          <AuthField label="EMAIL" icon={<Mail aria-hidden="true" size={18} />} type="email" autoComplete="email" placeholder="招待を受け取ったメールアドレス" value={email} onChange={setEmail} />
-          <AuthField label="確認コード" icon={<KeyRound aria-hidden="true" size={18} />} type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="8桁の確認コード" value={code} onChange={(value) => setCode(value.replace(/\D/g, "").slice(0, 8))} maxLength={8} />
+          {!linkActivation && <AuthField label="EMAIL" icon={<Mail aria-hidden="true" size={18} />} type="email" autoComplete="email" placeholder="招待を受け取ったメールアドレス" value={email} onChange={setEmail} />}
+          {!linkActivation && <AuthField label="確認コード" icon={<KeyRound aria-hidden="true" size={18} />} type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="8桁の確認コード" value={code} onChange={(value) => setCode(value.replace(/\D/g, "").slice(0, 8))} maxLength={8} />}
           <AuthField label="NEW PASSWORD" icon={<LockKeyhole aria-hidden="true" size={18} />} type="password" autoComplete="new-password" placeholder="8文字以上のパスワード" value={password} onChange={setPassword} minLength={8} />
           <AuthField label="CONFIRM PASSWORD" icon={<LockKeyhole aria-hidden="true" size={18} />} type="password" autoComplete="new-password" placeholder="パスワードをもう一度入力" value={passwordConfirmation} onChange={setPasswordConfirmation} minLength={8} />
 
           {errorMessage && <p role="alert" className="border-l-2 border-orange-500 bg-orange-500/10 px-4 py-3 text-sm text-orange-200">{errorMessage}</p>}
 
-          <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 bg-orange-500 px-5 py-4 text-xs font-black tracking-[0.12em] text-white transition hover:bg-orange-400 disabled:cursor-wait disabled:opacity-60">
-            {loading ? "SETTING..." : "アカウントを有効にする"}
+          <button type="submit" disabled={loading || checkingLink} className="flex w-full items-center justify-center gap-2 bg-orange-500 px-5 py-4 text-xs font-black tracking-[0.12em] text-white transition hover:bg-orange-400 disabled:cursor-wait disabled:opacity-60">
+            {checkingLink ? "CHECKING..." : loading ? "SETTING..." : "アカウントを有効にする"}
             {!loading && <ArrowRight aria-hidden="true" size={16} />}
           </button>
         </form>
