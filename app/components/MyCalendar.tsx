@@ -351,7 +351,18 @@ export default function MyCalendar({
       );
     });
     const scanRecordIds = new Set(scans.flatMap((scan) => scan.measurements.flatMap((measurement) => measurement.performance_record_id ? [measurement.performance_record_id] : [])));
-    performanceRecords.filter((performance) => !scanRecordIds.has(performance.id)).forEach((performance) =>
+    const calendarLinkedRecordIds = new Set(
+      entries.flatMap((entry) =>
+        entry.performance_record_id ? [entry.performance_record_id] : [],
+      ),
+    );
+    performanceRecords
+      .filter(
+        (performance) =>
+          !scanRecordIds.has(performance.id) &&
+          !calendarLinkedRecordIds.has(performance.id),
+      )
+      .forEach((performance) =>
       result.push({
         key: `performance-${performance.id}`,
         date: performance.date,
