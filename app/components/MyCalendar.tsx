@@ -20,6 +20,7 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AwarenessTagSelector from "@/app/components/AwarenessTagSelector";
+import CalendarSyncButton from "@/app/components/CalendarSyncButton";
 import { createClient } from "@/lib/supabase-browser";
 import {
   createVideoPath,
@@ -665,6 +666,7 @@ export default function MyCalendar({
               マイカレンダー
             </h2>
             <div className="flex flex-wrap gap-2">
+              <CalendarSyncButton />
               <button
                 onClick={startNew}
                 className="hidden items-center gap-1.5 rounded-xl border border-orange-500/30 bg-orange-500/[.06] px-3 py-2.5 text-xs font-black text-orange-300 sm:inline-flex"

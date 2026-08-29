@@ -24,14 +24,27 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
     supabase.from("personal_calendar_input_history").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(30),
   ]);
 
+  const { data: competitions } = await supabase
+    .from("schedules")
+    .select("id,title,details,location,starts_at,ends_at,all_day,schedule_type")
+    .eq("schedule_type", "competition");
+
+  const absentScheduleIds = new Set<number>();
+  (attendance ?? []).forEach((row) => {
+    if (row.status === "absent") absentScheduleIds.add(row.schedule_id);
+  });
+
   const activeScheduleIds = new Set<number>();
   (attendance ?? []).forEach((row) => { if (row.status === "attending") activeScheduleIds.add(row.schedule_id); });
   (applications ?? []).forEach((row) => { if (row.status === "submitted") activeScheduleIds.add(row.schedule_id); });
-  const savedScheduleIds = (entries ?? []).flatMap((row) => row.schedule_id ? [row.schedule_id] : []);
+  const visibleCompetitions = (competitions ?? []).filter((row) => !absentScheduleIds.has(row.id));
+  visibleCompetitions.forEach((row) => activeScheduleIds.add(row.id));
+  const savedScheduleIds = (entries ?? []).flatMap((row) => row.schedule_id && !absentScheduleIds.has(row.schedule_id) ? [row.schedule_id] : []);
   const scheduleIds = [...new Set([...activeScheduleIds, ...savedScheduleIds])];
-  const { data: schedules } = scheduleIds.length
+  const { data: linkedSchedules } = scheduleIds.length
     ? await supabase.from("schedules").select("id,title,details,location,starts_at,ends_at,all_day,schedule_type").in("id", scheduleIds)
     : { data: [] };
+  const schedules = [...new Map([...visibleCompetitions, ...(linkedSchedules ?? [])].map((row) => [row.id, row])).values()];
 
   const recordIds = (records ?? []).map((record) => record.id);
   const { data: feedbackRequests } = recordIds.length
@@ -58,7 +71,7 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
         <div className="rounded-2xl border border-emerald-400/45 bg-emerald-400/10 p-4 text-emerald-200"><span className="flex items-center gap-2 text-sm font-black"><CalendarDays size={18}/>マイカレンダー</span><span className="mt-1 block text-xs text-white/45">自分の予定・練習日誌・目標</span></div>
         <Link href="/mypage/schedules" className="rounded-2xl border border-white/10 bg-[#111] p-4 text-white transition hover:border-orange-400/45"><span className="flex items-center gap-2 text-sm font-black"><Users size={18} className="text-orange-400"/>全体スケジュール</span><span className="mt-1 block text-xs text-white/45">クラブ予定・大会・出欠を確認</span></Link>
       </nav>
-      <MyCalendar userId={userId} initialEntries={enrichedEntries} schedules={schedules ?? []} activeScheduleIds={[...activeScheduleIds]} records={enrichedRecords} scans={(scans ?? []).map((scan) => ({ id: scan.id, scan_number: scan.scan_number, measured_on: scan.measured_on, measurements: scan.control_test_measurements ?? [] }))} periods={periods} initialGoal={activeGoal} goalHistory={goalHistory ?? []} initialInputHistory={inputHistory ?? []} initialOpen={query.new === "1"} initialSelectedDate={initialSelectedDate} initialPeriodId={initialPeriodId} initialPeriodDate={initialPeriodDate}/>
+      <MyCalendar userId={userId} initialEntries={enrichedEntries} schedules={schedules} activeScheduleIds={[...activeScheduleIds]} records={enrichedRecords} scans={(scans ?? []).map((scan) => ({ id: scan.id, scan_number: scan.scan_number, measured_on: scan.measured_on, measurements: scan.control_test_measurements ?? [] }))} periods={periods} initialGoal={activeGoal} goalHistory={goalHistory ?? []} initialInputHistory={inputHistory ?? []} initialOpen={query.new === "1"} initialSelectedDate={initialSelectedDate} initialPeriodId={initialPeriodId} initialPeriodDate={initialPeriodDate}/>
     </div>
   </main>;
 }
