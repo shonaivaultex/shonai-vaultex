@@ -37,6 +37,12 @@ export default function CreateProfilePage() {
         return;
       }
 
+      const { data: acceptedFamilyInvitation } = await supabase.rpc("accept_pending_family_invitation");
+      if (acceptedFamilyInvitation?.length) {
+        router.replace("/family");
+        return;
+      }
+
       if (active) setChecking(false);
     }
 
