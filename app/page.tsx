@@ -172,6 +172,7 @@ export default function HomePage() {
               <div className="mt-9 flex flex-wrap gap-3">
                 <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline">公式LINEはこちらから</CtaLink>
                 <CtaLink href="/mypage">マイページを開く</CtaLink>
+                <CtaLink href="/family" variant="outline">保護者の方はこちら</CtaLink>
                 <CtaLink href="/schedule" variant="outline">スケジュールを見る</CtaLink>
               </div>
             </div>
