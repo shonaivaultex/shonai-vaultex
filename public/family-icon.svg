@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="VAULTEX FAMILY">
+  <rect width="512" height="512" rx="112" fill="#090a0c"/>
+  <image href="icon-512.png" x="34" y="34" width="444" height="444"/>
+  <g stroke="#090a0c" stroke-width="12">
+    <circle cx="402" cy="402" r="42" fill="#f5f2ec"/>
+    <circle cx="451" cy="433" r="29" fill="#f97316"/>
+  </g>
+</svg>
