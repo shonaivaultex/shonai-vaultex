@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronRight, Gauge, LoaderCircle, X } from "lucide-react";
+import Link from "next/link";
+import { Check, ChevronRight, Gauge, History, LoaderCircle, X } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 
 export type DailyCheckinValue = {
@@ -57,6 +58,7 @@ export default function DailyCheckin({ userId, date, initialValue }: { userId: s
       </span>
       <ChevronRight size={17} className="shrink-0 text-white/30 transition group-hover:translate-x-0.5"/>
     </button>
+    <div className="mt-2 flex justify-end"><Link href="/mypage/checkins" className="inline-flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-white/40 transition hover:text-orange-300"><History size={13}/>これまでの状態を見る</Link></div>
 
     {open ? <div className="fixed inset-0 z-[120] grid place-items-end bg-black/75 p-2 backdrop-blur-sm sm:place-items-center sm:p-5" role="dialog" aria-modal="true" aria-labelledby="daily-checkin-title">
       <div className="max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-[26px] border border-orange-400/35 bg-[#111] p-5 shadow-2xl sm:p-7">
