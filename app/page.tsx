@@ -1,6 +1,6 @@
 "use client";
 
-import { Dumbbell, Mail, MapPin, MessageCircle, Phone, Trophy, Users } from "lucide-react";
+import { Dumbbell, Mail, MapPin, Phone, Trophy, Users } from "lucide-react";
 import Hero from "./components/Hero";
 import LoadingScreen from "./components/LoadingScreen";
 import { useEffect, useState } from "react";
@@ -10,7 +10,6 @@ import { ContactLine } from "./components/ui/ContactLine";
 import { CtaLink } from "./components/ui/CtaLink";
 import { SectionLabel } from "./components/ui/SectionLabel";
 import { Stat } from "./components/ui/Stat";
-import { lineOfficialUrl } from "./components/site";
 const features = [
   { icon: Trophy, title: "挑戦を継続できる環境", text: "練習だけでなく、試合後の振り返りまで支える仕組みで「自分で成長を言語化」できるようにします。" },
   { icon: Users, title: "仲間と共に伸びる文化", text: "上手くいかない日も、仲間とコーチが一緒に改善。比較ではなく、本人の前回より良くなることを重視します。" },
@@ -31,14 +30,14 @@ const copyByAudience = {
     aboutText1: "練習の見守りや進捗を把握できる情報設計で、家庭からクラブ生活を応援しやすい環境を目指します。",
     aboutText2: "勝敗よりも「毎週の小さな成長」を大切にし、長く継続できる習慣づくりを支援します。",
     featureSub: "競技力と人間力を、同時に育てるVAULTEXの3つの約束。",
-    ctaText: "無料体験を今すぐ予約する",
+    ctaText: "公式LINE登録のあと、マイページへ",
   },
   player: {
     aboutTitle: "自分の成長を、数字と感覚で実感する場所です。",
     aboutText1: "記録、フィードバック、日々の振り返りを1か所で見られるから、次の練習が明確になります。",
     aboutText2: "強くなるだけでなく、仲間やチームで支え合いながら『前より上手くなる』を続けます。",
     featureSub: "競技力とメンタルを、同時に育てるVAULTEXの3つの約束。",
-    ctaText: "まずは練習を体験して、今日の自分と比較してみる",
+    ctaText: "公式LINE登録のあと、マイページで開始",
   },
 } as const;
 
@@ -74,7 +73,7 @@ export default function HomePage() {
             <button type="button" onClick={() => setAudience("parent")} className={`rounded-full px-4 py-2 text-xs font-black ${audience === "parent" ? "bg-orange-500 text-black" : "text-white/70"}`}>保護者向け</button>
             <button type="button" onClick={() => setAudience("player")} className={`rounded-full px-4 py-2 text-xs font-black ${audience === "player" ? "bg-orange-500 text-black" : "text-white/70"}`}>選手向け</button>
           </div>
-          <CtaLink href="https://forms.gle/9KLAq5PSkBudhbyL9" className="mt-1">{currentCopy.ctaText}</CtaLink>
+          <CtaLink href="/mypage" className="mt-1">{currentCopy.ctaText}</CtaLink>
         </div>
       </section>
 
@@ -105,21 +104,21 @@ export default function HomePage() {
           <div className="mt-14 grid gap-px bg-white/10 md:grid-cols-3">{features.map(({ icon: Icon, title, text }, index) => <article key={title} className="group bg-[#101216] p-7 sm:p-9"><div className="flex items-start justify-between"><Icon aria-hidden="true" size={30} strokeWidth={1.5} className="text-orange-500" /><span className="text-xs font-bold text-white/35">0{index + 1}</span></div><h3 className="mt-16 text-lg font-black tracking-wide">{title}</h3><p className="mt-4 text-sm leading-7 text-white/60">{text}</p><div className="mt-8 h-px w-10 bg-orange-500 transition-all duration-300 group-hover:w-full" /></article>)}</div>
           <div className="mt-8 flex flex-wrap gap-4">
             <CtaLink href="/program">プログラムを詳しく見る</CtaLink>
-            <CtaLink href="/mypage-sample" variant="outline">マイページのサンプルを見る</CtaLink>
+            <CtaLink href="/mypage" variant="outline">マイページを開く</CtaLink>
           </div>
-          <div className="mt-12 rounded-2xl border border-white/10 bg-[#0c0d10] p-6 sm:p-10">
+            <div className="mt-12 rounded-2xl border border-white/10 bg-[#0c0d10] p-6 sm:p-10">
             <SectionLabel index="02-2">HOW TO START</SectionLabel>
-            <h3 className="mt-3 text-2xl font-black tracking-[-0.03em] sm:text-3xl">まずは3ステップ。迷わない入会導線</h3>
+            <h3 className="mt-3 text-2xl font-black tracking-[-0.03em] sm:text-3xl">まずは3ステップ。迷わない初回導線</h3>
             <div className="mt-7 grid gap-4 text-sm leading-7 text-white/70 md:grid-cols-3">
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <span className="text-xs font-black tracking-[0.12em] text-orange-400">STEP 1</span>
-                <p className="mt-3 font-bold text-white">無料体験を予約</p>
-                <p className="mt-2">まずは体験会の日程だけ選んでください。</p>
+                <p className="mt-3 font-bold text-white">LINEでまず登録</p>
+                <p className="mt-2">公式LINEで友だち登録し、必要情報を入力してください。</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <span className="text-xs font-black tracking-[0.12em] text-orange-400">STEP 2</span>
-                <p className="mt-3 font-bold text-white">実際に体験</p>
-                <p className="mt-2">練習の進行、雰囲気、コーチングを現場で見られます。</p>
+                <p className="mt-3 font-bold text-white">プロフィールを入力</p>
+                <p className="mt-2">名前・メール・学年を登録して、本人情報を確定します。</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <span className="text-xs font-black tracking-[0.12em] text-orange-400">STEP 3</span>
@@ -127,7 +126,7 @@ export default function HomePage() {
                 <p className="mt-2">マイページで成長の跡を確認しながらトレーニングを続けます。</p>
               </div>
             </div>
-            <CtaLink href="https://forms.gle/9KLAq5PSkBudhbyL9" className="mt-8 inline-flex">無料体験を予約する</CtaLink>
+            <CtaLink href="/mypage" className="mt-8 inline-flex">マイページを開く</CtaLink>
           </div>
         </div>
       </section>
@@ -156,11 +155,34 @@ export default function HomePage() {
 
       <section id="news" className="bg-[#101216] py-24 sm:py-32"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><SectionLabel index="04">NEWS</SectionLabel><h2 className="mt-7 text-3xl font-black tracking-[-0.04em] sm:text-5xl">VAULTEXからのお知らせ</h2><div className="mt-10 border-t border-white/15">{news.length ? news.map((item) => <article key={item.id ?? item.date} className="grid gap-3 border-b border-white/15 py-6 sm:grid-cols-12 sm:items-center sm:px-3"><time className="text-xs font-medium text-white/45 sm:col-span-2">{item.date}</time><span className="text-[10px] font-black tracking-[0.14em] text-orange-500 sm:col-span-2">{item.tag}</span><div className="sm:col-span-8"><h3 className="text-sm font-bold">{item.title}</h3><p className="mt-1 line-clamp-2 text-sm leading-6 text-white/55">{item.body}</p></div></article>) : <p className="py-8 text-sm text-white/45">現在、一般向けのお知らせはありません。</p>}</div></div></section>
 
-      <section id="contact" className="relative overflow-hidden bg-orange-500 py-24 text-[#090a0c] sm:py-32"><div className="pointer-events-none absolute -right-8 -top-28 select-none text-[13rem] font-black leading-none tracking-[-0.1em] text-black/10 sm:text-[22rem]">GO</div><div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><p className="flex items-center gap-3 text-xs font-black tracking-[0.22em]"><span className="text-black/50">05</span><span className="h-px w-8 bg-[#090a0c]" />CONTACT</p><div className="mt-8 grid gap-12 lg:grid-cols-12"><div className="lg:col-span-8"><h2 className="text-4xl font-black leading-[0.95] tracking-[-0.065em] sm:text-7xl">YOUR NEXT<br />MOVE STARTS<br />HERE.</h2><p className="mt-7 max-w-md text-sm font-medium leading-7 text-black/70">体験・見学はいつでも歓迎です。公式LINEから質問するか、フォームから体験をお申し込みください。</p><div className="mt-9 flex flex-wrap gap-3"><CtaLink href={lineOfficialUrl}>公式LINEで相談する</CtaLink><CtaLink href="https://forms.gle/9KLAq5PSkBudhbyL9" variant="outline">無料体験を申し込む</CtaLink></div></div><div className="space-y-6 self-end text-sm font-semibold lg:col-span-4"><ContactLine icon={MessageCircle}>公式LINE：@082fhyco</ContactLine><ContactLine icon={MapPin}>山形県庄内地域（活動場所はお問い合わせください）</ContactLine><ContactLine icon={Mail}>shonaivaultex@gmail.com</ContactLine><ContactLine icon={Phone}>
-準備中
-</ContactLine></div></div></div></section>
-        </main>
+      <section id="contact" className="relative overflow-hidden bg-orange-500 py-24 text-[#090a0c] sm:py-32">
+        <div className="pointer-events-none absolute -right-8 -top-28 select-none text-[13rem] font-black leading-none tracking-[-0.1em] text-black/10 sm:text-[22rem]">GO</div>
+        <div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <p className="flex items-center gap-3 text-xs font-black tracking-[0.22em]">
+            <span className="text-black/50">05</span>
+            <span className="h-px w-8 bg-[#090a0c]" />
+            APP
+          </p>
+          <div className="mt-8 grid gap-12 lg:grid-cols-12">
+            <div className="lg:col-span-8">
+              <h2 className="text-4xl font-black leading-[0.95] tracking-[-0.065em] sm:text-7xl">公式LINE登録後は<br />アプリで進められます。</h2>
+              <p className="mt-7 max-w-md text-sm font-medium leading-7 text-black/70">
+                まずは公式LINEで登録し、名前・メール・学年を入力してください。あとはアプリ上でマイページとスケジュールへ進めます。
+              </p>
+              <div className="mt-9 flex flex-wrap gap-3">
+                <CtaLink href="/mypage">マイページを開く</CtaLink>
+                <CtaLink href="/mypage/schedules" variant="outline">スケジュールを見る</CtaLink>
+              </div>
+            </div>
+            <div className="space-y-6 self-end text-sm font-semibold lg:col-span-4">
+              <ContactLine icon={MapPin}>山形県庄内地域（活動場所はアプリ案内）</ContactLine>
+              <ContactLine icon={Mail}>shonaivaultex@gmail.com</ContactLine>
+              <ContactLine icon={Phone}>休会・お問い合わせはアプリのコーチ窓口まで</ContactLine>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
   </>
-  
-);
+  );
 }

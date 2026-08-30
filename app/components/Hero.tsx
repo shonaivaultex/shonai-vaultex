@@ -63,7 +63,7 @@ export default function Hero() {
         </div>
 
         <div className="mt-10 flex flex-wrap items-center gap-3 sm:mt-12">
-          <CtaLink href="https://forms.gle/gE26L75sc31dJdJk7" className="bg-orange-500 text-black hover:bg-white">VAULTEXを体験する</CtaLink>
+          <CtaLink href="/mypage" className="bg-orange-500 text-black hover:bg-white">マイページを開く</CtaLink>
           <CtaLink href="#weapons" variant="outline" className="border-white/35 text-white">VAULTEXを知る</CtaLink>
           <p className="ml-auto hidden text-[10px] font-black tracking-[0.3em] text-white/40 md:block">EST. 2026 / SHONAI / JAPAN</p>
         </div>

@@ -279,11 +279,11 @@ export default function AboutPage() {
               ここから。
             </h2>
           </div>
-          <CtaLink href="https://forms.gle/orQ5SPpgJ6Zm5D5Q8" variant="outline">
-            体験会
+          <CtaLink href="/mypage" variant="outline">
+            マイページを開く
           </CtaLink>
-          <CtaLink href="https://forms.gle/9KLAq5PSkBudhbyL9" variant="outline">
-            お問い合わせ
+          <CtaLink href="/mypage/schedules" variant="outline">
+            スケジュールを見る
           </CtaLink>
         </motion.div>
       </section>

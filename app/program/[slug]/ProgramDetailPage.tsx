@@ -60,8 +60,8 @@ export function ProgramDetailPage({ program }: { program: Program }) {
   ))}
 </div>
 <div className="mt-12 flex flex-wrap gap-4">
-  <CtaLink href="https://forms.gle/gE26L75sc31dJdJk7">
-    無料体験を申し込む
+  <CtaLink href="/mypage">
+    マイページを開く
   </CtaLink>
 
   <CtaLink href="/program" variant="outline">
@@ -78,6 +78,6 @@ export function ProgramDetailPage({ program }: { program: Program }) {
 
 <section className="py-24 sm:py-32"><motion.div {...reveal} className="mx-auto grid max-w-7xl gap-14 px-5 sm:px-8 lg:grid-cols-12 lg:gap-20 lg:px-10"><div className="lg:col-span-4"><SectionLabel>FAQ</SectionLabel><h2 className="mt-6 text-4xl font-black tracking-[-0.045em] sm:text-5xl">よくある質問。</h2></div><div className="divide-y divide-white/10 border-y border-white/10 lg:col-span-8">{program.faq.map((item, index) => <details key={item.question} className="group py-6"><summary className="flex cursor-pointer list-none items-center justify-between gap-5 text-lg font-bold"><span><span className="mr-3 text-sm text-orange-500">0{index + 1}</span>{item.question}</span><span className="text-2xl font-normal text-orange-500 transition-transform group-open:rotate-45">+</span></summary><p className="max-w-2xl pt-5 text-sm leading-7 text-white/60">{item.answer}</p></details>)}</div></motion.div></section>
 
-<section className="relative overflow-hidden bg-orange-500 py-24 text-[#090a0c] sm:py-32"><div className="pointer-events-none absolute -right-4 -top-16 select-none text-[10rem] font-black leading-none tracking-[-0.1em] text-black/10 sm:text-[16rem]">JOIN</div><motion.div {...reveal} className="relative mx-auto flex max-w-7xl flex-col justify-between gap-10 px-5 sm:px-8 md:flex-row md:items-end lg:px-10"><div><p className="text-xs font-black tracking-[0.28em]">JOIN {program.name}</p><h2 className="mt-5 text-4xl font-black leading-[1.05] tracking-[-0.05em] sm:text-5xl md:text-6xl">次の一歩を、<br />ここから。</h2></div><CtaLink href="/#contact" variant="outline">体験会・お問い合わせ</CtaLink></motion.div></section>
+<section className="relative overflow-hidden bg-orange-500 py-24 text-[#090a0c] sm:py-32"><div className="pointer-events-none absolute -right-4 -top-16 select-none text-[10rem] font-black leading-none tracking-[-0.1em] text-black/10 sm:text-[16rem]">JOIN</div><motion.div {...reveal} className="relative mx-auto flex max-w-7xl flex-col justify-between gap-10 px-5 sm:px-8 md:flex-row md:items-end lg:px-10"><div><p className="text-xs font-black tracking-[0.28em]">JOIN {program.name}</p><h2 className="mt-5 text-4xl font-black leading-[1.05] tracking-[-0.05em] sm:text-5xl md:text-6xl">次の一歩を、<br />ここから。</h2></div><CtaLink href="/mypage/schedules" variant="outline">スケジュールを見る</CtaLink></motion.div></section>
   </main>;
 }
