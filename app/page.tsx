@@ -171,7 +171,7 @@ export default function HomePage() {
               </p>
               <div className="mt-9 flex flex-wrap gap-3">
                 <CtaLink href="/mypage">マイページを開く</CtaLink>
-                <CtaLink href="/mypage/schedules" variant="outline">スケジュールを見る</CtaLink>
+                <CtaLink href="/schedule" variant="outline">スケジュールを見る</CtaLink>
               </div>
             </div>
             <div className="space-y-6 self-end text-sm font-semibold lg:col-span-4">

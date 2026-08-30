@@ -282,7 +282,7 @@ export default function AboutPage() {
           <CtaLink href="/mypage" variant="outline">
             マイページを開く
           </CtaLink>
-          <CtaLink href="/mypage/schedules" variant="outline">
+          <CtaLink href="/schedule" variant="outline">
             スケジュールを見る
           </CtaLink>
         </motion.div>

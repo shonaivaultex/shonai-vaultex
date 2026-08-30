@@ -5,7 +5,7 @@ export const siteNavigation = [
   { label: "PROGRAM", href: "/program" },
   { label: "NEWS", href: "/#news" },
   { label: "MY PAGE", href: "/mypage" },
-  { label: "SCHEDULE", href: "/mypage/schedules" },
+  { label: "SCHEDULE", href: "/schedule" },
   {label: "COACH", href: "/coach",},//
 ] as const;
 
