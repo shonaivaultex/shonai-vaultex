@@ -170,6 +170,7 @@ export default function HomePage() {
                 まずは公式LINEで登録し、名前・メール・学年を入力してください。あとはアプリ上でマイページとスケジュールへ進めます。
               </p>
               <div className="mt-9 flex flex-wrap gap-3">
+                <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline">公式LINEはこちらから</CtaLink>
                 <CtaLink href="/mypage">マイページを開く</CtaLink>
                 <CtaLink href="/schedule" variant="outline">スケジュールを見る</CtaLink>
               </div>
