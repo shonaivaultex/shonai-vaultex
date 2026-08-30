@@ -114,7 +114,7 @@ export default async function MyPage() {
   });
   const todayActions = [
     unansweredScheduleCount > 0
-      ? { href: "/mypage/schedules", label: `出欠を回答する（${unansweredScheduleCount}件）`, detail: "参加・欠席・未定を選択", tone: "orange" }
+      ? { href: "/mypage/schedules?attendance=unanswered", label: `出欠を回答する（${unansweredScheduleCount}件）`, detail: "参加・欠席・未定を選択", tone: "orange" }
       : null,
     !dailyCheckin
       ? { href: "#daily-checkin", label: "今日の状態を記録", detail: "体調・疲労・気分を30秒で入力", tone: "amber" }
