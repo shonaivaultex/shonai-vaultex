@@ -14,7 +14,7 @@ export default async function AthleteScanPage({params,searchParams}:{params:Prom
   const {reveal}=await searchParams;
   const supabase=await createClient();
   const {data:{user}}=await supabase.auth.getUser();
-  if(!user) redirect("/mypage/login");
+  if(!user) redirect(`/login?next=${encodeURIComponent(`/mypage/control-tests/${scanId}`)}`);
   const {data:scan}=await supabase.from("control_test_scans").select("id, scan_number, measured_on, athlete_standard_version, profile_snapshot, contact_profile_snapshot, control_test_measurements(test_code, primary_value, metrics, implement_weight_kg, implement_name, equipment, distance_m, jump_count), control_test_jump_trials(test_code,trial_number,jump_height_cm,contact_time_ms,rsi,drop_height_cm,is_valid)").eq("id",scanId).eq("user_id",user.id).maybeSingle();
   if(!scan) notFound();
   const current=scan as Scan;

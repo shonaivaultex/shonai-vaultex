@@ -89,7 +89,7 @@ export default async function CoachManagementPage() {
       icon: <BookOpen size={20} className="text-orange-300" />,
       accent: "from-orange-500/30 to-orange-500/5",
     },
-  ];
+  ].filter((action) => action.id !== "invite" || Boolean(adminRole));
 
   return <main className="min-h-screen bg-[#090a0c] px-5 pb-20 pt-8 text-white sm:px-8"><div className="mx-auto max-w-5xl">
     <section id="management-menu" className="fixed left-0 right-0 top-16 z-40 border-b border-white/10 bg-[#090a0c]/98 px-5 py-4 backdrop-blur">
@@ -137,11 +137,11 @@ export default async function CoachManagementPage() {
       <p className="mt-2 text-xs text-white/55">通常は会員だけに配信し、公開チェックを入れた内容だけHOMEにも掲載します。</p>
       <CoachAnnouncementForm />
     </section>
-    <section id="invite" className="mt-8 rounded-2xl border border-white/10 bg-[#101216] p-5">
+    {adminRole ? <section id="invite" className="mt-8 rounded-2xl border border-white/10 bg-[#101216] p-5">
       <h2 className="inline-flex items-center gap-2 text-sm font-black tracking-[0.1em] text-violet-300"><span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-violet-500/20">04</span>招待・会員追加</h2>
       <p className="mt-2 text-xs text-white/55">招待を送って、チーム人数を増やしやすくします。</p>
       <CoachInvitationManager />
-    </section>
+    </section> : null}
     <section id="report" className="mt-8 rounded-2xl border border-white/10 bg-[#101216] p-5">
       <h2 className="inline-flex items-center gap-2 text-sm font-black tracking-[0.1em] text-rose-300"><span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20">05</span>バグ報告を確認</h2>
       <p className="mt-2 text-xs text-white/55">未対応がある項目から順に、運用の安全性を保てます。</p>

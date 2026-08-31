@@ -12,11 +12,11 @@ type InviteInput = {
   programClass?: unknown;
 };
 
-async function requireCoach() {
+async function requireAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "coach").maybeSingle();
+  const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
   return role ? user : null;
 }
 
@@ -31,7 +31,7 @@ function normalize(input: InviteInput) {
 }
 
 export async function GET() {
-  if (!await requireCoach()) return NextResponse.json({ error: "権限がありません。" }, { status: 403 });
+  if (!await requireAdmin()) return NextResponse.json({ error: "管理者権限が必要です。" }, { status: 403 });
   if (!hasAdminKey()) return NextResponse.json({ invitations: [] });
   try {
     const admin = createAdminClient();
@@ -67,7 +67,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  if (!await requireCoach()) return NextResponse.json({ error: "権限がありません。" }, { status: 403 });
+  if (!await requireAdmin()) return NextResponse.json({ error: "管理者権限が必要です。" }, { status: 403 });
   try {
     const body = await request.json() as { invitations?: InviteInput[]; action?: unknown; userId?: unknown };
     if (body.action === "generate-link") {
