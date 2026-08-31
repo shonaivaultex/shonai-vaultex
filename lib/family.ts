@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase-admin";
 import { createClient } from "@/lib/supabase-server";
 import { evaluateAthleteScan, type AthleteMeasurement, type AthleteStandard, type TypeSettings } from "@/lib/athlete-scan";
 import { unitMap } from "@/lib/performance-events";
+import { addMonthsToMonthKey, japanMonthKey, japanMonthStartIso } from "@/lib/japan-time";
 
 export type FamilyAthlete = {
   id: string;
@@ -59,23 +60,21 @@ export async function requireFamilyContext(requestedAthleteId?: string | null): 
 type SafeRecord = { id: number; date: string; category: string; value: number; record_kind: string };
 type FamilySchedule = { id: number; title: string; location: string | null; starts_at: string; ends_at: string | null; all_day: boolean; schedule_type: string; audience: string; program_class: string | null };
 
-const monthKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 const round = (value: number) => Math.round(value * 10) / 10;
 
 export async function loadFamilyData(context: FamilyContext, reportMonth?: string | null) {
   const admin = createAdminClient();
   const now = new Date();
-  const selectedMonth = /^\d{4}-\d{2}$/.test(reportMonth ?? "") ? reportMonth! : monthKey(now);
+  const selectedMonth = /^\d{4}-\d{2}$/.test(reportMonth ?? "") ? reportMonth! : japanMonthKey(now);
   const monthStart = `${selectedMonth}-01`;
-  const nextMonthDate = new Date(`${monthStart}T00:00:00`);
-  nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-  const nextMonth = nextMonthDate.toISOString().slice(0, 10);
-  const historyStart = new Date(`${monthStart}T00:00:00`);
-  historyStart.setMonth(historyStart.getMonth() - 11);
+  const nextMonth = `${addMonthsToMonthKey(selectedMonth, 1)}-01`;
+  const historyMonth = addMonthsToMonthKey(selectedMonth, -11);
+  const historyStartDate = `${historyMonth}-01`;
+  const historyStartIso = japanMonthStartIso(historyMonth);
 
   const [recordsResult, schedulesResult, attendanceResult, reportsResult, announcementsResult, scansResult, currentStandardResult] = await Promise.all([
-    admin.from("performance_records").select("id,date,category,value,record_kind").eq("user_id", context.athlete.id).gte("date", historyStart.toISOString().slice(0, 10)).order("date"),
-    admin.from("schedules").select("id,title,location,starts_at,ends_at,all_day,schedule_type,audience,program_class").gte("starts_at", historyStart.toISOString()).order("starts_at"),
+    admin.from("performance_records").select("id,date,category,value,record_kind").eq("user_id", context.athlete.id).gte("date", historyStartDate).order("date"),
+    admin.from("schedules").select("id,title,location,starts_at,ends_at,all_day,schedule_type,audience,program_class").gte("starts_at", historyStartIso).order("starts_at"),
     admin.from("schedule_attendance").select("schedule_id,status").eq("user_id", context.athlete.id),
     admin.from("family_monthly_reports").select("id,report_month,coach_message,next_month,published,updated_at").eq("athlete_id", context.athlete.id).eq("published", true).order("report_month", { ascending: false }),
     admin.from("announcements").select("id,title,body,priority,created_at,audience,program_class").order("created_at", { ascending: false }).limit(20),
@@ -86,7 +85,7 @@ export async function loadFamilyData(context: FamilyContext, reportMonth?: strin
   const records = (recordsResult.data ?? []) as SafeRecord[];
   const schedules = (schedulesResult.data ?? []).filter((item) => item.audience === "all" || item.program_class === context.athlete.programClass) as FamilySchedule[];
   const attendance = new Map((attendanceResult.data ?? []).map((item) => [item.schedule_id, item.status]));
-  const monthSchedules = schedules.filter((item) => item.starts_at.slice(0, 7) === selectedMonth && attendance.get(item.id) === "attending");
+  const monthSchedules = schedules.filter((item) => japanMonthKey(item.starts_at) === selectedMonth && attendance.get(item.id) === "attending");
   const nextSession = schedules.find((item) => new Date(item.ends_at ?? item.starts_at) >= now) ?? null;
 
   const monthRecords = records.filter((record) => record.date >= monthStart && record.date < nextMonth);

@@ -43,14 +43,21 @@ export async function createFamilyInvitation(formData: FormData) {
   const tokenHash = createHash("sha256").update(token).digest("hex");
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
   const admin = createAdminClient();
+  const { error: expireError } = await admin.from("family_invitations").update({ expires_at: new Date().toISOString() }).eq("athlete_id", athleteId).eq("email", email).is("accepted_at", null);
+  if (expireError) throw expireError;
   const { error } = await admin.from("family_invitations").insert({ athlete_id: athleteId, invited_by: userId, email, guardian_name: guardianName, phone: phone || null, relationship, guardian_role: guardianRole, token_hash: tokenHash, expires_at: expiresAt });
   if (error) throw error;
 
   const acceptPath = `/family/accept?token=${encodeURIComponent(token)}`;
   const callbackUrl = `${siteUrl}/auth/callback?next=${encodeURIComponent(acceptPath)}`;
   const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: callbackUrl, data: { portal: "family" } });
+  let emailSent = !inviteError;
+  if (inviteError?.status === 422) {
+    const { error: magicLinkError } = await admin.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: callbackUrl } });
+    emailSent = !magicLinkError;
+  }
   const directUrl = `${siteUrl}${acceptPath}`;
-  redirect(`/coach/family?created=1&emailSent=${inviteError ? "0" : "1"}&invite=${encodeURIComponent(directUrl)}`);
+  redirect(`/coach/family?created=1&emailSent=${emailSent ? "1" : "0"}&invite=${encodeURIComponent(directUrl)}`);
 }
 
 export async function updateFamilyAttendance(formData: FormData) {

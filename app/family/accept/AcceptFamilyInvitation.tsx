@@ -20,6 +20,7 @@ export default function AcceptFamilyInvitation({ token, needsPasswordSetup, athl
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [switching, setSwitching] = useState(false);
   async function linkFamily(setPassword: boolean) {
     setError("");
     const supabase = createClient();
@@ -48,6 +49,20 @@ export default function AcceptFamilyInvitation({ token, needsPasswordSetup, athl
     event.preventDefault(); setError("");
     await linkFamily(needsPasswordSetup);
   }
+  async function switchAccount() {
+    setError("");
+    setSwitching(true);
+    const supabase = createClient();
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) {
+      setSwitching(false);
+      setError("ログアウトできませんでした。時間をおいてもう一度お試しください。");
+      return;
+    }
+    const acceptPath = `/family/accept?token=${encodeURIComponent(token)}`;
+    router.replace(`/login?next=${encodeURIComponent(acceptPath)}`);
+    router.refresh();
+  }
   const canAccept = invitationAvailable && emailMatches;
   return <form onSubmit={accept} className="mt-8 space-y-4">
     <div className="rounded-2xl border border-orange-200 bg-orange-50 p-5 text-center">
@@ -56,7 +71,7 @@ export default function AcceptFamilyInvitation({ token, needsPasswordSetup, athl
       <p className="mt-3 text-xs text-black/45">ログイン中：{currentEmail || "確認できません"}</p>
     </div>
     {!invitationAvailable ? <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">この招待は期限切れまたは使用済みです。新しい招待URLを発行してください。</p> : null}
-    {invitationAvailable && !emailMatches ? <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-bold leading-6 text-red-700">この招待は {invitationEmail} 宛てです。現在のアカウントからログアウトし、招待先のメールアドレスでログインしてください。</p> : null}
+    {invitationAvailable && !emailMatches ? <div className="space-y-3 rounded-xl bg-red-50 p-4"><p role="alert" className="text-sm font-bold leading-6 text-red-700">この招待は {invitationEmail} 宛てです。ログイン中のアカウントを切り替えてください。</p><button type="button" disabled={switching} onClick={() => void switchAccount()} className="w-full rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-black text-red-700 disabled:opacity-50">{switching ? "切り替えています…" : "ログアウトして招待先のアカウントで入り直す"}</button></div> : null}
     {needsPasswordSetup && canAccept ? <><label className="block text-sm font-bold">パスワード<input type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-black/10 bg-white px-4 py-3 outline-none focus:border-orange-500"/></label>
     <label className="block text-sm font-bold">パスワード（確認）<input type="password" autoComplete="new-password" minLength={8} required value={confirmation} onChange={(event) => setConfirmation(event.target.value)} className="mt-2 w-full rounded-xl border border-black/10 bg-white px-4 py-3 outline-none focus:border-orange-500"/></label></> : null}
     {error ? <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p> : null}
