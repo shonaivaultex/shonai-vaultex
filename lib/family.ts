@@ -28,21 +28,10 @@ export async function requireFamilyContext(requestedAthleteId?: string | null): 
   const guardianId = authData?.claims.sub;
   if (!guardianId) redirect(`/login?next=${encodeURIComponent(requestedAthleteId ? `/family?athlete=${requestedAthleteId}` : "/family")}`);
 
-  let [{ data: links }, { data: guardian }] = await Promise.all([
+  const [{ data: links }, { data: guardian }] = await Promise.all([
     supabase.from("guardian_athlete_links").select("athlete_id,guardian_role,relationship").eq("guardian_id", guardianId).eq("status", "active"),
     supabase.from("family_guardians").select("name").eq("user_id", guardianId).maybeSingle(),
   ]);
-  if (!links?.length) {
-    const { data: accepted } = await supabase.rpc("accept_pending_family_invitation");
-    if (accepted?.length) {
-      const refreshed = await Promise.all([
-        supabase.from("guardian_athlete_links").select("athlete_id,guardian_role,relationship").eq("guardian_id", guardianId).eq("status", "active"),
-        supabase.from("family_guardians").select("name").eq("user_id", guardianId).maybeSingle(),
-      ]);
-      links = refreshed[0].data;
-      guardian = refreshed[1].data;
-    }
-  }
   if (!links?.length) redirect("/family/welcome");
 
   const admin = createAdminClient();

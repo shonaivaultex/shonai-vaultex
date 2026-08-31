@@ -69,8 +69,6 @@ export default async function MyPage() {
   const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }, { data: attendingSchedules }, { data: personalCalendarEntries }, { count: todayRecordCount }, { data: activeGoal }, { data: dailyCheckin }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise, attendingSchedulesPromise, personalCalendarPromise, todayRecordsPromise, activeGoalPromise, dailyCheckinPromise]);
 
   if (!player) {
-    const { data: acceptedFamilyInvitation } = await supabase.rpc("accept_pending_family_invitation");
-    if (acceptedFamilyInvitation?.length) redirect("/family");
     redirect("/profile/create");
   }
 
