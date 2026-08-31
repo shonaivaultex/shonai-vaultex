@@ -104,3 +104,28 @@ export async function revokeFamilyLink(formData: FormData) {
   await admin.from("guardian_athlete_links").update({ status: "revoked", updated_at: new Date().toISOString() }).eq("guardian_id", guardianId).eq("athlete_id", athleteId);
   revalidatePath("/family/settings");
 }
+
+export async function coachUpdateFamilyLinkRole(formData: FormData) {
+  const { userId } = await currentUserId();
+  if (!userId) redirect("/login?next=/coach/family");
+  const athleteId = String(formData.get("athlete_id") ?? "");
+  const guardianId = String(formData.get("guardian_id") ?? "");
+  const guardianRole = String(formData.get("guardian_role") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(athleteId) || !/^[0-9a-f-]{36}$/i.test(guardianId) || !["primary_guardian", "family_member"].includes(guardianRole) || !(await canManageAthlete(userId, athleteId))) throw new Error("連携情報または権限を確認してください。");
+  const admin = createAdminClient();
+  const { data, error } = await admin.from("guardian_athlete_links").update({ guardian_role: guardianRole, updated_at: new Date().toISOString() }).eq("athlete_id", athleteId).eq("guardian_id", guardianId).eq("status", "active").select("guardian_id").maybeSingle();
+  if (error || !data) throw error ?? new Error("対象の保護者連携が見つかりません。");
+  revalidatePath("/coach/family"); revalidatePath("/family"); revalidatePath("/family/settings");
+}
+
+export async function coachRevokeFamilyLink(formData: FormData) {
+  const { userId } = await currentUserId();
+  if (!userId) redirect("/login?next=/coach/family");
+  const athleteId = String(formData.get("athlete_id") ?? "");
+  const guardianId = String(formData.get("guardian_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(athleteId) || !/^[0-9a-f-]{36}$/i.test(guardianId) || !(await canManageAthlete(userId, athleteId))) throw new Error("連携情報または権限を確認してください。");
+  const admin = createAdminClient();
+  const { data, error } = await admin.from("guardian_athlete_links").update({ status: "revoked", updated_at: new Date().toISOString() }).eq("athlete_id", athleteId).eq("guardian_id", guardianId).eq("status", "active").select("guardian_id").maybeSingle();
+  if (error || !data) throw error ?? new Error("対象の保護者連携が見つかりません。");
+  revalidatePath("/coach/family"); revalidatePath("/family"); revalidatePath("/family/settings");
+}
