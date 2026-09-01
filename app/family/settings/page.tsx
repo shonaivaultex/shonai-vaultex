@@ -4,6 +4,179 @@ import FamilyShell, { Card, SectionTitle } from "../FamilyShell";
 import { requireFamilyContext } from "@/lib/family";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { createFamilyInvitation, revokeFamilyLink } from "../actions";
+import PushNotificationButton from "@/app/components/PushNotificationButton";
 
-const relationLabel: Record<string,string>={father:"父",mother:"母",guardian:"保護者",other:"その他保護者"};
-export default async function FamilySettingsPage({searchParams}:{searchParams:Promise<{athlete?:string;created?:string;invite?:string}>}){const query=await searchParams;const context=await requireFamilyContext(query.athlete);const admin=createAdminClient();const {data:links}=await admin.from("guardian_athlete_links").select("guardian_id,relationship,guardian_role,status").eq("athlete_id",context.athlete.id).eq("status","active");const ids=(links??[]).map((link)=>link.guardian_id);const {data:guardians}=ids.length?await admin.from("family_guardians").select("user_id,name,email,phone").in("user_id",ids):{data:[]};const profileById=new Map((guardians??[]).map((item)=>[item.user_id,item]));const primary=context.athlete.guardianRole==="primary_guardian";return <FamilyShell context={context} active="/family/settings"><SectionTitle eyebrow="FAMILY SETTINGS">家族・設定</SectionTitle><Link href={`/family/help?athlete=${context.athlete.id}`} className="mt-6 flex items-center gap-4 rounded-2xl border border-orange-200 bg-orange-50 p-5 transition hover:border-orange-400"><span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500 text-black"><BookOpen size={21}/></span><span><strong className="block">VAULTEX FAMILYの使い方</strong><span className="mt-1 block text-xs text-black/45">各画面・出欠・家族招待・プライバシーについて</span></span><ChevronRight className="ml-auto text-orange-700"/></Link><div className="mt-6 grid gap-5 lg:grid-cols-2"><Card><h3 className="font-black">登録されている家族</h3><div className="mt-4 divide-y divide-black/8">{(links??[]).map((link)=>{const profile=profileById.get(link.guardian_id);return <div key={link.guardian_id} className="py-4"><div className="flex items-start justify-between gap-3"><div><strong>{profile?.name??"保護者"}</strong><p className="mt-1 text-xs text-black/45">{relationLabel[link.relationship]??link.relationship}・{link.guardian_role==="primary_guardian"?"PRIMARY GUARDIAN":"FAMILY MEMBER"}</p><p className="mt-1 text-xs text-black/35">{profile?.email}</p></div>{primary&&link.guardian_id!==context.guardianId?<form action={revokeFamilyLink}><input type="hidden" name="athlete_id" value={context.athlete.id}/><input type="hidden" name="guardian_id" value={link.guardian_id}/><button className="text-xs font-black text-red-600">連携解除</button></form>:null}</div></div>})}</div><p className="mt-4 text-xs leading-6 text-black/40">家族それぞれが別ログインを使用します。同じパスワードの共有は推奨していません。</p></Card>{primary?<Card><h3 className="font-black">＋ 家族を招待</h3><p className="mt-2 text-xs leading-6 text-black/45">招待URLには対象選手との安全な紐付けが含まれるため、選手IDの入力は不要です。</p><form action={createFamilyInvitation} className="mt-5 space-y-3"><input type="hidden" name="athlete_id" value={context.athlete.id}/><input required name="guardian_name" placeholder="保護者氏名" className="w-full rounded-xl border border-black/10 px-4 py-3 text-sm"/><input required type="email" name="email" placeholder="メールアドレス" className="w-full rounded-xl border border-black/10 px-4 py-3 text-sm"/><input name="phone" placeholder="電話番号（任意）" className="w-full rounded-xl border border-black/10 px-4 py-3 text-sm"/><div className="grid grid-cols-2 gap-3"><select name="relationship" className="rounded-xl border border-black/10 px-3 py-3 text-sm"><option value="father">父</option><option value="mother">母</option><option value="guardian">保護者</option><option value="other">その他</option></select><select name="guardian_role" className="rounded-xl border border-black/10 px-3 py-3 text-sm"><option value="family_member">FAMILY MEMBER</option><option value="primary_guardian">PRIMARY GUARDIAN</option></select></div><button className="w-full rounded-xl bg-orange-500 px-5 py-3 text-sm font-black">招待メールを送る</button></form></Card>:<Card><h3 className="font-black">権限について</h3><p className="mt-3 text-sm leading-7 text-black/55">このアカウントはFAMILY MEMBERです。家族追加・出欠・登録情報管理はPRIMARY GUARDIANが行います。</p></Card>}</div></FamilyShell>}
+const relationLabel: Record<string, string> = {
+  father: "父",
+  mother: "母",
+  guardian: "保護者",
+  other: "その他保護者",
+};
+export default async function FamilySettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    athlete?: string;
+    created?: string;
+    invite?: string;
+  }>;
+}) {
+  const query = await searchParams;
+  const context = await requireFamilyContext(query.athlete);
+  const admin = createAdminClient();
+  const { data: links } = await admin
+    .from("guardian_athlete_links")
+    .select("guardian_id,relationship,guardian_role,status")
+    .eq("athlete_id", context.athlete.id)
+    .eq("status", "active");
+  const ids = (links ?? []).map((link) => link.guardian_id);
+  const { data: guardians } = ids.length
+    ? await admin
+        .from("family_guardians")
+        .select("user_id,name,email,phone")
+        .in("user_id", ids)
+    : { data: [] };
+  const profileById = new Map(
+    (guardians ?? []).map((item) => [item.user_id, item]),
+  );
+  const primary = context.athlete.guardianRole === "primary_guardian";
+  return (
+    <FamilyShell context={context} active="/family/settings">
+      <SectionTitle eyebrow="FAMILY SETTINGS">家族・設定</SectionTitle>
+      <Card className="mt-6">
+        <h3 className="font-black">通知</h3>
+        <p className="mt-2 text-xs leading-6 text-black/50">
+          予定変更や重要なお知らせを、この端末へお届けします。
+        </p>
+        <PushNotificationButton portal="family" />
+      </Card>
+      <Link
+        href={`/family/help?athlete=${context.athlete.id}`}
+        className="mt-6 flex items-center gap-4 rounded-2xl border border-orange-200 bg-orange-50 p-5 transition hover:border-orange-400"
+      >
+        <span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500 text-black">
+          <BookOpen size={21} />
+        </span>
+        <span>
+          <strong className="block">VAULTEX FAMILYの使い方</strong>
+          <span className="mt-1 block text-xs text-black/45">
+            各画面・出欠・家族招待・プライバシーについて
+          </span>
+        </span>
+        <ChevronRight className="ml-auto text-orange-700" />
+      </Link>
+      <div className="mt-6 grid gap-5 lg:grid-cols-2">
+        <Card>
+          <h3 className="font-black">登録されている家族</h3>
+          <div className="mt-4 divide-y divide-black/8">
+            {(links ?? []).map((link) => {
+              const profile = profileById.get(link.guardian_id);
+              return (
+                <div key={link.guardian_id} className="py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <strong>{profile?.name ?? "保護者"}</strong>
+                      <p className="mt-1 text-xs text-black/45">
+                        {relationLabel[link.relationship] ?? link.relationship}
+                        ・
+                        {link.guardian_role === "primary_guardian"
+                          ? "PRIMARY GUARDIAN"
+                          : "FAMILY MEMBER"}
+                      </p>
+                      <p className="mt-1 text-xs text-black/35">
+                        {profile?.email}
+                      </p>
+                    </div>
+                    {primary && link.guardian_id !== context.guardianId ? (
+                      <form action={revokeFamilyLink}>
+                        <input
+                          type="hidden"
+                          name="athlete_id"
+                          value={context.athlete.id}
+                        />
+                        <input
+                          type="hidden"
+                          name="guardian_id"
+                          value={link.guardian_id}
+                        />
+                        <button className="text-xs font-black text-red-600">
+                          連携解除
+                        </button>
+                      </form>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-4 text-xs leading-6 text-black/40">
+            家族それぞれが別ログインを使用します。同じパスワードの共有は推奨していません。
+          </p>
+        </Card>
+        {primary ? (
+          <Card>
+            <h3 className="font-black">＋ 家族を招待</h3>
+            <p className="mt-2 text-xs leading-6 text-black/45">
+              招待URLには対象選手との安全な紐付けが含まれるため、選手IDの入力は不要です。
+            </p>
+            <form action={createFamilyInvitation} className="mt-5 space-y-3">
+              <input
+                type="hidden"
+                name="athlete_id"
+                value={context.athlete.id}
+              />
+              <input
+                required
+                name="guardian_name"
+                placeholder="保護者氏名"
+                className="w-full rounded-xl border border-black/10 px-4 py-3 text-sm"
+              />
+              <input
+                required
+                type="email"
+                name="email"
+                placeholder="メールアドレス"
+                className="w-full rounded-xl border border-black/10 px-4 py-3 text-sm"
+              />
+              <input
+                name="phone"
+                placeholder="電話番号（任意）"
+                className="w-full rounded-xl border border-black/10 px-4 py-3 text-sm"
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <select
+                  name="relationship"
+                  className="rounded-xl border border-black/10 px-3 py-3 text-sm"
+                >
+                  <option value="father">父</option>
+                  <option value="mother">母</option>
+                  <option value="guardian">保護者</option>
+                  <option value="other">その他</option>
+                </select>
+                <select
+                  name="guardian_role"
+                  className="rounded-xl border border-black/10 px-3 py-3 text-sm"
+                >
+                  <option value="family_member">FAMILY MEMBER</option>
+                  <option value="primary_guardian">PRIMARY GUARDIAN</option>
+                </select>
+              </div>
+              <button className="w-full rounded-xl bg-orange-500 px-5 py-3 text-sm font-black">
+                招待メールを送る
+              </button>
+            </form>
+          </Card>
+        ) : (
+          <Card>
+            <h3 className="font-black">権限について</h3>
+            <p className="mt-3 text-sm leading-7 text-black/55">
+              このアカウントはFAMILY
+              MEMBERです。家族追加・出欠・登録情報管理はPRIMARY
+              GUARDIANが行います。
+            </p>
+          </Card>
+        )}
+      </div>
+    </FamilyShell>
+  );
+}
