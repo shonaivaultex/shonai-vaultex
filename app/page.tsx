@@ -11,9 +11,9 @@ import { CtaLink } from "./components/ui/CtaLink";
 import { SectionLabel } from "./components/ui/SectionLabel";
 import { Stat } from "./components/ui/Stat";
 const features = [
-  { icon: Trophy, title: "挑戦を継続できる環境", text: "練習だけでなく、試合後の振り返りまで支える仕組みで「自分で成長を言語化」できるようにします。" },
-  { icon: Users, title: "仲間と共に伸びる文化", text: "上手くいかない日も、仲間とコーチが一緒に改善。比較ではなく、本人の前回より良くなることを重視します。" },
-  { icon: Dumbbell, title: "競技力＋人間力", text: "基礎練習・技術練習・体力作りを、体力・メンタル・生活習慣まで一体で整える設計です。" },
+  { icon: Trophy, title: "まずは、あなたを知るところから", text: "初めにカウンセリングを行い、好きなこと、挑戦したいこと、性格や傾向を理解するところから始めます。不安や生活のスケジュールも聞きながら、その人に合ったプランを一緒に考えます。" },
+  { icon: Users, title: "一緒に取り組む時間が、仲間をつくる", text: "人数や練習内容に合わせて、ウォーミングアップにレクリエーションを取り入れます。準備や片付け、計測、動画撮影もできることを分担。自分のペースを大切にしながら、お互いを応援できる関係を育てます。" },
+  { icon: Dumbbell, title: "「なぜ」を伝える。納得して取り組む", text: "私自身の競技経験に加え、測定データ、動作分析、論文などの研究知見から競技力の向上を支えます。練習の根拠と、まだ確かではないことも分けて伝え、選手が納得して取り組める指導を大切にします。" },
 ] as const;
 
 type HomeNewsItem = {
@@ -24,28 +24,10 @@ type HomeNewsItem = {
   body?: string;
 };
 
-const copyByAudience = {
-  parent: {
-    aboutTitle: "ご家族の安心が、子どもの挑戦を支えます。",
-    aboutText1: "練習の見守りや進捗を把握できる情報設計で、家庭からクラブ生活を応援しやすい環境を目指します。",
-    aboutText2: "勝敗よりも「毎週の小さな成長」を大切にし、長く継続できる習慣づくりを支援します。",
-    featureSub: "競技力と人間力を、同時に育てるVAULTEXの3つの約束。",
-    ctaText: "公式LINE登録のあと、マイページへ",
-  },
-  player: {
-    aboutTitle: "自分の成長を、数字と感覚で実感する場所です。",
-    aboutText1: "記録、フィードバック、日々の振り返りを1か所で見られるから、次の練習が明確になります。",
-    aboutText2: "強くなるだけでなく、仲間やチームで支え合いながら『前より上手くなる』を続けます。",
-    featureSub: "競技力とメンタルを、同時に育てるVAULTEXの3つの約束。",
-    ctaText: "公式LINE登録のあと、マイページで開始",
-  },
-} as const;
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
-  const [audience, setAudience] = useState<"parent" | "player">("parent");
   const [news, setNews] = useState<HomeNewsItem[]>([]);
-  const currentCopy = copyByAudience[audience];
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -67,26 +49,18 @@ export default function HomePage() {
 
     <main className="overflow-x-hidden bg-[#090a0c] text-white">
       <Hero />
-      <section className="border-b border-white/10 bg-[#101216] py-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-3 px-5 sm:px-8 lg:px-10">
-          <div className="inline-flex rounded-full border border-white/10 bg-black/30 p-1">
-            <button type="button" onClick={() => setAudience("parent")} className={`rounded-full px-4 py-2 text-xs font-black ${audience === "parent" ? "bg-orange-500 text-black" : "text-white/70"}`}>保護者向け</button>
-            <button type="button" onClick={() => setAudience("player")} className={`rounded-full px-4 py-2 text-xs font-black ${audience === "player" ? "bg-orange-500 text-black" : "text-white/70"}`}>選手向け</button>
-          </div>
-          <CtaLink href="/mypage" className="mt-1">{currentCopy.ctaText}</CtaLink>
-        </div>
-      </section>
+
 
       <section id="about" className="border-t border-white/10 py-24 sm:py-32">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-12 lg:gap-8 lg:px-10">
           <div className="lg:col-span-4"><SectionLabel index="01">ABOUT US</SectionLabel></div>
           <div className="lg:col-span-8">
             <h2 className="max-w-3xl text-3xl font-black leading-tight tracking-[-0.045em] sm:text-5xl">
-              {currentCopy.aboutTitle}
+              環境が合わないことで、やりたいことを諦めてほしくない。
             </h2>
             <div className="mt-9 grid max-w-3xl gap-6 text-sm leading-8 text-white/65 sm:grid-cols-2">
-              <p>{currentCopy.aboutText1}</p>
-              <p>{currentCopy.aboutText2}</p>
+              <p>陸上が好きで始めたのに、思っていた環境と違った。新しいクラブに入りたいけれど、すでにできあがった輪になじめるか不安。そんな人が、自分らしく挑戦を続けられる場所をつくりたいと考えています。</p>
+              <p>競技で上を目指すことも、仲間と体を動かすことも。ここでの体験や出会いが、人生を豊かにするきっかけになったら。それが、VAULTEXに込めた思いです。</p>
             </div>
             <div className="mt-12 grid max-w-3xl grid-cols-3 border-y border-white/10 py-6">
   <Stat value="2026" label="FOUNDED" />
@@ -100,33 +74,34 @@ export default function HomePage() {
       <section id="feature" className="bg-[#101216] py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
           <SectionLabel index="02">OUR FEATURE</SectionLabel>
-          <div className="mt-7 flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><h2 className="text-3xl font-black tracking-[-0.045em] sm:text-5xl">強くなる、その先へ。</h2><p className="max-w-sm text-sm leading-7 text-white/60">{currentCopy.featureSub}</p></div>
+          <div className="mt-7 flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><h2 className="text-3xl font-black tracking-[-0.045em] sm:text-5xl">自分らしく、挑戦を続ける。</h2><p className="max-w-sm text-sm leading-7 text-white/60">一人ひとりを理解し、挑戦を支える。VAULTEXが大切にしていること。</p></div>
           <div className="mt-14 grid gap-px bg-white/10 md:grid-cols-3">{features.map(({ icon: Icon, title, text }, index) => <article key={title} className="group bg-[#101216] p-7 sm:p-9"><div className="flex items-start justify-between"><Icon aria-hidden="true" size={30} strokeWidth={1.5} className="text-orange-500" /><span className="text-xs font-bold text-white/35">0{index + 1}</span></div><h3 className="mt-16 text-lg font-black tracking-wide">{title}</h3><p className="mt-4 text-sm leading-7 text-white/60">{text}</p><div className="mt-8 h-px w-10 bg-orange-500 transition-all duration-300 group-hover:w-full" /></article>)}</div>
+          <div className="mt-10 max-w-3xl"><h3 className="text-xl font-black">心の準備も、競技の準備。</h3><p className="mt-4 text-sm leading-8 text-white/65">選手を否定する言葉ではなく、どうすれば次につながるかを一緒に考えます。試合に向けて十分に準備を重ね、不安を少しずつ減らしていく。自信を持ってスタートラインに立てるように、技術だけでなく気持ちの面にも向き合います。</p><CtaLink href="/coach" variant="outline" className="mt-5">コーチについて知る</CtaLink></div>
           <div className="mt-8 flex flex-wrap gap-4">
             <CtaLink href="/program">プログラムを詳しく見る</CtaLink>
             <CtaLink href="/mypage" variant="outline">マイページを開く</CtaLink>
           </div>
             <div className="mt-12 rounded-2xl border border-white/10 bg-[#0c0d10] p-6 sm:p-10">
             <SectionLabel index="02-2">HOW TO START</SectionLabel>
-            <h3 className="mt-3 text-2xl font-black tracking-[-0.03em] sm:text-3xl">まずは3ステップ。迷わない初回導線</h3>
+            <h3 className="mt-3 text-2xl font-black tracking-[-0.03em] sm:text-3xl">まずは、話を聞かせてください。</h3>
             <div className="mt-7 grid gap-4 text-sm leading-7 text-white/70 md:grid-cols-3">
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <span className="text-xs font-black tracking-[0.12em] text-orange-400">STEP 1</span>
-                <p className="mt-3 font-bold text-white">LINEでまず登録</p>
-                <p className="mt-2">公式LINEで友だち登録し、必要情報を入力してください。</p>
+                <p className="mt-3 font-bold text-white">公式LINEで相談</p>
+                <p className="mt-2">入会前のご相談も受け付けています。挑戦したいことや、今の環境で困っていることを聞かせてください。</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <span className="text-xs font-black tracking-[0.12em] text-orange-400">STEP 2</span>
-                <p className="mt-3 font-bold text-white">プロフィールを入力</p>
-                <p className="mt-2">名前・メール・学年を登録して、本人情報を確定します。</p>
+                <p className="mt-3 font-bold text-white">カウンセリングで一緒に考える</p>
+                <p className="mt-2">目標が決まっていなくても大丈夫。生活や気持ちに合った始め方を、一緒に考えます。</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <span className="text-xs font-black tracking-[0.12em] text-orange-400">STEP 3</span>
-                <p className="mt-3 font-bold text-white">記録を残して継続</p>
-                <p className="mt-2">マイページで成長の跡を確認しながらトレーニングを続けます。</p>
+                <p className="mt-3 font-bold text-white">自分のペースで始める</p>
+                <p className="mt-2">さまざまな体験を通して、やりたい競技や得意なことを見つけ、成長を記録していきます。</p>
               </div>
             </div>
-            <CtaLink href="/mypage" className="mt-8 inline-flex">マイページを開く</CtaLink>
+            <CtaLink href="https://line.me/R/ti/p/@082fhyco" className="mt-8 inline-flex">公式LINEで相談する</CtaLink>
           </div>
         </div>
       </section>
@@ -134,7 +109,12 @@ export default function HomePage() {
       <section id="program" className="py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
           <SectionLabel index="03">PROGRAM</SectionLabel>
-          <div className="mt-7 grid gap-10 lg:grid-cols-12"><h2 className="text-3xl font-black tracking-[-0.045em] sm:text-5xl lg:col-span-5">自分のペースで、<br />頂点を目指す。</h2><p className="max-w-md self-end text-sm leading-7 text-white/60 lg:col-span-5 lg:col-start-8">年齢と経験に合わせたプログラムで、運動の楽しさから本格的な競技力まで、一歩ずつサポートします。</p></div>
+          <div className="mt-7 grid gap-10 lg:grid-cols-12"><h2 className="text-3xl font-black tracking-[-0.045em] sm:text-5xl lg:col-span-5">あなたに合った、<br />陸上との関わり方を。</h2><p className="max-w-md self-end text-sm leading-7 text-white/60 lg:col-span-5 lg:col-start-8">大会を目指す方も、フィットネスとして体を動かしたい方も。年齢や経験、生活に合わせた関わり方を、一緒に考えます。</p></div>
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            <article><h3 className="text-lg font-black text-orange-400">小学生｜体験と成長を、未来に残す。</h3><p className="mt-3 text-sm leading-7 text-white/65">いろいろな競技や動きを体験し、好きなことや得意なことを見つける。「自分も小学生の頃から成長の記録を残しておきたかった」という私自身の思いから、長い時間をかけた変化も大切にします。</p></article>
+            <article><h3 className="text-lg font-black text-orange-400">中学生・高校生｜納得して、挑戦する。</h3><p className="mt-3 text-sm leading-7 text-white/65">学校や所属先によって、練習環境や専門的な指導を受けられる機会は異なります。今いる場所だけで挑戦の可能性が決まらないように、根拠のある説明と指導で「続けたい」「もっと伸びたい」を支えます。</p></article>
+            <article><h3 className="text-lg font-black text-orange-400">一般｜今の暮らしの中で、続ける。</h3><p className="mt-3 text-sm leading-7 text-white/65">時間がない、場所や仲間がいない。そんな悩みも聞かせてください。カウンセリングで生活に合ったスケジュールや競技との向き合い方を考えます。試合には出ず、フィットネスとしての利用も相談できます。</p></article>
+          </div>
           <div className="mt-16 grid gap-8 md:grid-cols-2">
   {programs.map((program) => (
     <ProgramCard
@@ -165,12 +145,12 @@ export default function HomePage() {
           </p>
           <div className="mt-8 grid gap-12 lg:grid-cols-12">
             <div className="lg:col-span-8">
-              <h2 className="text-4xl font-black leading-[0.95] tracking-[-0.065em] sm:text-7xl">公式LINE登録後は<br />アプリで進められます。</h2>
+              <h2 className="text-4xl font-black leading-[0.95] tracking-[-0.065em] sm:text-7xl">今日の挑戦を、<br />これからの自分へ。</h2>
               <p className="mt-7 max-w-md text-sm font-medium leading-7 text-black/70">
-                まずは公式LINEで登録し、名前・メール・学年を入力してください。あとはアプリ上でマイページとスケジュールへ進めます。
+                記録や動画、日々の振り返りをアプリに残していく。自分が積み重ねてきたことや、前回からの変化が見えるように。選手自身の振り返りと、ご家族の見守りを支えます。
               </p>
               <div className="mt-9 flex flex-wrap gap-3">
-                <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline">公式LINEはこちらから</CtaLink>
+                <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline">公式LINEで相談する</CtaLink>
                 <CtaLink href="/mypage">マイページを開く</CtaLink>
                 <CtaLink href="/family" variant="outline">保護者の方はこちら</CtaLink>
                 <CtaLink href="/schedule" variant="outline">スケジュールを見る</CtaLink>
@@ -179,7 +159,7 @@ export default function HomePage() {
             <div className="space-y-6 self-end text-sm font-semibold lg:col-span-4">
               <ContactLine icon={MapPin}>山形県庄内地域（活動場所はアプリ案内）</ContactLine>
               <ContactLine icon={Mail}>shonaivaultex@gmail.com</ContactLine>
-              <ContactLine icon={Phone}>休会・お問い合わせはアプリのコーチ窓口まで</ContactLine>
+              <ContactLine icon={Phone}>入会前のご相談は公式LINEから</ContactLine>
             </div>
           </div>
         </div>

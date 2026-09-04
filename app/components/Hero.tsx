@@ -48,23 +48,23 @@ export default function Hero() {
               <span className="h-px w-10 bg-orange-500" />
               ATHLETICS CLUB / SHONAI, YAMAGATA
             </p>
-            <h1 className="mt-7 max-w-6xl text-[clamp(3.25rem,8.2vw,8rem)] font-black leading-[0.84] tracking-[-0.085em]">
-              <span className="block text-white">BECOME</span>
-              <span className="block text-orange-500">WHO YOU WANT.</span>
+            <h1 className="mt-7 max-w-6xl text-[clamp(2rem,5.6vw,5.8rem)] font-black leading-[0.84] tracking-[-0.085em]">
+              <span className="block text-white">YOUR PACE.</span>
+              <span className="block text-orange-500">YOUR CHALLENGE.</span>
             </h1>
-            <p className="mt-7 text-xl font-black tracking-[-0.04em] text-white sm:text-3xl">あなたの「なりたい」を、叶える。</p>
+            <p className="mt-7 text-xl font-black tracking-[-0.04em] text-white sm:text-3xl">自分のペースで、挑戦できる場所。</p>
           </div>
 
           <aside className="border-l border-white/20 pl-5 lg:mb-1 lg:pl-7">
             <p className="text-[10px] font-black tracking-[0.25em] text-orange-400">OUR APPROACH</p>
-            <p className="mt-4 text-sm font-bold leading-7 text-white/85">目標は、人それぞれ。<br />成長する方法も、一つじゃない。</p>
-            <p className="mt-4 text-xs leading-6 text-white/55">指導・振り返り・データ・仲間。今の自分に必要なものを選びながら進む陸上クラブです。</p>
+            <p className="mt-4 text-sm font-bold leading-7 text-white/85">だれもが挑戦できる。<br />自分らしくいられる。</p>
+            <p className="mt-4 text-xs leading-6 text-white/55">いろいろな体験を通して、自分の「やってみたい」や得意なことを見つける。コーチや仲間と一緒に、自分らしく成長していく。</p>
           </aside>
         </div>
 
         <div className="mt-10 flex flex-wrap items-center gap-3 sm:mt-12">
-          <CtaLink href="/mypage" className="bg-orange-500 text-black hover:bg-white">マイページを開く</CtaLink>
-          <CtaLink href="#weapons" variant="outline" className="border-white/35 text-white">VAULTEXを知る</CtaLink>
+          <CtaLink href="https://line.me/R/ti/p/@082fhyco" className="bg-orange-500 text-black hover:bg-white">公式LINEで相談する</CtaLink>
+          <CtaLink href="/program" variant="outline" className="border-white/35 text-white">プログラムを見る</CtaLink>
           <p className="ml-auto hidden text-[10px] font-black tracking-[0.3em] text-white/40 md:block">EST. 2026 / SHONAI / JAPAN</p>
         </div>
 
