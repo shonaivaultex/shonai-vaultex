@@ -11,7 +11,7 @@ const options: Array<{ key: keyof Preferences; title: string; detail: string }> 
   { key: "notify_important", title: "重要なお知らせ", detail: "重要に設定されたクラブ連絡" },
   { key: "notify_schedule", title: "予定変更", detail: "練習予定の変更・中止" },
   { key: "notify_coach_records", title: "コーチ入力の記録", detail: "コーチが練習・大会記録や測定値を追加した時" },
-  { key: "notify_training_log_reminder", title: "練習の振り返り忘れ", detail: "予定した練習日に記録がまだない時" },
+  { key: "notify_training_log_reminder", title: "練習・本番記録の入力忘れ", detail: "参加日の21:00に、未入力の記録画面を直接開く通知" },
 ];
 const familyOptions: Array<{ key: keyof Preferences; title: string; detail: string }> = [
   { key: "notify_schedule", title: "予定の追加・変更・中止", detail: "練習や大会の予定が更新された時" },
