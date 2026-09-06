@@ -33,15 +33,16 @@ export default async function CoachManagementPage() {
   const classes = (assignments ?? []).map((item) => item.program_class);
   const [{ data: allAthletes }, { data: schedules }, { data: scheduleTemplates }, { data: bugReports }] = await Promise.all([
     classes.length ? supabase.from("players").select("user_id, name, grade, event, program_class, member_status").in("program_class", classes).order("program_class").order("name") : Promise.resolve({ data: [] }),
-    supabase.from("schedules").select("*").eq("author_id", userId).gte("starts_at", new Date().toISOString()).order("starts_at").limit(20),
+    supabase.from("schedules").select("*").eq("author_id", userId).gte("starts_at", new Date().toISOString()).order("starts_at").limit(200),
     supabase.from("schedule_templates").select("*").eq("author_id", userId).order("name"),
     supabase.from("bug_reports").select("id, user_id, category, detail, page_url, user_agent, status, created_at").order("created_at", { ascending: false }).limit(50),
   ]);
   const scheduleIds = (schedules ?? []).map((item) => item.id);
-  const [{ data: attendance }, { data: competitionApplications }] = scheduleIds.length ? await Promise.all([
+  const [{ data: attendance }, { data: competitionApplications }, { data: personalBookings }] = scheduleIds.length ? await Promise.all([
     supabase.from("schedule_attendance").select("schedule_id, status").in("schedule_id", scheduleIds),
     supabase.from("competition_applications").select("id,schedule_id,user_id,events,note,status,created_at").in("schedule_id", scheduleIds).order("created_at"),
-  ]) : [{ data: [] }, { data: [] }];
+    supabase.from("personal_session_bookings").select("schedule_id,user_id,note,created_at").in("schedule_id", scheduleIds).order("created_at"),
+  ]) : [{ data: [] }, { data: [] }, { data: [] }];
   const memberNames = new Map((allAthletes ?? []).map((athlete) => [athlete.user_id, athlete.name]));
   const competitionApplicants: CompetitionApplicant[] = (competitionApplications ?? []).map((application) => ({ ...application, player_name: memberNames.get(application.user_id) ?? "会員" }));
   const bugReportItems: BugReportItem[] = (bugReports ?? []).map((item) => ({ id: item.id, memberName: memberNames.get(item.user_id) ?? "会員", category: item.category, detail: item.detail, pageUrl: item.page_url, userAgent: item.user_agent, status: item.status, createdAt: item.created_at }));
@@ -125,6 +126,7 @@ export default async function CoachManagementPage() {
       <h2 className="inline-flex items-center gap-2 text-sm font-black tracking-[0.1em] text-cyan-300"><span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/20">01</span>スケジュール・出席管理</h2>
       <p className="mt-2 text-xs text-white/55">今日からの予定・出欠を先に整えるのが、運営の基本です。</p>
       <CoachScheduleManager initialItems={(schedules ?? []) as ScheduleItem[]} initialTemplates={(scheduleTemplates ?? []) as ScheduleTemplate[]} initialAttendance={attendance ?? []} competitionApplicants={competitionApplicants} />
+      {(personalBookings ?? []).length ? <div className="mt-5 rounded-xl border border-orange-400/25 bg-orange-400/[.05] p-4"><h3 className="text-sm font-black text-orange-300">パーソナル予約者</h3><div className="mt-3 space-y-2">{(personalBookings ?? []).map((booking) => { const schedule = (schedules ?? []).find((item) => item.id === booking.schedule_id); return <div key={booking.schedule_id} className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs"><strong>{memberNames.get(booking.user_id) ?? "会員"}</strong><span className="ml-2 text-white/45">{schedule ? new Date(schedule.starts_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }) : "日時未確認"}</span>{booking.note ? <p className="mt-2 text-white/60">希望内容：{booking.note}</p> : null}</div>; })}</div></div> : null}
     </section>
     {adminRole ? <Link href="/admin/athlete-scan" className="mt-4 flex items-center justify-between rounded-2xl border border-cyan-400/30 bg-cyan-400/[.06] p-5 transition hover:border-cyan-300"><span className="flex items-center gap-4"><ScanLine className="text-cyan-300"/><span><strong className="block">VAULTEX STANDARD 管理</strong><span className="mt-1 block text-xs text-white/50">影響を確認して基準値を更新</span></span></span><ChevronRight className="text-cyan-300"/></Link> : null}
     <section id="members" className="mt-8 rounded-2xl border border-white/10 bg-[#101216] p-5">

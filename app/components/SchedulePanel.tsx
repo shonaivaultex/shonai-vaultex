@@ -3,7 +3,7 @@ import { CalendarDays, ChevronRight, MapPin, UserRound, Users } from "lucide-rea
 import ScheduleAttendance from "@/app/components/ScheduleAttendance";
 import { schedulePhase } from "@/lib/schedule-phases";
 
-export type ScheduleItem = { id: number; author_id?: string; author_name?: string; title: string; details: string | null; location: string | null; starts_at: string; ends_at: string | null; all_day?: boolean; training_phase?: string; schedule_type: string; audience: string; program_class: string | null; registration_enabled: boolean; registration_opens_at: string | null; registration_deadline: string | null; personal?: boolean };
+export type ScheduleItem = { id: number; author_id?: string; author_name?: string; title: string; details: string | null; location: string | null; starts_at: string; ends_at: string | null; all_day?: boolean; training_phase?: string; schedule_type: string; audience: string; program_class: string | null; registration_enabled: boolean; registration_opens_at: string | null; registration_deadline: string | null; is_personal_slot?: boolean; personal_booked?: boolean; personal?: boolean };
 export type CoachAttendanceMember = { id: string; name: string; programClass: string | null; status: string; comment: string | null };
 export type CoachAttendanceRoster = { attending: CoachAttendanceMember[]; absent: CoachAttendanceMember[]; undecided: CoachAttendanceMember[]; unanswered: CoachAttendanceMember[] };
 

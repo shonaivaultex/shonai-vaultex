@@ -155,6 +155,8 @@ export default async function MyPage() {
         <Link href="/performance" className="hidden min-h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 text-sm font-black text-black transition hover:bg-orange-400 md:inline-flex">記録を追加<Plus size={17}/></Link>
       </section>
 
+      <Link href="/mypage/personal" className="mt-3 flex min-h-16 items-center justify-between rounded-2xl border border-orange-400/25 bg-orange-400/[.07] px-5 transition hover:bg-orange-400/10"><span><strong className="block text-sm text-orange-200">パーソナル予約</strong><span className="mt-1 block text-xs text-white/40">金曜夕方・土日の午後から空き枠を選ぶ</span></span><ChevronRight size={18} className="text-orange-300"/></Link>
+
       <section data-tutorial="mobile-home" className="mt-4 rounded-2xl border border-white/10 bg-[#121212] p-4 md:hidden">
         <div className="flex items-center justify-between gap-3">
           <div><p className="text-[9px] font-black tracking-[.2em] text-orange-400">TODAY</p><h2 className="mt-1 text-lg font-black">今日やること</h2></div>

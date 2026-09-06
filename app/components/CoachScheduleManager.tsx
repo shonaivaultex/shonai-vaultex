@@ -33,6 +33,9 @@ const quickPrograms = [
   { key: "basic", icon: CalendarClock, label: "平日・基礎セッション", description: "毎週水曜 17:00〜19:00", title: "走り方・基礎セッション", weekday: 3, hour: 17, minute: 0, duration: 120, scheduleType: "practice", repeat: "weekly", weeks: 12 },
   { key: "class", icon: BookmarkPlus, label: "クラス別セッション", description: "平日17:00〜19:00・クラス指定", title: "クラス別セッション", weekday: 3, hour: 17, minute: 0, duration: 120, scheduleType: "practice", repeat: "weekly", weeks: 12, audience: "class" },
   { key: "control", icon: Gauge, label: "月1回・CONTROL TEST", description: "第1日曜 9:00〜12:00", title: "CONTROL TEST / SCAN", weekday: 0, hour: 9, minute: 0, duration: 180, scheduleType: "measurement", repeat: "monthly", weeks: 24 },
+  { key: "personal-friday", icon: PersonStanding, label: "金曜・パーソナル枠", description: "毎週金曜 17:00／18:00", title: "パーソナルセッション", weekday: 5, hour: 17, minute: 0, duration: 60, scheduleType: "other", repeat: "weekly", weeks: 12, secondHour: 18 },
+  { key: "personal-saturday", icon: PersonStanding, label: "土曜午後・パーソナル枠", description: "毎週土曜 13:00／14:00", title: "パーソナルセッション", weekday: 6, hour: 13, minute: 0, duration: 60, scheduleType: "other", repeat: "weekly", weeks: 12, secondHour: 14 },
+  { key: "personal-sunday", icon: PersonStanding, label: "日曜午後・パーソナル枠", description: "毎週日曜 13:00／14:00", title: "パーソナルセッション", weekday: 0, hour: 13, minute: 0, duration: 60, scheduleType: "other", repeat: "weekly", weeks: 12, secondHour: 14 },
 ] as const;
 
 function nextWeekdayLocal(weekday: number, hour: number, minute: number) {
@@ -75,6 +78,8 @@ export default function CoachScheduleManager({ initialItems, initialTemplates, i
   const [copyOpen, setCopyOpen] = useState(false); const [copying, setCopying] = useState(false);
   const [title, setTitle] = useState(initialEditingItem?.title ?? ""); const [details, setDetails] = useState(initialEditingItem?.details ?? ""); const [location, setLocation] = useState(initialEditingItem?.location ?? ""); const [startsAt, setStartsAt] = useState(initialStart); const [endsAt, setEndsAt] = useState(localValue(initialEditingItem?.ends_at)); const [scheduleType, setScheduleType] = useState(initialEditingItem?.schedule_type ?? "practice"); const [audience, setAudience] = useState(initialEditingItem?.audience ?? "all"); const [programClass, setProgramClass] = useState(initialEditingItem?.program_class ?? "ジュニア"); const [repeat, setRepeat] = useState("once"); const [repeatUntil, setRepeatUntil] = useState("");
   const [allDay, setAllDay] = useState(initialEditingItem?.all_day ?? false);
+  const [secondSlotHour, setSecondSlotHour] = useState<number | null>(null);
+  const [isPersonalSlot, setIsPersonalSlot] = useState(initialEditingItem?.is_personal_slot ?? false);
   const [notifyMembers, setNotifyMembers] = useState(false);
   const [trainingPhase, setTrainingPhase] = useState(initialEditingItem?.training_phase ?? "normal");
   const [registrationEnabled, setRegistrationEnabled] = useState(initialEditingItem?.registration_enabled ?? false); const [registrationOpensAt, setRegistrationOpensAt] = useState(localValue(initialEditingItem?.registration_opens_at)); const [registrationDeadline, setRegistrationDeadline] = useState(localValue(initialEditingItem?.registration_deadline));
@@ -89,9 +94,9 @@ export default function CoachScheduleManager({ initialItems, initialTemplates, i
     }
     return Array.from({ length: 24 }, (_, index) => monthlyOccurrenceLocal(startsAt, index)).filter((value) => value.slice(0, 10) <= repeatUntil);
   }, [repeat, startsAt, repeatUntil]);
-  const occurrenceCount = occurrenceLocals.length;
+  const occurrenceCount = occurrenceLocals.length * (secondSlotHour === null ? 1 : 2);
   const weekday = startsAt ? weekdayLabels[dateOnlyUtc(startsAt).getUTCDay()] : "—";
-  function reset() { setOpen(false); setEditingId(null); setSelectedTemplate(""); setTitle(""); setDetails(""); setLocation(""); setStartsAt(""); setEndsAt(""); setAllDay(false); setNotifyMembers(false); setTrainingPhase("normal"); setScheduleType("practice"); setAudience("all"); setRepeat("once"); setRepeatUntil(""); setRegistrationEnabled(false); setRegistrationOpensAt(""); setRegistrationDeadline(""); }
+  function reset() { setOpen(false); setEditingId(null); setSelectedTemplate(""); setTitle(""); setDetails(""); setLocation(""); setStartsAt(""); setEndsAt(""); setAllDay(false); setSecondSlotHour(null); setIsPersonalSlot(false); setNotifyMembers(false); setTrainingPhase("normal"); setScheduleType("practice"); setAudience("all"); setRepeat("once"); setRepeatUntil(""); setRegistrationEnabled(false); setRegistrationOpensAt(""); setRegistrationDeadline(""); }
   function startNew(type: "practice" | "competition" = "practice") { reset(); setScheduleType(type); setOpen(true); }
   function applyQuickProgram(program: (typeof quickPrograms)[number]) {
     reset();
@@ -100,9 +105,9 @@ export default function CoachScheduleManager({ initialItems, initialTemplates, i
     const end = new Date(startDate.getTime() + program.duration * 60000);
     const until = new Date(dateOnlyUtc(start));
     until.setUTCDate(until.getUTCDate() + (program.weeks - 1) * 7);
-    setTitle(program.title); setScheduleType(program.scheduleType); setStartsAt(start); setEndsAt(localValue(end.toISOString())); setRepeat(program.repeat); setRepeatUntil(until.toISOString().slice(0, 10)); setAudience("audience" in program ? program.audience : "all"); setOpen(true);
+    setTitle(program.title); setScheduleType(program.scheduleType); setStartsAt(start); setEndsAt(localValue(end.toISOString())); setRepeat(program.repeat); setRepeatUntil(until.toISOString().slice(0, 10)); setAudience("audience" in program ? program.audience : "all"); setSecondSlotHour("secondHour" in program ? program.secondHour : null); setIsPersonalSlot("secondHour" in program); setOpen(true);
   }
-  function edit(item: ScheduleItem) { reset(); setEditingId(item.id); setTitle(item.title); setDetails(item.details ?? ""); setLocation(item.location ?? ""); setStartsAt(localValue(item.starts_at)); setEndsAt(localValue(item.ends_at)); setAllDay(item.all_day ?? false); setTrainingPhase(item.training_phase ?? "normal"); setScheduleType(item.schedule_type); setAudience(item.audience); setProgramClass(item.program_class ?? "ジュニア"); setRegistrationEnabled(item.registration_enabled ?? false); setRegistrationOpensAt(localValue(item.registration_opens_at)); setRegistrationDeadline(localValue(item.registration_deadline)); setOpen(true); }
+  function edit(item: ScheduleItem) { reset(); setEditingId(item.id); setTitle(item.title); setDetails(item.details ?? ""); setLocation(item.location ?? ""); setStartsAt(localValue(item.starts_at)); setEndsAt(localValue(item.ends_at)); setAllDay(item.all_day ?? false); setIsPersonalSlot(item.is_personal_slot ?? false); setTrainingPhase(item.training_phase ?? "normal"); setScheduleType(item.schedule_type); setAudience(item.audience); setProgramClass(item.program_class ?? "ジュニア"); setRegistrationEnabled(item.registration_enabled ?? false); setRegistrationOpensAt(localValue(item.registration_opens_at)); setRegistrationDeadline(localValue(item.registration_deadline)); setOpen(true); }
   function applyTemplate(id: string) {
     setSelectedTemplate(id); const template = initialTemplates.find((item) => String(item.id) === id); if (!template) return;
     const baseLocal = startsAt || localValue(new Date().toISOString()); const [hours, minutes] = template.start_time.split(":").map(Number); const start = japanLocalDate(`${baseLocal.slice(0, 10)}T${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`);
@@ -151,18 +156,19 @@ export default function CoachScheduleManager({ initialItems, initialTemplates, i
     if (end && end < start) { setSaving(false); alert("終了日時は開始日時より後にしてください。"); return; }
     if (scheduleType === "competition" && registrationEnabled && registrationOpensAt && registrationDeadline && japanLocalDate(registrationDeadline) < japanLocalDate(registrationOpensAt)) { setSaving(false); alert("申込締切は申込開始日時より後にしてください。"); return; }
     const duration = end ? end.getTime() - start.getTime() : null;
-    const base = { author_id: user.id, title: title.trim(), details: details.trim() || null, location: location.trim() || null, all_day: allDay, training_phase: trainingPhase, schedule_type: scheduleType, audience, program_class: audience === "class" ? programClass : null, registration_enabled: scheduleType === "competition" && registrationEnabled, registration_opens_at: scheduleType === "competition" && registrationEnabled && registrationOpensAt ? japanLocalDate(registrationOpensAt).toISOString() : null, registration_deadline: scheduleType === "competition" && registrationEnabled && registrationDeadline ? japanLocalDate(registrationDeadline).toISOString() : null, updated_at: new Date().toISOString() };
+    const base = { author_id: user.id, title: title.trim(), details: details.trim() || null, location: location.trim() || null, all_day: allDay, training_phase: trainingPhase, schedule_type: scheduleType, audience, program_class: audience === "class" ? programClass : null, is_personal_slot: isPersonalSlot, registration_enabled: scheduleType === "competition" && registrationEnabled, registration_opens_at: scheduleType === "competition" && registrationEnabled && registrationOpensAt ? japanLocalDate(registrationOpensAt).toISOString() : null, registration_deadline: scheduleType === "competition" && registrationEnabled && registrationDeadline ? japanLocalDate(registrationDeadline).toISOString() : null, updated_at: new Date().toISOString() };
     let result; let savedOccurrenceCount = occurrenceCount; let skippedCompetitionCount = 0;
     if (editingId) {
       result = await supabase.from("schedules").update({ ...base, starts_at: start.toISOString(), ends_at: end?.toISOString() ?? null }).eq("id", editingId);
     } else if (repeat !== "once") {
-      const { data: competitionItems, error: competitionError } = await supabase.from("schedules").select("starts_at, ends_at").eq("schedule_type", "competition");
+      const { data: existingItems, error: competitionError } = await supabase.from("schedules").select("starts_at, ends_at, schedule_type");
       if (competitionError) { setSaving(false); alert(competitionError.message); return; }
-      const competitionDates = new Set((competitionItems ?? []).flatMap((item) => scheduleDateKeys(item.starts_at, item.ends_at)));
-      const candidates = occurrenceLocals.map((occurrenceLocal) => { const occurrenceStart = japanLocalDate(occurrenceLocal); return { ...base, starts_at: occurrenceStart.toISOString(), ends_at: duration === null ? null : new Date(occurrenceStart.getTime() + duration).toISOString() }; });
-      const rows = candidates.filter((row) => !competitionDates.has(japanDateKey(row.starts_at)));
+      const competitionDates = new Set((existingItems ?? []).filter((item) => item.schedule_type === "competition").flatMap((item) => scheduleDateKeys(item.starts_at, item.ends_at)));
+      const registrationLocals = occurrenceLocals.flatMap((occurrenceLocal) => secondSlotHour === null ? [occurrenceLocal] : [occurrenceLocal, `${occurrenceLocal.slice(0, 10)}T${String(secondSlotHour).padStart(2, "0")}:00`]);
+      const candidates = registrationLocals.map((occurrenceLocal) => { const occurrenceStart = japanLocalDate(occurrenceLocal); return { ...base, starts_at: occurrenceStart.toISOString(), ends_at: duration === null ? null : new Date(occurrenceStart.getTime() + duration).toISOString() }; });
+      const rows = candidates.filter((row) => !competitionDates.has(japanDateKey(row.starts_at)) && (!isPersonalSlot || !(existingItems ?? []).some((item) => new Date(item.starts_at) < new Date(row.ends_at ?? row.starts_at) && new Date(item.ends_at ?? item.starts_at) > new Date(row.starts_at))));
       skippedCompetitionCount = candidates.length - rows.length; savedOccurrenceCount = rows.length;
-      if (!rows.length) { setSaving(false); alert("対象日はすべて大会日と重なるため、予定を登録しませんでした。"); return; }
+      if (!rows.length) { setSaving(false); alert(isPersonalSlot ? "対象枠は大会日または既存予定と重なるため、登録しませんでした。" : "対象日はすべて大会日と重なるため、予定を登録しませんでした。"); return; }
       result = await supabase.from("schedules").insert(rows);
     } else {
       result = await supabase.from("schedules").insert({ ...base, starts_at: start.toISOString(), ends_at: end?.toISOString() ?? null });
@@ -173,7 +179,7 @@ export default function CoachScheduleManager({ initialItems, initialTemplates, i
       await supabase.from("announcements").insert({ author_id: user.id, title: `${editingId ? "予定変更" : "新しい予定"}：${title}`, body: summary, audience, program_class: audience === "class" ? programClass : null, priority: editingId ? "important" : "normal" });
       fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "schedule", title: `${editingId ? "予定変更" : "新しい予定"}：${title}`, body: summary, audience, programClass: audience === "class" ? programClass : null }) }).catch(() => undefined);
     }
-    setSaving(false); reset(); if (skippedCompetitionCount) alert(`${savedOccurrenceCount}件を登録しました。大会日の${skippedCompetitionCount}件は除外しました。`); router.refresh();
+    setSaving(false); reset(); if (skippedCompetitionCount) alert(`${savedOccurrenceCount}件を登録しました。${isPersonalSlot ? "大会日または既存予定と重なる" : "大会日の"}${skippedCompetitionCount}件は除外しました。`); router.refresh();
   }
   async function remove(item: ScheduleItem) { if (!confirm(`「${item.title}」を削除しますか？`)) return; const supabase = createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const { error } = await supabase.from("schedules").delete().eq("id", item.id); if (error) { alert(error.message); return; } const body = `${formatJapan(item.starts_at)}の予定は中止になりました。`; await supabase.from("announcements").insert({ author_id: user.id, title: `予定中止：${item.title}`, body, audience: item.audience, program_class: item.program_class, priority: "important" }); fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "schedule", title: `予定中止：${item.title}`, body, audience: item.audience, programClass: item.program_class }) }).catch(() => undefined); router.refresh(); }
   async function removeMany(items: ScheduleItem[]) { const first = items[0]; if (!confirm(`「${first.title}」の繰り返し予定 ${items.length}件をすべて削除しますか？`)) return; const supabase = createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const { error } = await supabase.from("schedules").delete().in("id", items.map((item) => item.id)); if (error) { alert(error.message); return; } const body = `${shortRange(items)}の繰り返し予定は中止になりました。`; await supabase.from("announcements").insert({ author_id: user.id, title: `予定中止：${first.title}`, body, audience: first.audience, program_class: first.program_class, priority: "important" }); fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "schedule", title: `予定中止：${first.title}`, body, audience: first.audience, programClass: first.program_class }) }).catch(() => undefined); router.refresh(); }
