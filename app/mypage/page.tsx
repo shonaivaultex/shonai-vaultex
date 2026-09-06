@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
-import { Activity, ArrowUpRight, Check, ChevronRight, ClipboardPenLine, Flame, Medal, MessageCircle, NotebookPen, Plus, Target, Trophy, Video } from "lucide-react";
+import { Activity, ArrowUpRight, CalendarPlus, Check, ChevronRight, ClipboardPenLine, Flame, Medal, MessageCircle, NotebookPen, Plus, Target, Trophy, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { type ScheduleItem } from "@/app/components/SchedulePanel";
@@ -146,11 +146,12 @@ export default async function MyPage() {
       </div>
       <MypageTutorial autoOpen={(player.mypage_tutorial_version ?? 0) < MYPAGE_TUTORIAL_VERSION} userId={userId} />
 
-      <section className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+      <section className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
         <div className="rounded-2xl border border-orange-400/20 bg-orange-400/[.06] px-5 py-4">
           <p className="flex items-center gap-2 text-[10px] font-black tracking-[.18em] text-orange-300"><Flame size={14}/>KEEP MOVING</p>
           <p className="mt-2 text-sm font-bold leading-6 text-white/70">{todayActions.length ? `今日はあと${todayActions.length}件。ひとつずつ進めよう。` : "今日の確認は完了。積み重ねが次の自信になる。"}</p>
         </div>
+        <Link href="/mypage/my-calendar?week=1" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-emerald-400/35 bg-emerald-400/10 px-5 text-sm font-black text-emerald-200 transition hover:bg-emerald-400/15"><CalendarPlus size={18}/>1週間の予定を作成</Link>
         <Link href="/performance" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 text-sm font-black text-black transition hover:bg-orange-400">記録を追加<Plus size={17}/></Link>
       </section>
 

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase-server";
 import MyCalendar from "@/app/components/MyCalendar";
 import type { SchedulePeriod } from "@/lib/schedule-periods";
 
-export default async function MyCalendarPage({ searchParams }: { searchParams: Promise<{ period?: string; periodDate?: string; date?: string; new?: string }> }) {
+export default async function MyCalendarPage({ searchParams }: { searchParams: Promise<{ period?: string; periodDate?: string; date?: string; new?: string; week?: string }> }) {
   const query = await searchParams;
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getClaims();
@@ -73,7 +73,7 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
         <div className="rounded-2xl border border-emerald-400/45 bg-emerald-400/10 p-4 text-emerald-200"><span className="flex items-center gap-2 text-sm font-black"><CalendarDays size={18}/>マイカレンダー</span><span className="mt-1 block text-xs text-white/45">自分の予定・練習日誌・目標</span></div>
         <Link href="/mypage/schedules" className="rounded-2xl border border-white/10 bg-[#111] p-4 text-white transition hover:border-orange-400/45"><span className="flex items-center gap-2 text-sm font-black"><Users size={18} className="text-orange-400"/>全体スケジュール</span><span className="mt-1 block text-xs text-white/45">クラブ予定・大会・出欠を確認</span></Link>
       </nav>
-      <MyCalendar userId={userId} initialEntries={enrichedEntries} schedules={schedules} activeScheduleIds={[...activeScheduleIds]} records={enrichedRecords} scans={(scans ?? []).map((scan) => ({ id: scan.id, scan_number: scan.scan_number, measured_on: scan.measured_on, measurements: scan.control_test_measurements ?? [] }))} periods={periods} initialGoal={activeGoal} goalHistory={goalHistory ?? []} initialInputHistory={inputHistory ?? []} initialOpen={query.new === "1"} initialSelectedDate={initialSelectedDate} initialPeriodId={initialPeriodId} initialPeriodDate={initialPeriodDate}/>
+      <MyCalendar userId={userId} initialEntries={enrichedEntries} schedules={schedules} activeScheduleIds={[...activeScheduleIds]} records={enrichedRecords} scans={(scans ?? []).map((scan) => ({ id: scan.id, scan_number: scan.scan_number, measured_on: scan.measured_on, measurements: scan.control_test_measurements ?? [] }))} periods={periods} initialGoal={activeGoal} goalHistory={goalHistory ?? []} initialInputHistory={inputHistory ?? []} initialOpen={query.new === "1"} initialWeekPlan={query.week === "1"} initialSelectedDate={initialSelectedDate} initialPeriodId={initialPeriodId} initialPeriodDate={initialPeriodDate}/>
     </div>
   </main>;
 }

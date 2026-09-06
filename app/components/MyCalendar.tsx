@@ -267,6 +267,7 @@ export default function MyCalendar({
   goalHistory,
   initialInputHistory,
   initialOpen,
+  initialWeekPlan,
   initialSelectedDate,
   initialPeriodId,
   initialPeriodDate,
@@ -282,6 +283,7 @@ export default function MyCalendar({
   goalHistory: CalendarGoal[];
   initialInputHistory: CalendarInputHistory[];
   initialOpen?: boolean;
+  initialWeekPlan?: boolean;
   initialSelectedDate?: string;
   initialPeriodId?: number | null;
   initialPeriodDate?: string;
@@ -308,9 +310,19 @@ export default function MyCalendar({
   const [goalOpen, setGoalOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [quickPeriodOpen, setQuickPeriodOpen] = useState(false);
-  const [weekPlanOpen, setWeekPlanOpen] = useState(false);
+  const [weekPlanOpen, setWeekPlanOpen] = useState(Boolean(initialWeekPlan));
   const [weekPlanSaving, setWeekPlanSaving] = useState(false);
-  const [weekPlanRows, setWeekPlanRows] = useState<Array<{ date: string; type: keyof typeof entryTypes; title: string; scheduleId: number | null }>>([]);
+  const [weekPlanRows, setWeekPlanRows] = useState<Array<{ date: string; type: keyof typeof entryTypes; title: string; scheduleId: number | null }>>(() => {
+    if (!initialWeekPlan) return [];
+    const start = new Date(selectedDateValue.getFullYear(), selectedDateValue.getMonth(), selectedDateValue.getDate() - selectedDateValue.getDay());
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(start);
+      date.setDate(date.getDate() + index);
+      const key = dateKey(date);
+      const existing = initialEntries.find((entry) => !entry.schedule_id && entry.entry_date === key);
+      return { date: key, type: (existing?.entry_type && existing.entry_type in entryTypes ? existing.entry_type : "personal_training") as keyof typeof entryTypes, title: existing?.title ?? "", scheduleId: null };
+    });
+  });
   const [restSaving, setRestSaving] = useState(false);
   const dailyLogRef = useRef<HTMLElement>(null);
   const [mobileCalendarView, setMobileCalendarView] = useState<
