@@ -12,6 +12,7 @@ type Subscription = {
   auth: string;
 };
 type LineTarget = { user_id: string; line_user_id: string };
+type ScheduleLineTarget = LineTarget & { portal: "athlete" | "family" };
 
 type CalendarEntry = {
   user_id: string;
@@ -31,6 +32,94 @@ type Attendance = {
   user_id: string;
   schedule_id: number;
 };
+
+type TomorrowSchedule = Schedule & { title: string; starts_at: string };
+
+function japanTime(value: string) {
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+async function sendTomorrowScheduleReminders(admin: ReturnType<typeof createAdminClient>, tomorrow: string) {
+  if (!process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN) return 0;
+  const [{ data: connectionRows, error: connectionError }, { data: scheduleRows, error: scheduleError }] = await Promise.all([
+    admin.from("line_account_connections").select("user_id,line_user_id,portal").eq("notify_schedule", true),
+    admin
+      .from("schedules")
+      .select("id,title,starts_at,schedule_type")
+      .gte("starts_at", `${tomorrow}T00:00:00+09:00`)
+      .lte("starts_at", `${tomorrow}T23:59:59.999+09:00`)
+      .order("starts_at"),
+  ]);
+  if (connectionError || scheduleError) throw connectionError ?? scheduleError;
+  const connections = (connectionRows ?? []) as ScheduleLineTarget[];
+  const schedules = (scheduleRows ?? []) as TomorrowSchedule[];
+  if (!connections.length || !schedules.length) return 0;
+
+  const { data: attendanceRows, error: attendanceError } = await admin
+    .from("schedule_attendance")
+    .select("user_id,schedule_id")
+    .in("schedule_id", schedules.map((item) => item.id))
+    .eq("status", "attending");
+  if (attendanceError) throw attendanceError;
+  const attendance = (attendanceRows ?? []) as Attendance[];
+  const athleteIds = [...new Set(attendance.map((item) => item.user_id))];
+  const { data: linkRows, error: linksError } = athleteIds.length
+    ? await admin.from("guardian_athlete_links").select("guardian_id,athlete_id").in("athlete_id", athleteIds).eq("status", "active")
+    : { data: [], error: null };
+  if (linksError) throw linksError;
+
+  const athletesByGuardian = new Map<string, string[]>();
+  for (const link of linkRows ?? []) {
+    const current = athletesByGuardian.get(link.guardian_id) ?? [];
+    current.push(link.athlete_id);
+    athletesByGuardian.set(link.guardian_id, current);
+  }
+
+  let sent = 0;
+  for (const connection of connections) {
+    const linkedAthletes = connection.portal === "athlete"
+      ? [connection.user_id]
+      : athletesByGuardian.get(connection.user_id) ?? [];
+    const scheduleIds = new Set(
+      attendance
+        .filter((item) => linkedAthletes.includes(item.user_id))
+        .map((item) => item.schedule_id),
+    );
+    const userSchedules = schedules.filter((item) => scheduleIds.has(item.id));
+    if (!userSchedules.length) continue;
+
+    const { error: claimError } = await admin.from("line_daily_reminder_deliveries").insert({
+      user_id: connection.user_id,
+      reminder_date: tomorrow,
+      reminder_kind: "tomorrow_schedule",
+    });
+    if (claimError?.code === "23505") continue;
+    if (claimError) throw claimError;
+
+    const competition = userSchedules.some((item) => item.schedule_type === "competition");
+    const scheduleText = userSchedules.map((item) => `${japanTime(item.starts_at)} ${item.title}`).join("\n");
+    const result = await sendLineMessage(
+      connection.line_user_id,
+      competition ? "明日は大会です。準備を確認しましょう" : "明日のVAULTEX予定",
+      scheduleText,
+      connection.portal === "family" ? "/family/schedule" : "/mypage/my-calendar",
+    );
+    if (result.sent) sent += 1;
+    else {
+      await admin
+        .from("line_daily_reminder_deliveries")
+        .delete()
+        .eq("user_id", connection.user_id)
+        .eq("reminder_date", tomorrow)
+        .eq("reminder_kind", "tomorrow_schedule");
+    }
+  }
+  return sent;
+}
 
 function japanDate(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -68,6 +157,7 @@ export async function GET(request: Request) {
   const privateKey = process.env.VAPID_PRIVATE_KEY;
   const admin = createAdminClient();
   const reminderDate = japanDate();
+  const tomorrow = japanDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
   const [{ data: subscriptionRows, error: subscriptionError }, { data: lineRows, error: lineError }] = await Promise.all([
     admin.from("push_subscriptions").select("user_id, endpoint, p256dh, auth").eq("notify_training_log_reminder", true),
     admin.from("line_account_connections").select("user_id,line_user_id").eq("portal", "athlete").eq("notify_training_log_reminder", true),
@@ -78,7 +168,8 @@ export async function GET(request: Request) {
   const lineTargets = (lineRows ?? []) as LineTarget[];
   const subscribedUserIds = [...new Set([...subscriptions.map((item) => item.user_id), ...lineTargets.map((item) => item.user_id)])];
   if (!subscribedUserIds.length) {
-    return NextResponse.json({ date: reminderDate, eligible: 0, sent: 0 });
+    const tomorrowLineSent = await sendTomorrowScheduleReminders(admin, tomorrow);
+    return NextResponse.json({ date: reminderDate, eligible: 0, sent: 0, tomorrowLineSent });
   }
 
   const dayRange = japanDayRange(reminderDate);
@@ -211,6 +302,7 @@ export async function GET(request: Request) {
   if (staleEndpoints.length) {
     await admin.from("push_subscriptions").delete().in("endpoint", [...new Set(staleEndpoints)]);
   }
+  const tomorrowLineSent = await sendTomorrowScheduleReminders(admin, tomorrow);
 
   return NextResponse.json({
     date: reminderDate,
@@ -218,5 +310,6 @@ export async function GET(request: Request) {
     sentUsers,
     sentDevices,
     sentLine: eligibleUsers.filter(({ userId }) => lineTargets.some((target) => target.user_id === userId)).length,
+    tomorrowLineSent,
   });
 }
