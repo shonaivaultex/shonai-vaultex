@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { Bell, ChevronRight, Plus, ScanLine, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase-server";
-import { eventKindMap, unitMap } from "@/lib/performance-events";
+import { eventKindMap, eventNamesByKind, unitMap, type PerformanceKind } from "@/lib/performance-events";
 import { evaluateAthleteScan, type AthleteMeasurement, type AthleteStandard, type TypeSettings } from "@/lib/athlete-scan";
 import MonthlyGrowthReport, { type GrowthRecord } from "@/app/components/MonthlyGrowthReport";
 import NewsPanel, { type NewsItem } from "@/app/components/NewsPanel";
 
 type DeferredData = {
   currentMonthRecordCount: number;
-  personalBestCount: number;
+  recordedEventCounts: Record<PerformanceKind, number>;
   unreadCount: number;
   growthRecords: GrowthRecord[];
   personalBests: Record<string, number>;
@@ -109,10 +109,24 @@ export async function loadMypageDeferredData({
     if (current === undefined || (lowerIsBetter ? value < current : value > current)) bests[record.category] = value;
     return bests;
   }, {});
+  const recordedEventsByKind: Record<PerformanceKind, Set<string>> = {
+    athletics: new Set(),
+    "unofficial-athletics": new Set(),
+    "control-test": new Set(),
+  };
+  (ownRecords ?? []).forEach((record) => {
+    if (!Number.isFinite(Number(record.value))) return;
+    const kind = (record.record_kind ?? eventKindMap[record.category] ?? "control-test") as PerformanceKind;
+    recordedEventsByKind[kind]?.add(record.category);
+  });
 
   return {
     currentMonthRecordCount: (growthRecords ?? []).filter((record) => record.date.startsWith(currentMonth)).length,
-    personalBestCount: Object.keys(personalBests).length,
+    recordedEventCounts: {
+      athletics: recordedEventsByKind.athletics.size,
+      "unofficial-athletics": recordedEventsByKind["unofficial-athletics"].size,
+      "control-test": recordedEventsByKind["control-test"].size,
+    },
     unreadCount: newsItems.filter((item) => item.unread).length,
     growthRecords: (growthRecords ?? []) as GrowthRecord[],
     personalBests,
@@ -124,10 +138,15 @@ export async function loadMypageDeferredData({
 
 export async function MypageStats({ dataPromise }: { dataPromise: Promise<DeferredData> }) {
   const data = await dataPromise;
+  const recordKinds: Array<{ kind: PerformanceKind; label: string }> = [
+    { kind: "athletics", label: "大会" },
+    { kind: "unofficial-athletics", label: "練習" },
+    { kind: "control-test", label: "CT" },
+  ];
   return <div className="contents max-md:hidden">
     <Link href="/mypage/growth-report" className="border-r border-white/10 p-5 transition hover:bg-white/[.035] sm:p-7"><p className="text-[10px] font-black tracking-[.14em] text-white/30">THIS MONTH</p><strong className="mt-2 block text-3xl tracking-[-.04em]">{data.currentMonthRecordCount}<small className="ml-1 text-xs text-white/35">RECORDS</small></strong></Link>
     <a href="#news" className="p-5 transition hover:bg-white/[.035] sm:p-7"><p className="text-[10px] font-black tracking-[.14em] text-white/30">TO CHECK</p><strong className={`mt-2 block text-3xl tracking-[-.04em] ${data.unreadCount ? "text-orange-400" : ""}`}>{data.unreadCount}<small className="ml-1 text-xs text-white/35">ITEMS</small></strong></a>
-    <Link href="/mypage/growth-report" className="col-span-2 border-t border-white/10 p-5 transition hover:bg-white/[.035] sm:p-7"><div className="flex items-center justify-between gap-4"><span><p className="text-[10px] font-black tracking-[.14em] text-white/30">YOUR PROGRESS</p><strong className="mt-2 block text-lg">記録のある種目</strong><span className="mt-1 block text-[11px] text-white/35">練習・大会・測定の記録</span></span><strong className="text-3xl text-orange-400">{data.personalBestCount}<small className="ml-1 text-xs text-white/35">種目</small></strong></div></Link>
+    <Link href="/mypage/growth-report" className="col-span-2 border-t border-white/10 p-5 transition hover:bg-white/[.035] sm:p-7"><div className="flex flex-wrap items-end justify-between gap-4"><span><p className="text-[10px] font-black tracking-[.14em] text-white/30">YOUR PROGRESS</p><strong className="mt-2 block text-lg">記録のある種目</strong></span><span className="flex flex-wrap justify-end gap-2">{recordKinds.map(({ kind, label }) => <span key={kind} className="rounded-lg bg-white/[.05] px-3 py-2 text-center"><small className="block text-[9px] font-black text-white/35">{label}</small><strong className="mt-0.5 block text-sm text-orange-300">{data.recordedEventCounts[kind]} / {eventNamesByKind(kind).length}<span className="ml-1 text-[9px] text-white/30">種目</span></strong></span>)}</span></div></Link>
   </div>;
 }
 
