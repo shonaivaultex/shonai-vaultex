@@ -7,6 +7,8 @@ export type Program = {
   heroTitle: string;
   lead: string;
   description: string;
+  price: string;
+  priceNote: string;
   highlights: { title: string; description: string }[];
   flow: { time: string; title: string; description: string }[];
   faq: { question: string; answer: string }[];
@@ -19,6 +21,7 @@ export const programs: Program[] = [
     slug: "junior", number: "01", name: "JUNIOR", englishTitle: "Junior Athlete", audience: "小学4〜6年生対象",
     heroTitle: "FIND YOUR SPARK.", lead: "いろいろな体験から、好きなことを見つける。\n小さな挑戦も、未来につながる記録に。",
     description: "初めにカウンセリングで、お子さまの好きなことや性格、挑戦したいことを伺います。走る・跳ぶ・投げるなど、さまざまな体験から自分に合う競技を探し、自分のペースで取り組みます。「自分も小学生の頃からデータを残しておきたかった」という私自身の思いから、記録や動画を通して長い時間をかけた成長を残すことも大切にしています。",
+    price: "月額 5,000円", priceNote: "基本会費",
     highlights: [
       { title: "走る・跳ぶ・投げる基礎", description: "走る・跳ぶ・投げる。すべてのスポーツにつながる基礎運動能力を、楽しく伸ばします。" },
       { title: "成長を記録に残す", description: "記録や動画、振り返りを残し、自分の変化を見つけます。結果だけでなく、挑戦したことや工夫したことも一緒に振り返ります。" },
@@ -47,6 +50,7 @@ export const programs: Program[] = [
     slug: "youth", number: "02", name: "YOUTH", englishTitle: "Performance", audience: "中学生〜高校生対象",
     heroTitle: "YOUR WAY FORWARD.", lead: "環境が合わないことで、諦めてほしくない。\n納得できる指導で、次の挑戦へ。",
     description: "学校や所属先によって、練習環境や専門的な指導を受けられる機会は異なります。今いる環境が合わないことで、やりたい競技を諦めてほしくない。まずはカウンセリングで本人の思い、性格や傾向、学校での活動を理解し、一緒に練習方針を考えます。競技経験や測定データ、動作分析、研究知見をもとに、練習の理由を伝え、納得して取り組める環境を目指します。",
+    price: "月額 5,000円", priceNote: "基本会費",
     highlights: [
       { title: "根拠を知り、納得して取り組む", description: "なぜこの練習をするのか、どんな変化を目指すのかを伝えます。データや動きを一緒に確認し、根拠と、まだ確かではないことを分けて説明します。" },
       { title: "成長に合わせて体を整える", description: "成長段階や体調、学校での練習量に合わせて負荷を調整します。無理に周囲へ合わせるのではなく、自分に合ったペースで取り組みます。" },
@@ -75,6 +79,7 @@ export const programs: Program[] = [
     slug: "elite", number: "03", name: "ELITE", englishTitle: "Elite Performance", audience: "大学生・一般競技者対象",
     heroTitle: "BUILD YOUR BEST.", lead: "経験とデータを、次の一歩へ。\n自分に合う道筋で、さらなる高みを目指す。",
     description: "さらに競技力を高めたい方へ。カウンセリングで目標や課題、生活のスケジュールを伺い、選手自身の考えを軸に練習方針を組み立てます。私自身の競技経験に加え、測定データ、動作分析、論文などの研究知見をさまざまな角度から検討し、取り組みの根拠を共有します。ELITEという名称は競技レベルの上下や昇格を意味しません。",
+    price: "月額 5,000円", priceNote: "基本会費",
     highlights: [
       { title: "自分に合う練習計画", description: "選手が考える目標と課題をもとに、コーチとトレーニングの道筋を設計します。" },
       { title: "データを次の練習に活かす", description: "測定や動画から課題を整理し、研究知見も参考にしながら改善を試します。数値だけで決めつけず、本人の感覚と照らし合わせて振り返ります。" },
@@ -103,6 +108,7 @@ export const programs: Program[] = [
     slug: "masters", number: "04", name: "MASTERS", englishTitle: "Masters Athlete", audience: "一般・マスターズ対象",
     heroTitle: "MOVE YOUR WAY.", lead: "大会への挑戦も、日々のフィットネスも。\n今の暮らしに合う、陸上との関わり方を。",
     description: "やりたいけれど時間がない、練習する場所や一緒に取り組む人がいない。そんな悩みから相談してください。カウンセリングで生活リズムや体調、これまでの経験を伺い、スケジュールや競技への向き合い方を一緒に考えます。大会への挑戦だけでなく、試合に出ずフィットネスとして体を動かすことも歓迎します。",
+    price: "月額 5,000円", priceNote: "基本会費",
     highlights: [
       { title: "動きやすい体をつくる", description: "日常を軽やかに過ごすための、動きやすいからだづくりを大切にします。" },
       { title: "自分の目標で楽しむ", description: "健康、仲間づくり、記録更新。それぞれの目標に合わせて取り組めます。" },

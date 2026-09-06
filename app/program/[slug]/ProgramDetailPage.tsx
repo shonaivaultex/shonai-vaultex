@@ -59,6 +59,11 @@ export function ProgramDetailPage({ program }: { program: Program }) {
     </span>
   ))}
 </div>
+<div className="mt-7 inline-flex items-end gap-3 rounded-xl border border-orange-500/30 bg-black/30 px-5 py-4">
+  <span className="text-xs font-black tracking-[0.16em] text-orange-400">MEMBERSHIP</span>
+  <strong className="text-xl">{program.price}</strong>
+  <span className="pb-0.5 text-xs text-white/40">{program.priceNote}</span>
+</div>
 <div className="mt-12 flex flex-wrap gap-4">
   <CtaLink href="/mypage">
     マイページを開く
