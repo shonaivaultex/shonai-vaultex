@@ -42,6 +42,12 @@ function addTokyoDays(key: string, days: number) {
   return date.toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
 }
 
+function isTrainingSchedule(schedule: ScheduleItem) {
+  return schedule.personal
+    ? schedule.schedule_type === "school_practice" || schedule.schedule_type === "personal_training"
+    : schedule.schedule_type === "practice" || schedule.schedule_type === "measurement";
+}
+
 export default async function MyPage() {
   const supabase = await createClient();
 
@@ -98,7 +104,7 @@ export default async function MyPage() {
     };
   });
   const weekMyCalendarItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey))), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey)))]).sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
-  const todayTrainingItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && occursOnDate(schedule, todayKey))])
+  const todayTrainingItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && isTrainingSchedule(schedule) && attendanceByScheduleId.get(schedule.id) !== "absent" && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => isTrainingSchedule(schedule) && occursOnDate(schedule, todayKey))])
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
   const todayCompetitionItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && schedule.schedule_type === "competition" && (appliedCompetitionIds.has(schedule.id) || attendingScheduleIds.has(schedule.id)) && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type === "competition" && occursOnDate(schedule, todayKey))])
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
