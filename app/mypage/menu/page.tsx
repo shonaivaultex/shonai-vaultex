@@ -13,8 +13,8 @@ const links = [
   { href: "/mypage/schedules", label: "全体スケジュール", note: "クラブ予定・出欠", icon: CalendarDays },
 ];
 
-export default async function MypageMenuPage() {
-  const supabase = await createClient();
+export default async function MypageMenuPage({ searchParams }: { searchParams: Promise<{ settings?: string }> }) {
+  const [supabase, query] = await Promise.all([createClient(), searchParams]);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/mypage/menu");
   const { data: lineConnection } = await supabase
@@ -27,6 +27,6 @@ export default async function MypageMenuPage() {
     <Link href="/mypage" className="inline-flex items-center gap-2 text-xs font-bold tracking-[.12em] text-white/55"><ArrowLeft size={16}/>ホームへ戻る</Link>
     <header className="mt-8 border-l-2 border-orange-500 pl-5"><p className="text-xs font-black tracking-[.22em] text-orange-400">MORE</p><h1 className="mt-2 text-4xl font-black">その他</h1><p className="mt-3 text-white/55">記録の振り返り、設定、ヘルプをまとめています。</p></header>
     <section className="mt-8 grid gap-2 sm:grid-cols-2">{links.map(({href,label,note,icon:Icon})=><Link key={href} href={href} className="flex min-h-20 items-center gap-4 rounded-2xl border border-white/10 bg-[#111] px-5 transition hover:border-orange-500/35"><Icon size={20} className="text-orange-300"/><span><strong className="block">{label}</strong><span className="mt-1 block text-xs text-white/35">{note}</span></span><ChevronRight size={17} className="ml-auto text-white/25"/></Link>)}</section>
-    <MypageSettings lineConnection={lineConnection} lineConfigured={Boolean(process.env.LINE_LOGIN_CHANNEL_ID && process.env.LINE_LOGIN_CHANNEL_SECRET)}/>
+    <MypageSettings defaultOpen={query.settings === "1"} lineConnection={lineConnection} lineConfigured={Boolean(process.env.LINE_LOGIN_CHANNEL_ID && process.env.LINE_LOGIN_CHANNEL_SECRET)}/>
   </div></main>;
 }

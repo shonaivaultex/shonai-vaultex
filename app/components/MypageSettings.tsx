@@ -21,11 +21,13 @@ type LineConnection = {
   notify_attendance_reminder: boolean;
 };
 
-export default function MypageSettings({ lineConnection, lineConfigured }: { lineConnection: LineConnection | null; lineConfigured: boolean }) {
-  const [opened, setOpened] = useState(false);
+export default function MypageSettings({ lineConnection, lineConfigured, defaultOpen = false }: { lineConnection: LineConnection | null; lineConfigured: boolean; defaultOpen?: boolean }) {
+  const [opened, setOpened] = useState(defaultOpen);
 
   return (
     <details
+      id="settings"
+      open={opened}
       data-tutorial="settings"
       onToggle={(event) => setOpened(event.currentTarget.open)}
       className="group mt-8 scroll-mt-24 overflow-hidden rounded-2xl border border-white/10 bg-[#111] text-white open:border-orange-500/35"
