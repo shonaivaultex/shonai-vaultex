@@ -55,11 +55,6 @@ export function ProgramCard({
           {program.audience}
         </p>
 
-        <div className="mt-4 flex items-baseline gap-2">
-          <strong className="text-lg text-white">{program.price}</strong>
-          <span className="text-[10px] font-bold tracking-[0.12em] text-white/35">{program.priceNote}</span>
-        </div>
-
         <div className="mt-5 flex flex-wrap gap-2">
           {program.tags.map((tag) => (
             <span
