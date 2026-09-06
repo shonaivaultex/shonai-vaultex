@@ -2,7 +2,6 @@
 
 import { Dumbbell, Mail, MapPin, Phone, Trophy, Users } from "lucide-react";
 import Hero from "./components/Hero";
-import LoadingScreen from "./components/LoadingScreen";
 import { useEffect, useState } from "react";
 import { ProgramCard } from "./components/ProgramCard";
 import { programs } from "./components/program-data";
@@ -26,14 +25,9 @@ type HomeNewsItem = {
 
 
 export default function HomePage() {
-  const [loading, setLoading] = useState(true);
   const [news, setNews] = useState<HomeNewsItem[]>([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2200);
-
     fetch("/api/public-news")
       .then((res) => (res.ok ? res.json() : []))
       .then((rows: Array<{ id: number; title: string; body?: string | null; priority?: string | null; created_at: string }>) => {
@@ -41,12 +35,9 @@ export default function HomePage() {
       })
       .catch(() => setNews([]));
 
-    return () => clearTimeout(timer);
   }, []);
   return (
     <>
-   <LoadingScreen loading={loading} />
-
     <main className="overflow-x-hidden bg-[#090a0c] text-white">
       <Hero />
 

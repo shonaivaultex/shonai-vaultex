@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function NavigationProgress() {
-  const [loading, setLoading] = useState(false);
+  const pathname = usePathname();
+  const [navigationFrom, setNavigationFrom] = useState<string | null>(null);
+  const loading = navigationFrom === pathname;
 
   useEffect(() => {
     const beginNavigation = (event: MouseEvent) => {
@@ -12,15 +15,15 @@ export default function NavigationProgress() {
       if (!target || target.target === "_blank" || target.hasAttribute("download")) return;
       const href = target.href; if (!href) return; const url = new URL(href);
       if (url.origin !== window.location.origin || (url.pathname === window.location.pathname && url.search === window.location.search)) return;
-      setLoading(true);
+      setNavigationFrom(pathname);
     };
     document.addEventListener("click", beginNavigation, true);
     return () => document.removeEventListener("click", beginNavigation, true);
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     if (!loading) return;
-    const timeout = window.setTimeout(() => setLoading(false), 10000);
+    const timeout = window.setTimeout(() => setNavigationFrom(null), 10000);
     return () => window.clearTimeout(timeout);
   }, [loading]);
 
