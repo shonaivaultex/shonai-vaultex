@@ -332,6 +332,25 @@ export default function MyCalendar({
     () => new Set(activeScheduleIds),
     [activeScheduleIds],
   );
+  const entryByScheduleId = useMemo(
+    () => new Map(entries.flatMap((entry) => entry.schedule_id ? [[entry.schedule_id, entry] as const] : [])),
+    [entries],
+  );
+  const scheduleDatesById = useMemo(
+    () => new Map(schedules.map((schedule) => [schedule.id, scheduleDates(schedule)])),
+    [schedules],
+  );
+  const schedulesByDate = useMemo(() => {
+    const result = new Map<string, ClubSchedule[]>();
+    schedules.forEach((schedule) => {
+      (scheduleDatesById.get(schedule.id) ?? []).forEach((date) => {
+        const current = result.get(date);
+        if (current) current.push(schedule);
+        else result.set(date, [schedule]);
+      });
+    });
+    return result;
+  }, [schedules, scheduleDatesById]);
   const displayItems = useMemo(() => {
     const result: DisplayItem[] = entries
       .filter((entry) => !entry.schedule_id)
@@ -344,7 +363,7 @@ export default function MyCalendar({
         active: true,
       }));
     schedules.forEach((schedule) => {
-      const entry = entries.find((item) => item.schedule_id === schedule.id);
+      const entry = entryByScheduleId.get(schedule.id);
       const active = activeIds.has(schedule.id);
       if (
         !active &&
@@ -354,7 +373,7 @@ export default function MyCalendar({
         !entry?.performance_record_id
       )
         return;
-      scheduleDates(schedule).forEach((date) =>
+      (scheduleDatesById.get(schedule.id) ?? []).forEach((date) =>
         result.push({
           key: `schedule-${schedule.id}-${date}`,
           date,
@@ -402,7 +421,7 @@ export default function MyCalendar({
       active: true,
     }));
     return result;
-  }, [entries, schedules, activeIds, performanceRecords, scans]);
+  }, [entries, schedules, activeIds, performanceRecords, scans, entryByScheduleId, scheduleDatesById]);
   const byDate = useMemo(
     () =>
       displayItems.reduce<Record<string, DisplayItem[]>>((all, item) => {
@@ -1116,7 +1135,7 @@ export default function MyCalendar({
             <div className="mt-5 space-y-2">
               {weekPlanRows.map((row, index) => {
                 const day = new Date(`${row.date}T00:00:00`);
-                const daySchedules = schedules.filter((schedule) => scheduleDates(schedule).includes(row.date));
+                const daySchedules = schedulesByDate.get(row.date) ?? [];
                 return <div key={row.date} className="grid gap-2 rounded-2xl border border-white/[.08] bg-black/20 p-3 sm:grid-cols-[90px_150px_1fr] sm:items-center">
                   <div><strong className="text-sm">{day.getMonth() + 1}/{day.getDate()}（{weekdays[day.getDay()]}）</strong></div>
                   <select aria-label={`${row.date}の種類`} disabled={Boolean(row.scheduleId)} value={row.type} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, type: event.target.value as keyof typeof entryTypes, title: event.target.value === "rest" ? "REST" : item.title === "REST" ? "" : item.title } : item))} className="rounded-xl border border-white/10 bg-[#181818] px-3 py-3 text-sm disabled:opacity-40">

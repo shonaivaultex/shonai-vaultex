@@ -38,15 +38,10 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
   const activeScheduleIds = new Set<number>();
   (attendance ?? []).forEach((row) => { if (row.status === "attending") activeScheduleIds.add(row.schedule_id); });
   (applications ?? []).forEach((row) => { if (row.status === "submitted") activeScheduleIds.add(row.schedule_id); });
-  const eligibleSchedules = (availableSchedules ?? []).filter((row) => row.audience === "all" || row.program_class === playerProfile?.program_class);
-  const visibleCompetitions = eligibleSchedules.filter((row) => row.schedule_type === "competition" && !absentScheduleIds.has(row.id));
-  visibleCompetitions.forEach((row) => activeScheduleIds.add(row.id));
   const savedScheduleIds = (entries ?? []).flatMap((row) => row.schedule_id && !absentScheduleIds.has(row.schedule_id) ? [row.schedule_id] : []);
-  const scheduleIds = [...new Set([...activeScheduleIds, ...savedScheduleIds])];
-  const { data: linkedSchedules } = scheduleIds.length
-    ? await supabase.from("schedules").select("id,title,details,location,starts_at,ends_at,all_day,schedule_type,audience,program_class").in("id", scheduleIds)
-    : { data: [] };
-  const schedules = [...new Map([...eligibleSchedules, ...visibleCompetitions, ...(linkedSchedules ?? [])].map((row) => [row.id, row])).values()];
+  const retainedScheduleIds = new Set([...activeScheduleIds, ...savedScheduleIds]);
+  const schedules = (availableSchedules ?? []).filter((row) => row.audience === "all" || row.program_class === playerProfile?.program_class || retainedScheduleIds.has(row.id));
+  schedules.filter((row) => row.schedule_type === "competition" && !absentScheduleIds.has(row.id)).forEach((row) => activeScheduleIds.add(row.id));
 
   const recordIds = (records ?? []).map((record) => record.id);
   const { data: feedbackRequests } = recordIds.length
