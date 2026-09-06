@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
+  CalendarPlus,
   Check,
   CircleCheck,
   ChevronLeft,
@@ -307,6 +308,9 @@ export default function MyCalendar({
   const [goalOpen, setGoalOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [quickPeriodOpen, setQuickPeriodOpen] = useState(false);
+  const [weekPlanOpen, setWeekPlanOpen] = useState(false);
+  const [weekPlanSaving, setWeekPlanSaving] = useState(false);
+  const [weekPlanRows, setWeekPlanRows] = useState<Array<{ date: string; type: keyof typeof entryTypes; title: string }>>([]);
   const [restSaving, setRestSaving] = useState(false);
   const dailyLogRef = useRef<HTMLElement>(null);
   const [mobileCalendarView, setMobileCalendarView] = useState<
@@ -466,6 +470,60 @@ export default function MyCalendar({
     );
     setSelectedDate(dateKey(next));
     setMonth(new Date(next.getFullYear(), next.getMonth(), 1));
+  }
+  function openWeekPlanner(copyPrevious = false) {
+    const sourceStart = new Date(mobileWeekStart);
+    if (copyPrevious) sourceStart.setDate(sourceStart.getDate() - 7);
+    const rows = Array.from({ length: 7 }, (_, index) => {
+      const target = new Date(mobileWeekStart);
+      target.setDate(target.getDate() + index);
+      const source = new Date(sourceStart);
+      source.setDate(source.getDate() + index);
+      const previous = copyPrevious
+        ? entries.find((entry) => !entry.schedule_id && entry.entry_date === dateKey(source))
+        : entries.find((entry) => !entry.schedule_id && entry.entry_date === dateKey(target));
+      return {
+        date: dateKey(target),
+        type: (previous?.entry_type && previous.entry_type in entryTypes ? previous.entry_type : "personal_training") as keyof typeof entryTypes,
+        title: previous?.title ?? "",
+      };
+    });
+    setWeekPlanRows(rows);
+    setWeekPlanOpen(true);
+  }
+  async function saveWeekPlan() {
+    const rows = weekPlanRows.filter((row) => row.title.trim() || row.type === "rest");
+    if (!rows.length) return alert("1日以上の予定を入力してください。");
+    setWeekPlanSaving(true);
+    try {
+      const payload = rows.map((row) => ({
+        user_id: userId,
+        schedule_id: null,
+        entry_date: row.date,
+        starts_at: null,
+        ends_at: null,
+        all_day: true,
+        entry_type: row.type,
+        title: row.type === "rest" ? "REST" : row.title.trim(),
+        location: null,
+        journal: null,
+        awareness_categories: [],
+        record_value: null,
+        record_unit: null,
+        performance_record_id: null,
+        video_path: null,
+        color: row.type === "rest" ? "slate" : row.type === "competition" ? "violet" : row.type === "school_practice" ? "sky" : "emerald",
+      }));
+      const { data, error } = await createClient().from("personal_calendar_entries").insert(payload).select("*");
+      if (error) throw error;
+      setEntries((current) => [...current, ...((data ?? []).map((entry) => ({ ...entry, video_url: null })) as Entry[])]);
+      setWeekPlanOpen(false);
+      router.refresh();
+    } catch (caught) {
+      alert(caught instanceof Error ? caught.message : "1週間の予定を保存できませんでした。");
+    } finally {
+      setWeekPlanSaving(false);
+    }
   }
   function moveMonth(amount: number) {
     const next = new Date(month.getFullYear(), month.getMonth() + amount, 1);
@@ -678,6 +736,14 @@ export default function MyCalendar({
             </h2>
             <div className="flex flex-wrap gap-2">
               <CalendarSyncButton />
+              <button
+                type="button"
+                onClick={() => openWeekPlanner(false)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-orange-500 px-3 py-2.5 text-xs font-black text-black"
+              >
+                <CalendarPlus size={15} />
+                1週間を作成
+              </button>
               <button
                 onClick={startNew}
                 className="hidden items-center gap-1.5 rounded-xl border border-orange-500/30 bg-orange-500/[.06] px-3 py-2.5 text-xs font-black text-orange-300 sm:inline-flex"
@@ -1014,6 +1080,30 @@ export default function MyCalendar({
           />
         </div>
       </div>
+      {weekPlanOpen ? (
+        <div className="fixed inset-0 z-[130] overflow-y-auto bg-black/80 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-labelledby="week-plan-title">
+          <section className="mx-auto my-5 max-w-3xl rounded-[28px] border border-orange-500/35 bg-[#111] p-5 shadow-2xl sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">WEEKLY PLAN</p><h2 id="week-plan-title" className="mt-1 text-2xl font-black">1週間のマイカレンダーを作る</h2><p className="mt-2 text-xs leading-5 text-white/45">{mobileWeekStart.getMonth() + 1}/{mobileWeekStart.getDate()}〜{mobileWeekDays[6].getMonth() + 1}/{mobileWeekDays[6].getDate()}・空欄の日は登録されません</p></div>
+              <button type="button" onClick={() => setWeekPlanOpen(false)} aria-label="閉じる" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/[.07] text-white/60"><X size={19}/></button>
+            </div>
+            <button type="button" onClick={() => openWeekPlanner(true)} className="mt-5 inline-flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/[.06] px-4 py-3 text-xs font-black text-emerald-200"><CalendarDays size={16}/>前週の個人予定を読み込む</button>
+            <div className="mt-5 space-y-2">
+              {weekPlanRows.map((row, index) => {
+                const day = new Date(`${row.date}T00:00:00`);
+                return <div key={row.date} className="grid gap-2 rounded-2xl border border-white/[.08] bg-black/20 p-3 sm:grid-cols-[90px_150px_1fr] sm:items-center">
+                  <div><strong className="text-sm">{day.getMonth() + 1}/{day.getDate()}（{weekdays[day.getDay()]}）</strong></div>
+                  <select aria-label={`${row.date}の種類`} value={row.type} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, type: event.target.value as keyof typeof entryTypes, title: event.target.value === "rest" ? "REST" : item.title === "REST" ? "" : item.title } : item))} className="rounded-xl border border-white/10 bg-[#181818] px-3 py-3 text-sm">
+                    {Object.entries(entryTypes).filter(([value]) => value !== "club_schedule").map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                  <input aria-label={`${row.date}の予定名`} maxLength={120} disabled={row.type === "rest"} value={row.type === "rest" ? "REST" : row.title} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item))} placeholder={row.type === "rest" ? "休養日" : "例：学校練習、ジョグ、補強"} className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm disabled:text-white/40"/>
+                </div>;
+              })}
+            </div>
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={() => setWeekPlanOpen(false)} className="rounded-xl border border-white/15 px-5 py-3 text-sm font-bold text-white/55">キャンセル</button><button type="button" onClick={saveWeekPlan} disabled={weekPlanSaving} className="rounded-xl bg-orange-500 px-5 py-3 text-sm font-black text-black disabled:opacity-50">{weekPlanSaving ? "保存中…" : "入力した予定をまとめて保存"}</button></div>
+          </section>
+        </div>
+      ) : null}
       <section
         ref={dailyLogRef}
         className="scroll-mt-20 rounded-[26px] border border-white/10 bg-[#111] p-5 sm:p-6 xl:sticky xl:top-20"
