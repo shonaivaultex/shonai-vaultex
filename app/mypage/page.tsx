@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
-import { Activity, ArrowUpRight, CalendarDays, CalendarPlus, Check, ChevronRight, ClipboardPenLine, Medal, MessageCircle, NotebookPen, Plus, Target, Trophy, UserRoundCheck, Video } from "lucide-react";
+import { Activity, ArrowUpRight, CalendarDays, CalendarPlus, Check, ChevronRight, ClipboardPenLine, Medal, MessageCircle, NotebookPen, Plus, Settings2, Target, Trophy, UserRoundCheck, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { type ScheduleItem } from "@/app/components/SchedulePanel";
@@ -143,11 +143,12 @@ export default async function MyPage() {
         {todayActions.length ? <div className="mt-3 grid gap-2 md:grid-cols-2">{todayActions.map((action) => <Link key={action.href} href={action.href} className="flex min-h-16 items-center gap-3 rounded-xl border border-white/[.07] bg-black/20 px-3 py-2.5 transition hover:border-orange-400/30 active:scale-[.99]"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${action.tone === "emerald" ? "bg-emerald-400/10 text-emerald-300" : "bg-orange-400/10 text-orange-300"}`}><ClipboardPenLine size={17}/></span><span className="min-w-0 flex-1"><strong className="block text-sm">{action.label}</strong><span className="mt-0.5 block text-[10px] text-white/35">{action.detail}</span></span><ChevronRight size={16} className="shrink-0 text-white/25"/></Link>)}</div> : <div className="mt-3 flex items-center gap-3 rounded-xl border border-emerald-400/15 bg-emerald-400/[.04] px-3 py-3"><span className="grid h-8 w-8 place-items-center rounded-full bg-emerald-400/10 text-emerald-300"><Check size={17}/></span><span><strong className="block text-sm">今日の確認は完了</strong><span className="mt-0.5 block text-[10px] text-white/35">必要になったら下のメニューから記録できます</span></span></div>}
       </section>
 
-      <section className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
+      <section className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-5">
         <Link href="/mypage/my-calendar?week=1" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[.06] px-4 transition hover:border-emerald-400/45"><CalendarPlus size={18} className="shrink-0 text-emerald-300"/><span><strong className="block text-sm">1週間の予定</strong><span className="mt-0.5 block text-[10px] text-white/35">まとめて作成</span></span></Link>
         <Link data-tutorial="all-schedules" href="/mypage/schedules" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.025] px-4 transition hover:border-white/25"><CalendarDays size={18} className="shrink-0 text-sky-300"/><span><strong className="block text-sm">全体予定</strong><span className="mt-0.5 block text-[10px] text-white/35">出欠もここから</span></span></Link>
         <Link href="/mypage/personal" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.025] px-4 transition hover:border-white/25"><UserRoundCheck size={18} className="shrink-0 text-orange-300"/><span><strong className="block text-sm">パーソナル予約</strong><span className="mt-0.5 block text-[10px] text-white/35">空き枠を選ぶ</span></span></Link>
         <Link href="/performance" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.025] px-4 transition hover:border-white/25"><Plus size={18} className="shrink-0 text-orange-300"/><span><strong className="block text-sm">記録を追加</strong><span className="mt-0.5 block text-[10px] text-white/35">練習・大会記録</span></span></Link>
+        <Link href="/mypage/menu" className="group col-span-2 flex min-h-16 items-center gap-3 rounded-2xl border border-sky-400/20 bg-sky-400/[.05] px-4 transition hover:border-sky-400/45 lg:col-span-1"><Settings2 size={18} className="shrink-0 text-sky-300"/><span><strong className="block text-sm">LINE連携・設定</strong><span className="mt-0.5 block text-[10px] text-white/35">通知・プロフィール</span></span></Link>
       </section>
 
       <section className="relative mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_85%_10%,rgba(249,115,22,.16),transparent_28%),linear-gradient(145deg,#151515,#0d0d0d_65%)] text-white shadow-[0_28px_90px_rgba(0,0,0,.28)]">
