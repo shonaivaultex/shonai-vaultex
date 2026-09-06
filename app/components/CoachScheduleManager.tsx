@@ -18,6 +18,14 @@ function localValue(value?: string | null) {
 function japanLocalDate(value: string) { return new Date(`${value}:00+09:00`); }
 function dateOnlyUtc(value: string) { return new Date(`${value.slice(0, 10)}T00:00:00Z`); }
 function formatJapan(value: Date | string, options?: Intl.DateTimeFormatOptions) { return new Date(value).toLocaleString("ja-JP", { timeZone: japanTimeZone, ...options }); }
+function japanDateKey(value: Date | string) { return new Date(value).toLocaleDateString("en-CA", { timeZone: japanTimeZone }); }
+function scheduleDateKeys(startsAt: string, endsAt?: string | null) {
+  const cursor = dateOnlyUtc(japanDateKey(startsAt));
+  const last = dateOnlyUtc(japanDateKey(endsAt ?? startsAt));
+  const keys: string[] = [];
+  while (cursor <= last && keys.length < 370) { keys.push(cursor.toISOString().slice(0, 10)); cursor.setUTCDate(cursor.getUTCDate() + 1); }
+  return keys;
+}
 const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
 const quickPrograms = [
   { key: "event", icon: PersonStanding, label: "土曜・種目別セッション", description: "毎週土曜 9:00〜11:00", title: "種目別セッション", weekday: 6, hour: 9, minute: 0, duration: 120, scheduleType: "practice", repeat: "weekly", weeks: 12 },
@@ -118,17 +126,20 @@ export default function CoachScheduleManager({ initialItems, initialTemplates, i
     const sourceLabel = `${sourceMonth.slice(0, 4)}年${Number(sourceMonth.slice(5))}月`; const targetLabel = `${targetMonth.slice(0, 4)}年${Number(targetMonth.slice(5))}月`;
     if (!confirm(`${sourceLabel}の予定を、曜日を保ったまま${targetLabel}へ複製しますか？\nすでに同じ予定がある場合は登録しません。`)) return;
     setCopying(true); const supabase = createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) { setCopying(false); return; }
-    const [{ data: sourceItems, error: sourceError }, { data: targetItems, error: targetError }] = await Promise.all([
+    const [{ data: sourceItems, error: sourceError }, { data: targetItems, error: targetError }, { data: competitionItems, error: competitionError }] = await Promise.all([
       supabase.from("schedules").select("*").eq("author_id", user.id).gte("starts_at", sourceStart).lt("starts_at", sourceEnd).order("starts_at"),
       supabase.from("schedules").select("title, starts_at, audience, program_class").eq("author_id", user.id).gte("starts_at", targetStart).lt("starts_at", targetEnd),
+      supabase.from("schedules").select("starts_at, ends_at").eq("schedule_type", "competition"),
     ]);
-    if (sourceError || targetError) { setCopying(false); alert(sourceError?.message ?? targetError?.message); return; }
+    if (sourceError || targetError || competitionError) { setCopying(false); alert(sourceError?.message ?? targetError?.message ?? competitionError?.message); return; }
     if (!sourceItems?.length) { setCopying(false); alert(`${sourceLabel}に複製できる予定がありません。`); return; }
     const existing = new Set((targetItems ?? []).map((item) => scheduleKey(item.title, new Date(item.starts_at), item.audience, item.program_class)));
-    const rows = sourceItems.flatMap((item) => { const sourceDate = new Date(item.starts_at); const copiedStart = sameWeekdayOccurrence(item.starts_at, targetMonth); if (!copiedStart) return []; const key = scheduleKey(item.title, copiedStart, item.audience, item.program_class); if (existing.has(key)) return []; existing.add(key); const duration = item.ends_at ? new Date(item.ends_at).getTime() - sourceDate.getTime() : null; return [{ author_id: user.id, title: item.title, details: item.details, location: item.location, all_day: item.all_day ?? false, training_phase: item.training_phase ?? "normal", schedule_type: item.schedule_type, audience: item.audience, program_class: item.program_class, starts_at: copiedStart.toISOString(), ends_at: duration === null ? null : new Date(copiedStart.getTime() + duration).toISOString(), updated_at: new Date().toISOString() }]; });
-    if (!rows.length) { setCopying(false); alert("対象月には同じ予定がすでに登録されています。"); return; }
+    const competitionDates = new Set((competitionItems ?? []).flatMap((item) => scheduleDateKeys(item.starts_at, item.ends_at)));
+    let skippedCompetitionCount = 0;
+    const rows = sourceItems.flatMap((item) => { const sourceDate = new Date(item.starts_at); const copiedStart = sameWeekdayOccurrence(item.starts_at, targetMonth); if (!copiedStart) return []; const key = scheduleKey(item.title, copiedStart, item.audience, item.program_class); if (existing.has(key)) return []; existing.add(key); if (competitionDates.has(japanDateKey(copiedStart))) { skippedCompetitionCount += 1; return []; } const duration = item.ends_at ? new Date(item.ends_at).getTime() - sourceDate.getTime() : null; return [{ author_id: user.id, title: item.title, details: item.details, location: item.location, all_day: item.all_day ?? false, training_phase: item.training_phase ?? "normal", schedule_type: item.schedule_type, audience: item.audience, program_class: item.program_class, starts_at: copiedStart.toISOString(), ends_at: duration === null ? null : new Date(copiedStart.getTime() + duration).toISOString(), updated_at: new Date().toISOString() }]; });
+    if (!rows.length) { setCopying(false); alert(skippedCompetitionCount ? "対象日はすべて大会日と重なるため、予定を複製しませんでした。" : "対象月には同じ予定がすでに登録されています。"); return; }
     const { error } = await supabase.from("schedules").insert(rows); if (error) { setCopying(false); alert(error.message); return; }
-    setCopying(false); setCopyOpen(false); alert(`${targetLabel}へ${rows.length}件の予定を複製しました。`); router.refresh();
+    setCopying(false); setCopyOpen(false); alert(`${targetLabel}へ${rows.length}件の予定を複製しました。${skippedCompetitionCount ? ` 大会日の${skippedCompetitionCount}件は除外しました。` : ""}`); router.refresh();
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -139,22 +150,28 @@ export default function CoachScheduleManager({ initialItems, initialTemplates, i
     if (scheduleType === "competition" && registrationEnabled && registrationOpensAt && registrationDeadline && japanLocalDate(registrationDeadline) < japanLocalDate(registrationOpensAt)) { setSaving(false); alert("申込締切は申込開始日時より後にしてください。"); return; }
     const duration = end ? end.getTime() - start.getTime() : null;
     const base = { author_id: user.id, title: title.trim(), details: details.trim() || null, location: location.trim() || null, all_day: allDay, training_phase: trainingPhase, schedule_type: scheduleType, audience, program_class: audience === "class" ? programClass : null, registration_enabled: scheduleType === "competition" && registrationEnabled, registration_opens_at: scheduleType === "competition" && registrationEnabled && registrationOpensAt ? japanLocalDate(registrationOpensAt).toISOString() : null, registration_deadline: scheduleType === "competition" && registrationEnabled && registrationDeadline ? japanLocalDate(registrationDeadline).toISOString() : null, updated_at: new Date().toISOString() };
-    let result;
+    let result; let savedOccurrenceCount = occurrenceCount; let skippedCompetitionCount = 0;
     if (editingId) {
       result = await supabase.from("schedules").update({ ...base, starts_at: start.toISOString(), ends_at: end?.toISOString() ?? null }).eq("id", editingId);
     } else if (repeat !== "once") {
-      const rows = occurrenceLocals.map((occurrenceLocal) => { const occurrenceStart = japanLocalDate(occurrenceLocal); return { ...base, starts_at: occurrenceStart.toISOString(), ends_at: duration === null ? null : new Date(occurrenceStart.getTime() + duration).toISOString() }; });
+      const { data: competitionItems, error: competitionError } = await supabase.from("schedules").select("starts_at, ends_at").eq("schedule_type", "competition");
+      if (competitionError) { setSaving(false); alert(competitionError.message); return; }
+      const competitionDates = new Set((competitionItems ?? []).flatMap((item) => scheduleDateKeys(item.starts_at, item.ends_at)));
+      const candidates = occurrenceLocals.map((occurrenceLocal) => { const occurrenceStart = japanLocalDate(occurrenceLocal); return { ...base, starts_at: occurrenceStart.toISOString(), ends_at: duration === null ? null : new Date(occurrenceStart.getTime() + duration).toISOString() }; });
+      const rows = candidates.filter((row) => !competitionDates.has(japanDateKey(row.starts_at)));
+      skippedCompetitionCount = candidates.length - rows.length; savedOccurrenceCount = rows.length;
+      if (!rows.length) { setSaving(false); alert("対象日はすべて大会日と重なるため、予定を登録しませんでした。"); return; }
       result = await supabase.from("schedules").insert(rows);
     } else {
       result = await supabase.from("schedules").insert({ ...base, starts_at: start.toISOString(), ends_at: end?.toISOString() ?? null });
     }
     if (result.error) { setSaving(false); alert(result.error.message); return; }
-    const summary = repeat !== "once" && !editingId ? `${startsAt.slice(0, 10).replaceAll("-", "/")}から${repeatUntil.replaceAll("-", "/")}まで、${repeat === "monthly" ? `毎月第${Math.floor((dateOnlyUtc(startsAt).getUTCDate() - 1) / 7) + 1}${weekday}曜日` : `毎週${weekday}曜日`} ${startsAt.slice(11, 16)}（全${occurrenceCount}回）` : `${formatJapan(start)} ${location || "場所未定"}`;
+    const summary = repeat !== "once" && !editingId ? `${startsAt.slice(0, 10).replaceAll("-", "/")}から${repeatUntil.replaceAll("-", "/")}まで、${repeat === "monthly" ? `毎月第${Math.floor((dateOnlyUtc(startsAt).getUTCDate() - 1) / 7) + 1}${weekday}曜日` : `毎週${weekday}曜日`} ${startsAt.slice(11, 16)}（全${savedOccurrenceCount}回）` : `${formatJapan(start)} ${location || "場所未定"}`;
     if (notifyMembers) {
       await supabase.from("announcements").insert({ author_id: user.id, title: `${editingId ? "予定変更" : "新しい予定"}：${title}`, body: summary, audience, program_class: audience === "class" ? programClass : null, priority: editingId ? "important" : "normal" });
       fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "schedule", title: `${editingId ? "予定変更" : "新しい予定"}：${title}`, body: summary, audience, programClass: audience === "class" ? programClass : null }) }).catch(() => undefined);
     }
-    setSaving(false); reset(); router.refresh();
+    setSaving(false); reset(); if (skippedCompetitionCount) alert(`${savedOccurrenceCount}件を登録しました。大会日の${skippedCompetitionCount}件は除外しました。`); router.refresh();
   }
   async function remove(item: ScheduleItem) { if (!confirm(`「${item.title}」を削除しますか？`)) return; const supabase = createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const { error } = await supabase.from("schedules").delete().eq("id", item.id); if (error) { alert(error.message); return; } const body = `${formatJapan(item.starts_at)}の予定は中止になりました。`; await supabase.from("announcements").insert({ author_id: user.id, title: `予定中止：${item.title}`, body, audience: item.audience, program_class: item.program_class, priority: "important" }); fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "schedule", title: `予定中止：${item.title}`, body, audience: item.audience, programClass: item.program_class }) }).catch(() => undefined); router.refresh(); }
   async function removeMany(items: ScheduleItem[]) { const first = items[0]; if (!confirm(`「${first.title}」の繰り返し予定 ${items.length}件をすべて削除しますか？`)) return; const supabase = createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const { error } = await supabase.from("schedules").delete().in("id", items.map((item) => item.id)); if (error) { alert(error.message); return; } const body = `${shortRange(items)}の繰り返し予定は中止になりました。`; await supabase.from("announcements").insert({ author_id: user.id, title: `予定中止：${first.title}`, body, audience: first.audience, program_class: first.program_class, priority: "important" }); fetch("/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "schedule", title: `予定中止：${first.title}`, body, audience: first.audience, programClass: first.program_class }) }).catch(() => undefined); router.refresh(); }
