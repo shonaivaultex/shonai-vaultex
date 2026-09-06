@@ -128,52 +128,56 @@ export default function HomePage() {
       <section id="price" className="border-y border-white/10 bg-[#0d0f12] py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
           <SectionLabel index="04">PRICE</SectionLabel>
-          <div className="mt-7 grid items-start gap-8 lg:grid-cols-12 lg:gap-10">
+          <div className="mt-7 grid items-center gap-8 lg:grid-cols-12 lg:gap-10">
             <div className="lg:col-span-5">
               <h2 className="text-4xl font-black tracking-[-0.05em] sm:text-6xl">KEEP IT<br/><span className="text-orange-500">SIMPLE.</span></h2>
               <p className="mt-6 max-w-md text-sm leading-7 text-white/60">年代や競技レベルで基本会費を分けず、一人ひとりに必要な関わり方をカウンセリングから考えます。</p>
-              <div className="mt-9 rounded-3xl border border-white/10 bg-[#111317] p-6 sm:p-7">
-                  <p className="text-xs font-black tracking-[0.18em] text-orange-400">MEMBERSHIP BENEFITS</p>
-                  <h3 className="mt-2 text-xl font-black">基本会費に含まれるもの</h3>
-                  <div className="mt-5 divide-y divide-white/10 border-y border-white/10">
-                    <div className="py-4">
-                      <p className="text-xs font-black tracking-[0.14em] text-white/40">SESSION</p>
-                      <h4 className="mt-1 font-bold">グループセッション</h4>
-                      <p className="mt-2 text-sm leading-6 text-white/55">走り方・基礎、クラス別、種目練習、オープントレーニングなど、公開されているセッションに参加できます。</p>
-                    </div>
-                    <div className="py-4">
-                      <p className="text-xs font-black tracking-[0.14em] text-white/40">COUNSELING</p>
-                      <h4 className="mt-1 font-bold">カウンセリングと目標整理</h4>
-                      <p className="mt-2 text-sm leading-6 text-white/55">目標や競技経験、学校・仕事との両立、本人の傾向を確認し、活動の進め方やスケジュールを一緒に考えます。</p>
-                    </div>
-                    <div className="py-4">
-                      <p className="text-xs font-black tracking-[0.14em] text-white/40">RECORD &amp; REVIEW</p>
-                      <h4 className="mt-1 font-bold">記録と振り返り</h4>
-                      <p className="mt-2 text-sm leading-6 text-white/55">練習・大会の記録、CONTROL TEST、動画などを蓄積。必要に応じて測定や動作を振り返り、次の課題につなげます。</p>
-                    </div>
-                    <div className="py-4">
-                      <p className="text-xs font-black tracking-[0.14em] text-white/40">APP &amp; SUPPORT</p>
-                      <h4 className="mt-1 font-bold">アプリでの継続サポート</h4>
-                      <p className="mt-2 text-sm leading-6 text-white/55">予定・出欠、1週間のマイカレンダー、成長レポートを一括管理。LINE通知や保護者向けページにも対応します。</p>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-xs leading-6 text-white/40">※ パーソナルセッション、大会参加費、交通費、競技場利用料などは基本会費に含まれません。</p>
-              </div>
             </div>
-            <div className="overflow-hidden rounded-3xl border border-orange-500/30 bg-[#111317] lg:col-span-7">
-              <div className="border-b border-white/10 p-7 sm:p-9"><p className="text-xs font-black tracking-[0.2em] text-orange-400">MONTHLY MEMBERSHIP</p><div className="mt-4 flex items-end gap-2"><strong className="text-5xl font-black tracking-[-0.06em] sm:text-6xl">5,000</strong><span className="pb-1 text-lg font-black">円 / 月</span></div><p className="mt-4 text-sm leading-7 text-white/55">JUNIOR・YOUTH・ELITE・MASTERS 共通の基本会費です。</p></div>
-              <div className="p-6 sm:p-9">
-                  <p className="text-xs font-black tracking-[0.18em] text-orange-400">PERSONAL SESSION</p>
-                  <h3 className="mt-2 text-xl font-black">パーソナル料金</h3>
-                  <div className="mt-5 divide-y divide-white/10 border-y border-white/10 text-sm">
-                    <div className="flex items-center justify-between gap-4 py-3"><span className="text-white/60">クラブ会員・60分</span><strong>4,000円</strong></div>
-                    <div className="flex items-center justify-between gap-4 py-3"><span className="text-white/60">パーソナルのみ・60分</span><strong>6,000円</strong></div>
-                    <div className="flex items-start justify-between gap-4 py-3"><span className="text-white/60">継続プラン</span><strong className="text-right leading-6">月2回 11,000円<br/>月4回 20,000円</strong></div>
-                    <div className="flex items-center justify-between gap-4 py-3"><span className="text-white/60">初回体験</span><strong>3,000円</strong></div>
-                  </div>
-                  <p className="mt-4 text-xs leading-6 text-white/40">通常料金には個別指導と簡単なフィードバックを含みます。詳しい動画分析や個別メニュー作成は、内容を確認してご案内します。競技場利用料・出張費が必要な場合は別途お知らせします。</p>
-                  <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline" className="mt-5">料金・体験を相談する</CtaLink>
+            <div className="rounded-3xl border border-orange-500/30 bg-[#111317] p-7 sm:p-9 lg:col-span-7">
+              <p className="text-xs font-black tracking-[0.2em] text-orange-400">MONTHLY MEMBERSHIP</p>
+              <div className="mt-4 flex items-end gap-2"><strong className="text-5xl font-black tracking-[-0.06em] sm:text-6xl">5,000</strong><span className="pb-1 text-lg font-black">円 / 月</span></div>
+              <p className="mt-4 text-sm leading-7 text-white/55">JUNIOR・YOUTH・ELITE・MASTERS 共通の基本会費です。</p>
+            </div>
+          </div>
+          <div className="mt-8 grid items-stretch gap-8 lg:grid-cols-12">
+            <div className="rounded-3xl border border-white/10 bg-[#111317] p-6 sm:p-8 lg:col-span-7">
+              <p className="text-xs font-black tracking-[0.18em] text-orange-400">MEMBERSHIP BENEFITS</p>
+              <h3 className="mt-2 text-xl font-black">基本会費に含まれるもの</h3>
+              <div className="mt-5 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-2">
+                <div className="bg-[#111317] p-5">
+                  <p className="text-xs font-black tracking-[0.14em] text-white/40">SESSION</p>
+                  <h4 className="mt-1 font-bold">グループセッション</h4>
+                  <p className="mt-2 text-sm leading-6 text-white/55">走り方・基礎、クラス別、種目練習、オープントレーニングなど、公開されているセッションに参加できます。</p>
+                </div>
+                <div className="bg-[#111317] p-5">
+                  <p className="text-xs font-black tracking-[0.14em] text-white/40">COUNSELING</p>
+                  <h4 className="mt-1 font-bold">カウンセリングと目標整理</h4>
+                  <p className="mt-2 text-sm leading-6 text-white/55">目標や競技経験、学校・仕事との両立、本人の傾向を確認し、活動の進め方やスケジュールを一緒に考えます。</p>
+                </div>
+                <div className="bg-[#111317] p-5">
+                  <p className="text-xs font-black tracking-[0.14em] text-white/40">RECORD &amp; REVIEW</p>
+                  <h4 className="mt-1 font-bold">記録と振り返り</h4>
+                  <p className="mt-2 text-sm leading-6 text-white/55">練習・大会の記録、CONTROL TEST、動画などを蓄積。必要に応じて測定や動作を振り返り、次の課題につなげます。</p>
+                </div>
+                <div className="bg-[#111317] p-5">
+                  <p className="text-xs font-black tracking-[0.14em] text-white/40">APP &amp; SUPPORT</p>
+                  <h4 className="mt-1 font-bold">アプリでの継続サポート</h4>
+                  <p className="mt-2 text-sm leading-6 text-white/55">予定・出欠、1週間のマイカレンダー、成長レポートを一括管理。LINE通知や保護者向けページにも対応します。</p>
+                </div>
               </div>
+              <p className="mt-4 text-xs leading-6 text-white/40">※ パーソナルセッション、大会参加費、交通費、競技場利用料などは基本会費に含まれません。</p>
+            </div>
+            <div className="flex flex-col rounded-3xl border border-white/10 bg-[#111317] p-6 sm:p-8 lg:col-span-5">
+              <p className="text-xs font-black tracking-[0.18em] text-orange-400">PERSONAL SESSION</p>
+              <h3 className="mt-2 text-xl font-black">パーソナル料金</h3>
+              <div className="mt-5 divide-y divide-white/10 border-y border-white/10 text-sm">
+                <div className="flex items-center justify-between gap-4 py-3"><span className="text-white/60">クラブ会員・60分</span><strong>4,000円</strong></div>
+                <div className="flex items-center justify-between gap-4 py-3"><span className="text-white/60">パーソナルのみ・60分</span><strong>6,000円</strong></div>
+                <div className="flex items-start justify-between gap-4 py-3"><span className="text-white/60">継続プラン</span><strong className="text-right leading-6">月2回 11,000円<br/>月4回 20,000円</strong></div>
+                <div className="flex items-center justify-between gap-4 py-3"><span className="text-white/60">初回体験</span><strong>3,000円</strong></div>
+              </div>
+              <p className="mt-4 text-xs leading-6 text-white/40">通常料金には個別指導と簡単なフィードバックを含みます。詳しい動画分析や個別メニュー作成は、内容を確認してご案内します。競技場利用料・出張費が必要な場合は別途お知らせします。</p>
+              <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline" className="mt-5">料金・体験を相談する</CtaLink>
             </div>
           </div>
         </div>
