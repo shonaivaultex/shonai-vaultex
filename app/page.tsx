@@ -128,12 +128,11 @@ export default function HomePage() {
       <section id="price" className="border-y border-white/10 bg-[#0d0f12] py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
           <SectionLabel index="04">PRICE</SectionLabel>
-          <div className="mt-7 grid gap-10 lg:grid-cols-12">
-            <div className="lg:col-span-5"><h2 className="text-4xl font-black tracking-[-0.05em] sm:text-6xl">KEEP IT<br/><span className="text-orange-500">SIMPLE.</span></h2><p className="mt-6 max-w-md text-sm leading-7 text-white/60">年代や競技レベルで基本会費を分けず、一人ひとりに必要な関わり方をカウンセリングから考えます。</p></div>
-            <div className="overflow-hidden rounded-3xl border border-orange-500/30 bg-[#111317] lg:col-span-7">
-              <div className="border-b border-white/10 p-7 sm:p-9"><p className="text-xs font-black tracking-[0.2em] text-orange-400">MONTHLY MEMBERSHIP</p><div className="mt-4 flex items-end gap-2"><strong className="text-5xl font-black tracking-[-0.06em] sm:text-6xl">5,000</strong><span className="pb-1 text-lg font-black">円 / 月</span></div><p className="mt-4 text-sm leading-7 text-white/55">JUNIOR・YOUTH・ELITE・MASTERS 共通の基本会費です。</p></div>
-              <div className="grid gap-px bg-white/10 sm:grid-cols-2">
-                <div className="bg-[#111317] p-6 sm:p-7">
+          <div className="mt-7 grid items-start gap-8 lg:grid-cols-12 lg:gap-10">
+            <div className="lg:col-span-5">
+              <h2 className="text-4xl font-black tracking-[-0.05em] sm:text-6xl">KEEP IT<br/><span className="text-orange-500">SIMPLE.</span></h2>
+              <p className="mt-6 max-w-md text-sm leading-7 text-white/60">年代や競技レベルで基本会費を分けず、一人ひとりに必要な関わり方をカウンセリングから考えます。</p>
+              <div className="mt-9 rounded-3xl border border-white/10 bg-[#111317] p-6 sm:p-7">
                   <p className="text-xs font-black tracking-[0.18em] text-orange-400">MEMBERSHIP BENEFITS</p>
                   <h3 className="mt-2 text-xl font-black">基本会費に含まれるもの</h3>
                   <div className="mt-5 divide-y divide-white/10 border-y border-white/10">
@@ -159,8 +158,11 @@ export default function HomePage() {
                     </div>
                   </div>
                   <p className="mt-4 text-xs leading-6 text-white/40">※ パーソナルセッション、大会参加費、交通費、競技場利用料などは基本会費に含まれません。</p>
-                </div>
-                <div className="bg-[#111317] p-6">
+              </div>
+            </div>
+            <div className="overflow-hidden rounded-3xl border border-orange-500/30 bg-[#111317] lg:col-span-7">
+              <div className="border-b border-white/10 p-7 sm:p-9"><p className="text-xs font-black tracking-[0.2em] text-orange-400">MONTHLY MEMBERSHIP</p><div className="mt-4 flex items-end gap-2"><strong className="text-5xl font-black tracking-[-0.06em] sm:text-6xl">5,000</strong><span className="pb-1 text-lg font-black">円 / 月</span></div><p className="mt-4 text-sm leading-7 text-white/55">JUNIOR・YOUTH・ELITE・MASTERS 共通の基本会費です。</p></div>
+              <div className="p-6 sm:p-9">
                   <p className="text-xs font-black tracking-[0.18em] text-orange-400">PERSONAL SESSION</p>
                   <h3 className="mt-2 text-xl font-black">パーソナル料金</h3>
                   <div className="mt-5 divide-y divide-white/10 border-y border-white/10 text-sm">
@@ -171,7 +173,6 @@ export default function HomePage() {
                   </div>
                   <p className="mt-4 text-xs leading-6 text-white/40">通常料金には個別指導と簡単なフィードバックを含みます。詳しい動画分析や個別メニュー作成は、内容を確認してご案内します。競技場利用料・出張費が必要な場合は別途お知らせします。</p>
                   <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline" className="mt-5">料金・体験を相談する</CtaLink>
-                </div>
               </div>
             </div>
           </div>
