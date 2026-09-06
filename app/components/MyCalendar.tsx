@@ -310,7 +310,7 @@ export default function MyCalendar({
   const [quickPeriodOpen, setQuickPeriodOpen] = useState(false);
   const [weekPlanOpen, setWeekPlanOpen] = useState(false);
   const [weekPlanSaving, setWeekPlanSaving] = useState(false);
-  const [weekPlanRows, setWeekPlanRows] = useState<Array<{ date: string; type: keyof typeof entryTypes; title: string }>>([]);
+  const [weekPlanRows, setWeekPlanRows] = useState<Array<{ date: string; type: keyof typeof entryTypes; title: string; scheduleId: number | null }>>([]);
   const [restSaving, setRestSaving] = useState(false);
   const dailyLogRef = useRef<HTMLElement>(null);
   const [mobileCalendarView, setMobileCalendarView] = useState<
@@ -486,17 +486,28 @@ export default function MyCalendar({
         date: dateKey(target),
         type: (previous?.entry_type && previous.entry_type in entryTypes ? previous.entry_type : "personal_training") as keyof typeof entryTypes,
         title: previous?.title ?? "",
+        scheduleId: null,
       };
     });
     setWeekPlanRows(rows);
     setWeekPlanOpen(true);
   }
   async function saveWeekPlan() {
-    const rows = weekPlanRows.filter((row) => row.title.trim() || row.type === "rest");
+    const rows = weekPlanRows.filter((row) => row.scheduleId || row.title.trim() || row.type === "rest");
     if (!rows.length) return alert("1日以上の予定を入力してください。");
     setWeekPlanSaving(true);
     try {
-      const payload = rows.map((row) => ({
+      const scheduleIds = [...new Set(rows.flatMap((row) => row.scheduleId ? [row.scheduleId] : []))];
+      const personalRows = rows.filter((row) => !row.scheduleId);
+      const supabase = createClient();
+      if (scheduleIds.length) {
+        const { error: attendanceError } = await supabase.from("schedule_attendance").upsert(
+          scheduleIds.map((scheduleId) => ({ schedule_id: scheduleId, user_id: userId, status: "attending", comment: null, updated_at: new Date().toISOString() })),
+          { onConflict: "schedule_id,user_id" },
+        );
+        if (attendanceError) throw attendanceError;
+      }
+      const payload = personalRows.map((row) => ({
         user_id: userId,
         schedule_id: null,
         entry_date: row.date,
@@ -514,7 +525,9 @@ export default function MyCalendar({
         video_path: null,
         color: row.type === "rest" ? "slate" : row.type === "competition" ? "violet" : row.type === "school_practice" ? "sky" : "emerald",
       }));
-      const { data, error } = await createClient().from("personal_calendar_entries").insert(payload).select("*");
+      const { data, error } = payload.length
+        ? await supabase.from("personal_calendar_entries").insert(payload).select("*")
+        : { data: [], error: null };
       if (error) throw error;
       setEntries((current) => [...current, ...((data ?? []).map((entry) => ({ ...entry, video_url: null })) as Entry[])]);
       setWeekPlanOpen(false);
@@ -1091,12 +1104,16 @@ export default function MyCalendar({
             <div className="mt-5 space-y-2">
               {weekPlanRows.map((row, index) => {
                 const day = new Date(`${row.date}T00:00:00`);
+                const daySchedules = schedules.filter((schedule) => scheduleDates(schedule).includes(row.date));
                 return <div key={row.date} className="grid gap-2 rounded-2xl border border-white/[.08] bg-black/20 p-3 sm:grid-cols-[90px_150px_1fr] sm:items-center">
                   <div><strong className="text-sm">{day.getMonth() + 1}/{day.getDate()}（{weekdays[day.getDay()]}）</strong></div>
-                  <select aria-label={`${row.date}の種類`} value={row.type} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, type: event.target.value as keyof typeof entryTypes, title: event.target.value === "rest" ? "REST" : item.title === "REST" ? "" : item.title } : item))} className="rounded-xl border border-white/10 bg-[#181818] px-3 py-3 text-sm">
+                  <select aria-label={`${row.date}の種類`} disabled={Boolean(row.scheduleId)} value={row.type} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, type: event.target.value as keyof typeof entryTypes, title: event.target.value === "rest" ? "REST" : item.title === "REST" ? "" : item.title } : item))} className="rounded-xl border border-white/10 bg-[#181818] px-3 py-3 text-sm disabled:opacity-40">
                     {Object.entries(entryTypes).filter(([value]) => value !== "club_schedule").map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select>
-                  <input aria-label={`${row.date}の予定名`} maxLength={120} disabled={row.type === "rest"} value={row.type === "rest" ? "REST" : row.title} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item))} placeholder={row.type === "rest" ? "休養日" : "例：学校練習、ジョグ、補強"} className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm disabled:text-white/40"/>
+                  <div className="grid gap-2">
+                    {daySchedules.length ? <select aria-label={`${row.date}の全体スケジュール`} value={row.scheduleId ?? ""} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, scheduleId: event.target.value ? Number(event.target.value) : null } : item))} className="rounded-xl border border-orange-400/25 bg-orange-400/[.07] px-3 py-3 text-sm font-bold text-orange-100"><option value="">自分の予定を入力する</option>{daySchedules.map((schedule) => <option key={schedule.id} value={schedule.id}>全体予定：{schedule.title}{timeValue(schedule.starts_at) ? `（${timeValue(schedule.starts_at)}〜）` : ""}</option>)}</select> : null}
+                    {row.scheduleId ? <p className="px-1 text-[11px] font-bold text-emerald-300">保存すると、この予定の出欠が「参加」になります</p> : <input aria-label={`${row.date}の予定名`} maxLength={120} disabled={row.type === "rest"} value={row.type === "rest" ? "REST" : row.title} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item))} placeholder={row.type === "rest" ? "休養日" : "例：学校練習、ジョグ、補強"} className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm disabled:text-white/40"/>}
+                  </div>
                 </div>;
               })}
             </div>

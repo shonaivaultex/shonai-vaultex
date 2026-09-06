@@ -12,7 +12,7 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
   const userId = authData?.claims.sub;
   if (!userId) redirect("/login?next=/mypage/my-calendar");
 
-  const [{ data: entries }, { data: attendance }, { data: applications }, { data: records }, { data: scans }, { data: periodRows }, { data: activeGoal }, { data: goalHistory }, { data: inputHistory }] = await Promise.all([
+  const [{ data: entries }, { data: attendance }, { data: applications }, { data: records }, { data: scans }, { data: periodRows }, { data: activeGoal }, { data: goalHistory }, { data: inputHistory }, { data: playerProfile }] = await Promise.all([
     supabase.from("personal_calendar_entries").select("*").eq("user_id", userId).order("entry_date"),
     supabase.from("schedule_attendance").select("schedule_id,status").eq("user_id", userId),
     supabase.from("competition_applications").select("schedule_id,status").eq("user_id", userId),
@@ -22,12 +22,13 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
     supabase.from("personal_calendar_goals").select("*").eq("user_id", userId).eq("status", "active").maybeSingle(),
     supabase.from("personal_calendar_goals").select("*").eq("user_id", userId).neq("status", "active").order("target_date", { ascending: false }).limit(50),
     supabase.from("personal_calendar_input_history").select("*").eq("user_id", userId).order("updated_at", { ascending: false }).limit(30),
+    supabase.from("players").select("program_class").eq("user_id", userId).maybeSingle(),
   ]);
 
-  const { data: competitions } = await supabase
+  const { data: availableSchedules } = await supabase
     .from("schedules")
-    .select("id,title,details,location,starts_at,ends_at,all_day,schedule_type")
-    .eq("schedule_type", "competition");
+    .select("id,title,details,location,starts_at,ends_at,all_day,schedule_type,audience,program_class")
+    .order("starts_at");
 
   const absentScheduleIds = new Set<number>();
   (attendance ?? []).forEach((row) => {
@@ -37,14 +38,15 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
   const activeScheduleIds = new Set<number>();
   (attendance ?? []).forEach((row) => { if (row.status === "attending") activeScheduleIds.add(row.schedule_id); });
   (applications ?? []).forEach((row) => { if (row.status === "submitted") activeScheduleIds.add(row.schedule_id); });
-  const visibleCompetitions = (competitions ?? []).filter((row) => !absentScheduleIds.has(row.id));
+  const eligibleSchedules = (availableSchedules ?? []).filter((row) => row.audience === "all" || row.program_class === playerProfile?.program_class);
+  const visibleCompetitions = eligibleSchedules.filter((row) => row.schedule_type === "competition" && !absentScheduleIds.has(row.id));
   visibleCompetitions.forEach((row) => activeScheduleIds.add(row.id));
   const savedScheduleIds = (entries ?? []).flatMap((row) => row.schedule_id && !absentScheduleIds.has(row.schedule_id) ? [row.schedule_id] : []);
   const scheduleIds = [...new Set([...activeScheduleIds, ...savedScheduleIds])];
   const { data: linkedSchedules } = scheduleIds.length
-    ? await supabase.from("schedules").select("id,title,details,location,starts_at,ends_at,all_day,schedule_type").in("id", scheduleIds)
+    ? await supabase.from("schedules").select("id,title,details,location,starts_at,ends_at,all_day,schedule_type,audience,program_class").in("id", scheduleIds)
     : { data: [] };
-  const schedules = [...new Map([...visibleCompetitions, ...(linkedSchedules ?? [])].map((row) => [row.id, row])).values()];
+  const schedules = [...new Map([...eligibleSchedules, ...visibleCompetitions, ...(linkedSchedules ?? [])].map((row) => [row.id, row])).values()];
 
   const recordIds = (records ?? []).map((record) => record.id);
   const { data: feedbackRequests } = recordIds.length
