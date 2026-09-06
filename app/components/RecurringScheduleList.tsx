@@ -12,13 +12,18 @@ const weekdayKeys = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 function shortDate(value: string) { return new Date(value).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", timeZone: "Asia/Tokyo" }); }
 function time(value: string) { return new Date(value).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tokyo" }); }
 function weekday(value: string) { return weekdays[weekdayKeys.indexOf(new Date(value).toLocaleDateString("en-US", { weekday: "short", timeZone: "Asia/Tokyo" }))]; }
+function isWeeklyGap(previous: ScheduleItem, current: ScheduleItem) {
+  const gap = new Date(current.starts_at).getTime() - new Date(previous.starts_at).getTime();
+  const weeks = Math.round(gap / (7 * 86400000));
+  return weeks >= 1 && Math.abs(gap - weeks * 7 * 86400000) < 3600000;
+}
 
 export default function RecurringScheduleList({ items, attendance, onEdit, onRemove, onRemoveMany }: Props) {
   const [expanded, setExpanded] = useState<string[]>([]);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const groups = useMemo(() => {
     const bySignature = items.reduce<Record<string, ScheduleItem[]>>((result, item) => { const key = [item.title, item.location ?? "", item.schedule_type, item.training_phase ?? "normal", item.audience, item.program_class ?? "", time(item.starts_at)].join("|"); (result[key] ??= []).push(item); return result; }, {});
-    return Object.entries(bySignature).flatMap<Group>(([key, groupItems]) => { const sorted = groupItems.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()); const weekly = sorted.length > 1 && sorted.slice(1).every((item, index) => Math.abs(new Date(item.starts_at).getTime() - new Date(sorted[index].starts_at).getTime() - 7 * 86400000) < 3600000); return weekly ? [{ key, items: sorted }] : sorted.map((item) => ({ key: `${key}|${item.id}`, items: [item] })); }).sort((a, b) => new Date(a.items[0].starts_at).getTime() - new Date(b.items[0].starts_at).getTime());
+    return Object.entries(bySignature).flatMap<Group>(([key, groupItems]) => { const sorted = groupItems.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()); const weekly = sorted.length > 1 && sorted.slice(1).every((item, index) => isWeeklyGap(sorted[index], item)); return weekly ? [{ key, items: sorted }] : sorted.map((item) => ({ key: `${key}|${item.id}`, items: [item] })); }).sort((a, b) => new Date(a.items[0].starts_at).getTime() - new Date(b.items[0].starts_at).getTime());
   }, [items]);
   const sections = [{ key: "all", label: "全体対象", groups: groups.filter((group) => group.items[0].audience === "all") }, ...programClasses.map((programClass) => ({ key: programClass, label: `${programClass}対象`, groups: groups.filter((group) => group.items[0].audience === "class" && group.items[0].program_class === programClass) }))].filter((section) => section.groups.length > 0);
   function toggle(key: string) { setExpanded((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]); }
