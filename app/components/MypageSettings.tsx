@@ -5,13 +5,23 @@ import Link from "next/link";
 import { BookOpen, ChevronDown, ChevronRight, Download, MessageCircle, Settings } from "lucide-react";
 import { useState } from "react";
 import { lineOfficialUrl } from "@/app/components/site";
+import LineConnectionSettings from "@/app/components/LineConnectionSettings";
 
 const PushNotificationButton = dynamic(() => import("@/app/components/PushNotificationButton"), {
   loading: () => <div className="h-12 animate-pulse rounded-xl bg-white/[0.04]" />,
 });
 const BugReportButton = dynamic(() => import("@/app/components/BugReportButton"));
 
-export default function MypageSettings() {
+type LineConnection = {
+  display_name: string | null;
+  notify_important: boolean;
+  notify_schedule: boolean;
+  notify_feedback: boolean;
+  notify_training_log_reminder: boolean;
+  notify_attendance_reminder: boolean;
+};
+
+export default function MypageSettings({ lineConnection, lineConfigured }: { lineConnection: LineConnection | null; lineConfigured: boolean }) {
   const [opened, setOpened] = useState(false);
 
   return (
@@ -29,6 +39,11 @@ export default function MypageSettings() {
       {opened ? (
         <div className="border-t border-white/10 p-4">
           <PushNotificationButton />
+          <div className="mt-3 rounded-xl border border-white/10 p-4">
+            <p className="text-sm font-black">LINE連携</p>
+            <p className="mt-1 text-xs leading-5 text-white/40">重要連絡や記録のリマインドをLINEでも受け取れます。</p>
+            <LineConnectionSettings initial={lineConnection} configured={lineConfigured} />
+          </div>
           <a href="/member-manual.pdf" target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center justify-between rounded-xl border border-white/10 px-4 py-3 text-sm text-white/75"><span className="flex items-center gap-2 font-bold"><BookOpen size={17} className="text-orange-400" />使用マニュアル</span><ChevronRight size={16} /></a>
           <a href={lineOfficialUrl} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center justify-between rounded-xl border border-[#06c755]/30 bg-[#06c755]/5 px-4 py-3 text-sm text-white/75 transition hover:border-[#06c755]/60 hover:text-white"><span className="flex items-center gap-2 font-bold"><MessageCircle size={17} className="text-[#06c755]" />SHONAI VAULTEX公式LINE</span><span className="text-xs text-white/35">お知らせ・問い合わせ</span></a>
           <BugReportButton />

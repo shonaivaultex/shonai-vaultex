@@ -17,10 +17,16 @@ export default async function MypageMenuPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/mypage/menu");
+  const { data: lineConnection } = await supabase
+    .from("line_account_connections")
+    .select("display_name,notify_important,notify_schedule,notify_feedback,notify_training_log_reminder,notify_attendance_reminder")
+    .eq("user_id", user.id)
+    .eq("portal", "athlete")
+    .maybeSingle();
   return <main className="min-h-screen bg-[#090a0c] px-4 pb-28 pt-28 text-white sm:px-8"><div className="mx-auto max-w-4xl">
     <Link href="/mypage" className="inline-flex items-center gap-2 text-xs font-bold tracking-[.12em] text-white/55"><ArrowLeft size={16}/>ホームへ戻る</Link>
     <header className="mt-8 border-l-2 border-orange-500 pl-5"><p className="text-xs font-black tracking-[.22em] text-orange-400">MORE</p><h1 className="mt-2 text-4xl font-black">その他</h1><p className="mt-3 text-white/55">記録の振り返り、設定、ヘルプをまとめています。</p></header>
     <section className="mt-8 grid gap-2 sm:grid-cols-2">{links.map(({href,label,note,icon:Icon})=><Link key={href} href={href} className="flex min-h-20 items-center gap-4 rounded-2xl border border-white/10 bg-[#111] px-5 transition hover:border-orange-500/35"><Icon size={20} className="text-orange-300"/><span><strong className="block">{label}</strong><span className="mt-1 block text-xs text-white/35">{note}</span></span><ChevronRight size={17} className="ml-auto text-white/25"/></Link>)}</section>
-    <MypageSettings/>
+    <MypageSettings lineConnection={lineConnection} lineConfigured={Boolean(process.env.LINE_LOGIN_CHANNEL_ID && process.env.LINE_LOGIN_CHANNEL_SECRET)}/>
   </div></main>;
 }

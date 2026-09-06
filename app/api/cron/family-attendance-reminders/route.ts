@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { sendLineMessage } from "@/lib/line";
 
 export const runtime = "nodejs";
 
 type Subscription = { user_id: string; endpoint: string; p256dh: string; auth: string };
+type LineTarget = { user_id: string; line_user_id: string };
 type FamilyLink = { guardian_id: string; athlete_id: string };
 type Player = { user_id: string; name: string; program_class: string | null };
 type Schedule = { id: number; title: string; starts_at: string; audience: string; program_class: string | null; registration_deadline: string | null };
@@ -27,19 +29,18 @@ export async function GET(request: Request) {
 
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  if (!publicKey || !privateKey) return NextResponse.json({ error: "Push is not configured" }, { status: 503 });
-
   const admin = createAdminClient();
   const now = new Date();
   const until = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-  const { data: subscriptionRows, error: subscriptionError } = await admin
-    .from("push_subscriptions")
-    .select("user_id,endpoint,p256dh,auth")
-    .eq("notify_attendance_reminder", true);
-  if (subscriptionError) return NextResponse.json({ error: subscriptionError.message }, { status: 500 });
+  const [{ data: subscriptionRows, error: subscriptionError }, { data: lineRows, error: lineError }] = await Promise.all([
+    admin.from("push_subscriptions").select("user_id,endpoint,p256dh,auth").eq("notify_attendance_reminder", true),
+    admin.from("line_account_connections").select("user_id,line_user_id").eq("portal", "family").eq("notify_attendance_reminder", true),
+  ]);
+  if (subscriptionError || lineError) return NextResponse.json({ error: (subscriptionError ?? lineError)?.message }, { status: 500 });
 
   const subscriptions = (subscriptionRows ?? []) as Subscription[];
-  const guardianIds = [...new Set(subscriptions.map((item) => item.user_id))];
+  const lineTargets = (lineRows ?? []) as LineTarget[];
+  const guardianIds = [...new Set([...subscriptions.map((item) => item.user_id), ...lineTargets.map((item) => item.user_id)])];
   if (!guardianIds.length) return NextResponse.json({ eligible: 0, sentUsers: 0, sentDevices: 0 });
 
   const { data: linkRows, error: linksError } = await admin
@@ -81,7 +82,7 @@ export async function GET(request: Request) {
       .map((schedule) => ({ link, player, schedule }));
   });
 
-  webpush.setVapidDetails("mailto:info@shonai-vaultex.jp", publicKey, privateKey);
+  if (publicKey && privateKey) webpush.setVapidDetails("mailto:info@shonai-vaultex.jp", publicKey, privateKey);
   let sentUsers = 0;
   let sentDevices = 0;
   const staleEndpoints: string[] = [];
@@ -104,7 +105,7 @@ export async function GET(request: Request) {
       url: `/family/schedule?athlete=${item.link.athlete_id}`,
       tag: `family-attendance-${item.link.athlete_id}-${item.schedule.id}`,
     });
-    const results = await Promise.all(targets.map(async (target) => {
+    const results = publicKey && privateKey ? await Promise.all(targets.map(async (target) => {
       try {
         await webpush.sendNotification({ endpoint: target.endpoint, keys: { p256dh: target.p256dh, auth: target.auth } }, payload);
         return true;
@@ -114,9 +115,11 @@ export async function GET(request: Request) {
         console.error("Family attendance reminder push failed", { statusCode });
         return false;
       }
-    }));
+    })) : [];
+    const lineTarget = lineTargets.find((target) => target.user_id === item.link.guardian_id);
+    const lineDelivery = lineTarget ? await sendLineMessage(lineTarget.line_user_id, "出欠の回答をお願いします", `${item.player.name}さんの「${item.schedule.title}」（${japanDateTime(item.schedule.starts_at)}）が未回答です。`, `/family/schedule?athlete=${item.link.athlete_id}`) : { sent: false };
     const delivered = results.filter(Boolean).length;
-    if (delivered) {
+    if (delivered || lineDelivery.sent) {
       sentUsers += 1;
       sentDevices += delivered;
     } else {
@@ -125,5 +128,5 @@ export async function GET(request: Request) {
   }
 
   if (staleEndpoints.length) await admin.from("push_subscriptions").delete().in("endpoint", [...new Set(staleEndpoints)]);
-  return NextResponse.json({ eligible: eligible.length, sentUsers, sentDevices });
+  return NextResponse.json({ eligible: eligible.length, sentUsers, sentDevices, lineEnabled: Boolean(process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN) });
 }

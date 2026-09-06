@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, LockKeyhole, Mail } from "lucide-react";
+import { ArrowLeft, ArrowRight, LockKeyhole, Mail, MessageCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,16 +15,25 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isPasswordSetup, setIsPasswordSetup] = useState(false);
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [lineError, setLineError] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const hash = new URLSearchParams(window.location.hash.slice(1));
     const authType = hash.get("type");
+    const lineResult = params.get("line");
+    const lineMessage = lineResult === "not_connected"
+      ? "先にメールアドレスでログインし、設定からLINEを連携してください。"
+      : lineResult
+        ? "LINEログインを完了できませんでした。もう一度お試しください。"
+        : "";
+    const lineUpdate = lineMessage ? window.setTimeout(() => setLineError(lineMessage), 0) : undefined;
 
     if (params.has("code") || authType === "invite" || authType === "recovery") {
       const update = window.setTimeout(() => setIsPasswordSetup(true), 0);
-      return () => window.clearTimeout(update);
+      return () => { window.clearTimeout(update); if (lineUpdate) window.clearTimeout(lineUpdate); };
     }
+    return () => { if (lineUpdate) window.clearTimeout(lineUpdate); };
   }, []);
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
@@ -123,7 +132,11 @@ const { error } = await supabase.auth.signInWithPassword({
           </button>
         </form>
         ) : (
-        <form onSubmit={handleLogin} className="mt-9 space-y-5">
+        <>
+        <a href="/api/line/connect?mode=login&next=/mypage" className="mt-9 flex w-full items-center justify-center gap-2 bg-[#06c755] px-5 py-4 text-sm font-black text-white transition hover:bg-[#05b64d]"><MessageCircle size={19}/>LINEでログイン</a>
+        {lineError && <p role="alert" className="mt-3 border-l-2 border-orange-500 bg-orange-500/10 px-4 py-3 text-sm text-orange-200">{lineError}</p>}
+        <div className="my-6 flex items-center gap-3 text-[11px] text-white/30"><span className="h-px flex-1 bg-white/10"/>またはメールアドレス<span className="h-px flex-1 bg-white/10"/></div>
+        <form onSubmit={handleLogin} className="space-y-5">
           <label className="block">
             <span className="mb-2 block text-[11px] font-black tracking-[0.16em] text-white/55">EMAIL</span>
             <span className="flex items-center gap-3 border border-white/15 bg-black/20 px-4 focus-within:border-orange-500">
@@ -155,6 +168,7 @@ const { error } = await supabase.auth.signInWithPassword({
             {!loading && <ArrowRight aria-hidden="true" size={16} />}
           </button>
         </form>
+        </>
         )}
 
         {!isPasswordSetup && (

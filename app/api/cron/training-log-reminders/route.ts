@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { sendLineMessage } from "@/lib/line";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,7 @@ type Subscription = {
   p256dh: string;
   auth: string;
 };
+type LineTarget = { user_id: string; line_user_id: string };
 
 type CalendarEntry = {
   user_id: string;
@@ -64,22 +66,17 @@ export async function GET(request: Request) {
 
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  if (!publicKey || !privateKey) {
-    return NextResponse.json({ error: "Push is not configured" }, { status: 503 });
-  }
-
   const admin = createAdminClient();
   const reminderDate = japanDate();
-  const { data: subscriptionRows, error: subscriptionError } = await admin
-    .from("push_subscriptions")
-    .select("user_id, endpoint, p256dh, auth")
-    .eq("notify_training_log_reminder", true);
-  if (subscriptionError) {
-    return NextResponse.json({ error: subscriptionError.message }, { status: 500 });
-  }
+  const [{ data: subscriptionRows, error: subscriptionError }, { data: lineRows, error: lineError }] = await Promise.all([
+    admin.from("push_subscriptions").select("user_id, endpoint, p256dh, auth").eq("notify_training_log_reminder", true),
+    admin.from("line_account_connections").select("user_id,line_user_id").eq("portal", "athlete").eq("notify_training_log_reminder", true),
+  ]);
+  if (subscriptionError || lineError) return NextResponse.json({ error: (subscriptionError ?? lineError)?.message }, { status: 500 });
 
   const subscriptions = (subscriptionRows ?? []) as Subscription[];
-  const subscribedUserIds = [...new Set(subscriptions.map((item) => item.user_id))];
+  const lineTargets = (lineRows ?? []) as LineTarget[];
+  const subscribedUserIds = [...new Set([...subscriptions.map((item) => item.user_id), ...lineTargets.map((item) => item.user_id)])];
   if (!subscribedUserIds.length) {
     return NextResponse.json({ date: reminderDate, eligible: 0, sent: 0 });
   }
@@ -160,7 +157,7 @@ export async function GET(request: Request) {
     return [{ userId, kind: competition ? "competition" as const : "training" as const }];
   });
 
-  webpush.setVapidDetails("mailto:info@shonai-vaultex.jp", publicKey, privateKey);
+  if (publicKey && privateKey) webpush.setVapidDetails("mailto:info@shonai-vaultex.jp", publicKey, privateKey);
   let sentUsers = 0;
   let sentDevices = 0;
   const staleEndpoints: string[] = [];
@@ -184,7 +181,7 @@ export async function GET(request: Request) {
       url: `/performance?kind=${competition ? "athletics" : "unofficial-athletics"}&date=${reminderDate}&quick=1`,
       tag: `training-log-reminder-${reminderDate}`,
     });
-    const deliveries = await Promise.all(targets.map(async (target) => {
+    const deliveries = publicKey && privateKey ? await Promise.all(targets.map(async (target) => {
       try {
         await webpush.sendNotification(
           { endpoint: target.endpoint, keys: { p256dh: target.p256dh, auth: target.auth } },
@@ -197,9 +194,13 @@ export async function GET(request: Request) {
         console.error("Training reminder push failed", { userId, statusCode });
         return false;
       }
-    }));
+    })) : [];
+    const lineTarget = lineTargets.find((target) => target.user_id === userId);
+    const lineDelivery = lineTarget
+      ? await sendLineMessage(lineTarget.line_user_id, competition ? "今日の本番記録を残そう" : "今日の練習を振り返ろう", competition ? "今日の試合記録を入力して、次の挑戦につなげましょう。" : "今日の練習記録を入力して、短い振り返りを残しましょう。", `/performance?kind=${competition ? "athletics" : "unofficial-athletics"}&date=${reminderDate}&quick=1`)
+      : { sent: false };
     const delivered = deliveries.filter(Boolean).length;
-    if (delivered) {
+    if (delivered || lineDelivery.sent) {
       sentUsers += 1;
       sentDevices += delivered;
     } else {
@@ -216,5 +217,6 @@ export async function GET(request: Request) {
     eligible: eligibleUsers.length,
     sentUsers,
     sentDevices,
+    sentLine: eligibleUsers.filter(({ userId }) => lineTargets.some((target) => target.user_id === userId)).length,
   });
 }

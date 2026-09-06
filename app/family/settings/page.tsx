@@ -5,6 +5,7 @@ import { requireFamilyContext } from "@/lib/family";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { createFamilyInvitation, revokeFamilyLink } from "../actions";
 import PushNotificationButton from "@/app/components/PushNotificationButton";
+import LineConnectionSettings from "@/app/components/LineConnectionSettings";
 
 const relationLabel: Record<string, string> = {
   father: "父",
@@ -40,6 +41,12 @@ export default async function FamilySettingsPage({
     (guardians ?? []).map((item) => [item.user_id, item]),
   );
   const primary = context.athlete.guardianRole === "primary_guardian";
+  const { data: lineConnection } = await admin
+    .from("line_account_connections")
+    .select("display_name,notify_important,notify_schedule,notify_feedback,notify_training_log_reminder,notify_attendance_reminder")
+    .eq("user_id", context.guardianId)
+    .eq("portal", "family")
+    .maybeSingle();
   return (
     <FamilyShell context={context} active="/family/settings">
       <SectionTitle eyebrow="FAMILY SETTINGS">家族・設定</SectionTitle>
@@ -49,6 +56,11 @@ export default async function FamilySettingsPage({
           予定変更や重要なお知らせを、この端末へお届けします。
         </p>
         <PushNotificationButton portal="family" />
+        <div className="mt-4 border-t border-black/10 pt-4">
+          <h4 className="text-sm font-black">LINEでも受け取る</h4>
+          <p className="mt-1 text-xs leading-5 text-black/45">保護者本人のLINEへ、出欠や重要連絡をお届けします。</p>
+          <LineConnectionSettings portal="family" initial={lineConnection} configured={Boolean(process.env.LINE_LOGIN_CHANNEL_ID && process.env.LINE_LOGIN_CHANNEL_SECRET)} />
+        </div>
       </Card>
       <Link
         href={`/family/help?athlete=${context.athlete.id}`}
