@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
-import { Activity, ArrowUpRight, Check, ChevronRight, ClipboardPenLine, Medal, MessageCircle, NotebookPen, Plus, Target, Trophy, Video } from "lucide-react";
+import { Activity, ArrowUpRight, Check, ChevronRight, ClipboardPenLine, Flame, Medal, MessageCircle, NotebookPen, Plus, Target, Trophy, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { type ScheduleItem } from "@/app/components/SchedulePanel";
@@ -62,11 +62,11 @@ export default async function MyPage() {
   const competitionApplicationsPromise = Promise.resolve(supabase.from("competition_applications").select("schedule_id").eq("user_id", userId).eq("status", "submitted"));
   const attendingSchedulesPromise = Promise.resolve(supabase.from("schedule_attendance").select("schedule_id,status").eq("user_id", userId));
   const personalCalendarPromise = Promise.resolve(supabase.from("personal_calendar_entries").select("id,entry_date,title,location,journal,entry_type,starts_at,ends_at,all_day").eq("user_id", userId).is("schedule_id", null).gte("entry_date", todayKey).order("entry_date").limit(20));
-  const todayRecordsPromise = Promise.resolve(supabase.from("performance_records").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("date", todayKey));
+  const todayRecordsPromise = Promise.resolve(supabase.from("performance_records").select("id,record_kind").eq("user_id", userId).eq("date", todayKey));
   const activeGoalPromise = Promise.resolve(supabase.from("personal_calendar_goals").select("title,target_date").eq("user_id", userId).eq("status", "active").maybeSingle());
   const dailyCheckinPromise = Promise.resolve(supabase.from("daily_checkins").select("condition_score,fatigue_score,mood_score,note").eq("user_id", userId).eq("checkin_date", todayKey).maybeSingle());
   const deferredDataPromise = loadMypageDeferredData({ userId, gender: playerPromise.then(({ data }) => data?.gender ?? null), currentMonth, previousMonthStart });
-  const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }, { data: attendingSchedules }, { data: personalCalendarEntries }, { count: todayRecordCount }, { data: activeGoal }, { data: dailyCheckin }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise, attendingSchedulesPromise, personalCalendarPromise, todayRecordsPromise, activeGoalPromise, dailyCheckinPromise]);
+  const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }, { data: attendingSchedules }, { data: personalCalendarEntries }, { data: todayRecords }, { data: activeGoal }, { data: dailyCheckin }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise, attendingSchedulesPromise, personalCalendarPromise, todayRecordsPromise, activeGoalPromise, dailyCheckinPromise]);
 
   if (!player) {
     redirect("/profile/create");
@@ -100,6 +100,11 @@ export default async function MyPage() {
   const weekMyCalendarItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey))), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey)))]).sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
   const todayTrainingItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && schedule.schedule_type !== "competition" && attendanceByScheduleId.get(schedule.id) !== "absent" && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type !== "competition" && occursOnDate(schedule, todayKey))])
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+  const todayCompetitionItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && schedule.schedule_type === "competition" && (appliedCompetitionIds.has(schedule.id) || attendingScheduleIds.has(schedule.id)) && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type === "competition" && occursOnDate(schedule, todayKey))])
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+  const todayRecordCount = todayRecords?.length ?? 0;
+  const hasTodayTrainingRecord = todayRecords?.some((record) => record.record_kind === "unofficial-athletics") ?? false;
+  const hasTodayCompetitionRecord = todayRecords?.some((record) => record.record_kind === "athletics") ?? false;
   // The dashboard's "CLUB SCHEDULE" is an overview. Coaches need to see every
   // class they can manage, just as they do on the full schedule calendar.
   const visibleClubSchedules = ((schedules ?? []) as ScheduleItem[]).filter(isVisibleClubSchedule);
@@ -119,7 +124,10 @@ export default async function MyPage() {
     !dailyCheckin
       ? { href: "#daily-checkin", label: "今日の状態を記録", detail: "体調・疲労・気分を30秒で入力", tone: "amber" }
       : null,
-    todayTrainingItems.length > 0 && !todayRecordCount
+    todayCompetitionItems.length > 0 && !hasTodayCompetitionRecord
+      ? { href: `/performance?kind=athletics&date=${todayKey}&quick=1`, label: "今日の本番記録を残す", detail: "結果・気づき・動画を記録", tone: "orange" }
+      : null,
+    todayTrainingItems.length > 0 && !hasTodayTrainingRecord
       ? { href: `/performance?kind=unofficial-athletics&date=${todayKey}&from=calendar`, label: "今日の練習を記録", detail: "記録・意識・振り返りを残す", tone: "emerald" }
       : null,
   ].filter((action): action is NonNullable<typeof action> => Boolean(action));
@@ -131,6 +139,14 @@ export default async function MyPage() {
         <span className="hidden text-xs font-bold tracking-[.16em] text-white/25 sm:block">SHONAI VAULTEX</span>
       </div>
       <MypageTutorial autoOpen={(player.mypage_tutorial_version ?? 0) < MYPAGE_TUTORIAL_VERSION} userId={userId} />
+
+      <section className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div className="rounded-2xl border border-orange-400/20 bg-orange-400/[.06] px-5 py-4">
+          <p className="flex items-center gap-2 text-[10px] font-black tracking-[.18em] text-orange-300"><Flame size={14}/>KEEP MOVING</p>
+          <p className="mt-2 text-sm font-bold leading-6 text-white/70">{todayActions.length ? `今日はあと${todayActions.length}件。ひとつずつ進めよう。` : "今日の確認は完了。積み重ねが次の自信になる。"}</p>
+        </div>
+        <Link href="/performance" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 text-sm font-black text-black transition hover:bg-orange-400">記録を追加<Plus size={17}/></Link>
+      </section>
 
       <section data-tutorial="mobile-home" className="mt-4 rounded-2xl border border-white/10 bg-[#121212] p-4 md:hidden">
         <div className="flex items-center justify-between gap-3">
@@ -202,7 +218,7 @@ export default async function MyPage() {
               </div>
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
                 <Link href="/mypage/my-calendar" className="rounded-xl border border-white/10 bg-white/[.025] p-3 transition hover:border-orange-400/40"><span className="text-[10px] font-black text-white/30">NEXT</span>{nextSchedule && nextScheduleDate ? <><strong className="mt-1 block truncate text-sm">{nextSchedule.title}</strong><span className="mt-1 block truncate text-[11px] text-white/40">{nextScheduleDate.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short", timeZone: "Asia/Tokyo" })}{nextSchedule.location ? ` ・ ${nextSchedule.location}` : ""}</span></> : <strong className="mt-1 block text-sm text-white/35">次の予定はありません</strong>}</Link>
-                <Link href={`/performance?kind=unofficial-athletics&date=${todayKey}&from=calendar`} className="flex items-center justify-between rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] p-3 transition hover:bg-emerald-400/10"><span><span className="text-[10px] font-black text-emerald-300/70">TODAY&apos;S LOG</span><strong className="mt-1 block text-sm">{todayRecordCount ? `記録済み ${todayRecordCount}件` : "今日の練習を記録"}</strong></span><Plus size={18} className="text-emerald-300"/></Link>
+                <Link href={todayCompetitionItems.length ? `/performance?kind=athletics&date=${todayKey}&quick=1` : `/performance?kind=unofficial-athletics&date=${todayKey}&from=calendar`} className="flex items-center justify-between rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] p-3 transition hover:bg-emerald-400/10"><span><span className="text-[10px] font-black text-emerald-300/70">TODAY&apos;S LOG</span><strong className="mt-1 block text-sm">{todayRecordCount ? `記録済み ${todayRecordCount}件` : todayCompetitionItems.length ? "今日の本番記録を残す" : "今日の練習を記録"}</strong></span><Plus size={18} className="text-emerald-300"/></Link>
               </div>
               {activeGoal ? <Link href="/mypage/my-calendar" className="mt-3 flex min-w-0 items-center gap-2 text-xs text-white/40"><Target size={14} className="shrink-0 text-orange-400"/><span className="truncate">次の目標：{activeGoal.title}</span><span className="ml-auto shrink-0">{activeGoal.target_date.replaceAll("-", "/")}</span></Link> : null}
             </div>

@@ -8,6 +8,7 @@ import NewsPanel, { type NewsItem } from "@/app/components/NewsPanel";
 
 type DeferredData = {
   currentMonthRecordCount: number;
+  personalBestCount: number;
   unreadCount: number;
   growthRecords: GrowthRecord[];
   personalBests: Record<string, number>;
@@ -111,6 +112,7 @@ export async function loadMypageDeferredData({
 
   return {
     currentMonthRecordCount: (growthRecords ?? []).filter((record) => record.date.startsWith(currentMonth)).length,
+    personalBestCount: Object.keys(personalBests).length,
     unreadCount: newsItems.filter((item) => item.unread).length,
     growthRecords: (growthRecords ?? []) as GrowthRecord[],
     personalBests,
@@ -125,6 +127,7 @@ export async function MypageStats({ dataPromise }: { dataPromise: Promise<Deferr
   return <div className="contents max-md:hidden">
     <Link href="/mypage/growth-report" className="border-r border-white/10 p-5 transition hover:bg-white/[.035] sm:p-7"><p className="text-[10px] font-black tracking-[.14em] text-white/30">THIS MONTH</p><strong className="mt-2 block text-3xl tracking-[-.04em]">{data.currentMonthRecordCount}<small className="ml-1 text-xs text-white/35">RECORDS</small></strong></Link>
     <a href="#news" className="p-5 transition hover:bg-white/[.035] sm:p-7"><p className="text-[10px] font-black tracking-[.14em] text-white/30">TO CHECK</p><strong className={`mt-2 block text-3xl tracking-[-.04em] ${data.unreadCount ? "text-orange-400" : ""}`}>{data.unreadCount}<small className="ml-1 text-xs text-white/35">ITEMS</small></strong></a>
+    <Link href="/mypage/growth-report" className="col-span-2 border-t border-white/10 p-5 transition hover:bg-white/[.035] sm:p-7"><div className="flex items-center justify-between gap-4"><span><p className="text-[10px] font-black tracking-[.14em] text-white/30">YOUR PROGRESS</p><strong className="mt-2 block text-lg">自己ベストを記録した種目</strong></span><strong className="text-3xl text-orange-400">{data.personalBestCount}<small className="ml-1 text-xs text-white/35">種目</small></strong></div></Link>
   </div>;
 }
 
@@ -180,7 +183,7 @@ export async function LatestNewsSummary({ dataPromise }: { dataPromise: Promise<
 }
 
 export function MypageStatsSkeleton() {
-  return <>{[0, 1].map((item) => <div key={item} className={`${item === 0 ? "border-r" : ""} border-white/10 p-5 sm:p-7`}><div className="h-2.5 w-20 animate-pulse rounded bg-white/10"/><div className="mt-3 h-8 w-14 animate-pulse rounded bg-white/10"/></div>)}</>;
+  return <>{[0, 1, 2].map((item) => <div key={item} className={`${item === 0 ? "border-r" : ""} ${item === 2 ? "col-span-2 border-t" : ""} border-white/10 p-5 sm:p-7`}><div className="h-2.5 w-20 animate-pulse rounded bg-white/10"/><div className="mt-3 h-8 w-14 animate-pulse rounded bg-white/10"/></div>)}</>;
 }
 
 export function MypageDeferredSkeleton() {
