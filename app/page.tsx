@@ -67,6 +67,13 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
           <SectionLabel index="02">OUR APPROACH</SectionLabel>
           <div className="mt-7 flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><h2 className="text-3xl font-black tracking-[-0.045em] sm:text-5xl">OUR APPROACH.</h2><p className="max-w-sm text-sm leading-7 text-white/60">一人ひとりを理解し、挑戦を支える。VAULTEXが大切にしていること。</p></div>
+          <div className="mt-10 grid gap-5 border-y border-orange-500/35 bg-[linear-gradient(90deg,rgba(249,115,22,.1),transparent)] px-5 py-7 sm:grid-cols-[minmax(0,.65fr)_minmax(0,1.35fr)] sm:items-center sm:px-7">
+            <div>
+              <p className="text-[10px] font-black tracking-[.2em] text-orange-400">PERFORMANCE APPROACH</p>
+              <h3 className="mt-2 text-2xl font-black tracking-[-.035em] sm:text-3xl">ENJOY. MOVE. GROW.</h3>
+            </div>
+            <p className="max-w-2xl text-sm font-bold leading-7 text-white/75">VAULTEXでは、走る・跳ぶ・投げるなど、さまざまな種目や動きを楽しみながら、身体能力を高め、一人ひとりの自己ベスト更新を目指します。</p>
+          </div>
           <div className="mt-14 grid gap-px bg-white/10 md:grid-cols-3">{features.map(({ icon: Icon, title, text }, index) => <article key={title} className="group bg-[#101216] p-7 sm:p-9"><div className="flex items-start justify-between"><Icon aria-hidden="true" size={30} strokeWidth={1.5} className="text-orange-500" /><span className="text-xs font-bold text-white/35">0{index + 1}</span></div><h3 className="mt-16 text-lg font-black tracking-wide">{title}</h3><p className="mt-4 text-sm leading-7 text-white/60">{text}</p><div className="mt-8 h-px w-10 bg-orange-500 transition-all duration-300 group-hover:w-full" /></article>)}</div>
           <div className="mt-10 max-w-3xl"><h3 className="text-xl font-black">READY TO COMPETE.</h3><p className="mt-4 text-sm leading-8 text-white/65">選手を否定する言葉ではなく、どうすれば次につながるかを一緒に考えます。試合に向けて十分に準備を重ね、不安を少しずつ減らしていく。自信を持ってスタートラインに立てるように、技術だけでなく気持ちの面にも向き合います。</p><CtaLink href="/coach" variant="outline" className="mt-5">コーチについて知る</CtaLink></div>
           <div className="mt-8 flex flex-wrap gap-4">
