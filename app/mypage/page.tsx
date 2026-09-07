@@ -71,12 +71,14 @@ export default async function MyPage() {
   const todayRecordsPromise = Promise.resolve(supabase.from("performance_records").select("id,record_kind").eq("user_id", userId).eq("date", todayKey));
   const activeGoalPromise = Promise.resolve(supabase.from("personal_calendar_goals").select("title,target_date").eq("user_id", userId).eq("status", "active").maybeSingle());
   const dailyCheckinPromise = Promise.resolve(supabase.from("daily_checkins").select("condition_score,fatigue_score,mood_score,note").eq("user_id", userId).eq("checkin_date", todayKey).maybeSingle());
-  const deferredDataPromise = loadMypageDeferredData({ userId, gender: playerPromise.then(({ data }) => data?.gender ?? null), currentMonth, previousMonthStart });
   const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }, { data: attendingSchedules }, { data: personalCalendarEntries }, { data: todayRecords }, { data: activeGoal }, { data: dailyCheckin }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise, attendingSchedulesPromise, personalCalendarPromise, todayRecordsPromise, activeGoalPromise, dailyCheckinPromise]);
 
   if (!player) {
     redirect("/profile/create");
   }
+
+  // Keep secondary reports from competing with the data required for the first screen.
+  const deferredDataPromise = loadMypageDeferredData({ userId, gender: player.gender, currentMonth, previousMonthStart });
 
   const appliedCompetitionIds = new Set((competitionApplications ?? []).map((application) => application.schedule_id));
   const attendanceByScheduleId = new Map((attendingSchedules ?? []).map((attendance) => [attendance.schedule_id, attendance.status]));
@@ -144,11 +146,11 @@ export default async function MyPage() {
       </section>
 
       <section className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-5">
-        <Link href="/mypage/my-calendar?week=1" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[.06] px-4 transition hover:border-emerald-400/45"><CalendarPlus size={18} className="shrink-0 text-emerald-300"/><span><strong className="block text-sm">1週間の予定</strong><span className="mt-0.5 block text-[10px] text-white/35">まとめて作成</span></span></Link>
-        <Link data-tutorial="all-schedules" href="/mypage/schedules" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.025] px-4 transition hover:border-white/25"><CalendarDays size={18} className="shrink-0 text-sky-300"/><span><strong className="block text-sm">全体予定</strong><span className="mt-0.5 block text-[10px] text-white/35">出欠もここから</span></span></Link>
-        <Link href="/mypage/personal" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.025] px-4 transition hover:border-white/25"><UserRoundCheck size={18} className="shrink-0 text-orange-300"/><span><strong className="block text-sm">パーソナル予約</strong><span className="mt-0.5 block text-[10px] text-white/35">空き枠を選ぶ</span></span></Link>
-        <Link href="/performance" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.025] px-4 transition hover:border-white/25"><Plus size={18} className="shrink-0 text-orange-300"/><span><strong className="block text-sm">記録を追加</strong><span className="mt-0.5 block text-[10px] text-white/35">練習・大会記録</span></span></Link>
-        <Link href="/mypage/menu?settings=1#settings" className="group col-span-2 flex min-h-16 items-center gap-3 rounded-2xl border border-sky-400/20 bg-sky-400/[.05] px-4 transition hover:border-sky-400/45 lg:col-span-1"><Settings2 size={18} className="shrink-0 text-sky-300"/><span><strong className="block text-sm">LINE連携・設定</strong><span className="mt-0.5 block text-[10px] text-white/35">通知・プロフィール</span></span></Link>
+        <Link prefetch href="/mypage/my-calendar?week=1" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[.06] px-4 transition hover:border-emerald-400/45"><CalendarPlus size={18} className="shrink-0 text-emerald-300"/><span><strong className="block text-sm">1週間の予定</strong><span className="mt-0.5 block text-[10px] text-white/35">まとめて作成</span></span></Link>
+        <Link prefetch data-tutorial="all-schedules" href="/mypage/schedules" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.025] px-4 transition hover:border-white/25"><CalendarDays size={18} className="shrink-0 text-sky-300"/><span><strong className="block text-sm">全体予定</strong><span className="mt-0.5 block text-[10px] text-white/35">出欠もここから</span></span></Link>
+        <Link prefetch href="/mypage/personal" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.025] px-4 transition hover:border-white/25"><UserRoundCheck size={18} className="shrink-0 text-orange-300"/><span><strong className="block text-sm">パーソナル予約</strong><span className="mt-0.5 block text-[10px] text-white/35">空き枠を選ぶ</span></span></Link>
+        <Link prefetch href="/performance" className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/10 bg-white/[.025] px-4 transition hover:border-white/25"><Plus size={18} className="shrink-0 text-orange-300"/><span><strong className="block text-sm">記録を追加</strong><span className="mt-0.5 block text-[10px] text-white/35">練習・大会記録</span></span></Link>
+        <Link prefetch href="/mypage/menu?settings=1#settings" className="group col-span-2 flex min-h-16 items-center gap-3 rounded-2xl border border-sky-400/20 bg-sky-400/[.05] px-4 transition hover:border-sky-400/45 lg:col-span-1"><Settings2 size={18} className="shrink-0 text-sky-300"/><span><strong className="block text-sm">LINE連携・設定</strong><span className="mt-0.5 block text-[10px] text-white/35">通知・プロフィール</span></span></Link>
       </section>
 
       <section className="relative mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_85%_10%,rgba(249,115,22,.16),transparent_28%),linear-gradient(145deg,#151515,#0d0d0d_65%)] text-white shadow-[0_28px_90px_rgba(0,0,0,.28)]">
