@@ -54,10 +54,10 @@ export default function HomePage() {
               <p>陸上が好きで始めたのに、思っていた環境と違った。新しいクラブに入りたいけれど、すでにできあがった輪になじめるか不安。そんな人が、自分らしく挑戦を続けられる場所をつくりたいと考えています。</p>
               <p>競技で上を目指すことも、仲間と体を動かすことも。ここでの体験や出会いが、人生を豊かにするきっかけになったら。それが、VAULTEXに込めた思いです。</p>
             </div>
-            <div className="mt-12 grid max-w-3xl grid-cols-3 border-y border-white/10 py-6">
+<div className="mt-12 grid max-w-3xl grid-cols-3 border-y border-white/10 py-6">
   <Stat value="2026" label="FOUNDED" />
-  <Stat value="3つ" label="成長支援の柱" />
-  <Stat value="4" label="PROGRAM" />
+  <Stat value="走・跳・投" label="BASIC MOVEMENTS" />
+  <Stat value="全年代" label="小学生から一般まで" />
 </div>
           </div>
         </div>
