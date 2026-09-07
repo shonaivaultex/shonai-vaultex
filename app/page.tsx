@@ -8,7 +8,6 @@ import { programs } from "./components/program-data";
 import { ContactLine } from "./components/ui/ContactLine";
 import { CtaLink } from "./components/ui/CtaLink";
 import { SectionLabel } from "./components/ui/SectionLabel";
-import { Stat } from "./components/ui/Stat";
 const features = [
   { icon: Trophy, title: "まずは、あなたを知ることから", text: "初めにカウンセリングを行い、好きなこと、挑戦したいこと、性格や傾向を理解するところから始めます。不安や生活のスケジュールも聞きながら、その人に合ったプランを一緒に考えます。" },
   { icon: Users, title: "仲間と一緒に成長する", text: "人数や練習内容に合わせて、ウォーミングアップにレクリエーションを取り入れます。準備や片付け、計測、動画撮影もできることを分担。自分のペースを大切にしながら、お互いを応援できる関係を育てます。" },
@@ -54,11 +53,6 @@ export default function HomePage() {
               <p>陸上が好きで始めたのに、思っていた環境と違った。新しいクラブに入りたいけれど、すでにできあがった輪になじめるか不安。そんな人が、自分らしく挑戦を続けられる場所をつくりたいと考えています。</p>
               <p>競技で上を目指すことも、仲間と体を動かすことも。ここでの体験や出会いが、人生を豊かにするきっかけになったら。それが、VAULTEXに込めた思いです。</p>
             </div>
-<div className="mt-12 grid max-w-3xl grid-cols-3 border-y border-white/10 py-6">
-  <Stat value="2026" label="FOUNDED" />
-  <Stat value="走・跳・投" label="BASIC MOVEMENTS" />
-  <Stat value="全年代" label="小学生から一般まで" />
-</div>
           </div>
         </div>
       </section>
