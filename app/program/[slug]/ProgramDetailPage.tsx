@@ -1,12 +1,23 @@
 "use client";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
+import { CalendarDays, Clock3, MapPin, Users } from "lucide-react";
 import type { Program } from "../../components/program-data";
 import { CtaLink } from "../../components/ui/CtaLink";
 import { SectionLabel } from "../../components/ui/SectionLabel";
 const fadeUp = { hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0 } };
 const revealTransition = { duration: 0.65, ease: [0.22, 1, 0.36, 1] as const };
-export function ProgramDetailPage({ program }: { program: Program }) {
+type ProgramSchedule = { id: number; title: string; location: string | null; starts_at: string; ends_at: string | null; all_day: boolean; schedule_type: string; audience: string; program_class: string | null };
+const typeLabels: Record<string, string> = { practice: "練習", measurement: "測定", other: "セッション" };
+function scheduleDate(value: string) { return new Date(value).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", weekday: "short" }); }
+function scheduleTime(item: ProgramSchedule) {
+  if (item.all_day) return "終日";
+  const options: Intl.DateTimeFormatOptions = { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" };
+  const start = new Date(item.starts_at).toLocaleTimeString("ja-JP", options);
+  const end = item.ends_at ? new Date(item.ends_at).toLocaleTimeString("ja-JP", options) : null;
+  return end ? `${start}〜${end}` : `${start}〜`;
+}
+export function ProgramDetailPage({ program, schedules }: { program: Program; schedules: ProgramSchedule[] }) {
   const reduceMotion = useReducedMotion();
   const reveal = { initial: reduceMotion ? false : "hidden", whileInView: reduceMotion ? undefined : "visible", viewport: { once: true, amount: 0.2 }, variants: fadeUp, transition: revealTransition };
   return <main className="overflow-hidden bg-[#090a0c] text-white">
@@ -65,17 +76,19 @@ export function ProgramDetailPage({ program }: { program: Program }) {
   <span className="pb-0.5 text-xs text-white/40">{program.priceNote}</span>
 </div>
 <div className="mt-12 flex flex-wrap gap-4">
-  <CtaLink href="/mypage">
-    マイページを開く
+  <CtaLink href="https://line.me/R/ti/p/@082fhyco">
+    無料体験・相談はこちら
   </CtaLink>
 
-  <CtaLink href="/program" variant="outline">
-    プログラム一覧へ
+  <CtaLink href="/schedule" variant="outline">
+    開催予定を見る
   </CtaLink>
 </div>
       </motion.div>
     </section>
-    <section className="border-b border-white/10 py-24 sm:py-32"><motion.div {...reveal} className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-12 lg:gap-20 lg:px-10"><div className="lg:col-span-4"><SectionLabel>ABOUT THIS PROGRAM</SectionLabel></div><div className="lg:col-span-8"><p className="text-sm font-black tracking-[0.16em] text-orange-500">{program.audience}</p><h2 className="mt-5 whitespace-pre-line text-4xl font-black leading-[1.08] tracking-[-0.045em] sm:text-5xl md:text-6xl">{program.heroTitle}</h2><p className="mt-9 max-w-2xl text-base leading-8 text-white/65 sm:text-lg">{program.description}</p></div></motion.div></section>
+    <section className="border-b border-white/10 py-24 sm:py-32"><motion.div {...reveal} className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-12 lg:gap-20 lg:px-10"><div className="lg:col-span-4"><SectionLabel>ABOUT THIS PROGRAM</SectionLabel></div><div className="lg:col-span-8"><p className="text-sm font-black tracking-[0.16em] text-orange-500">{program.audience}</p><h2 className="mt-5 text-4xl font-black leading-[1.08] tracking-[-0.045em] sm:text-5xl md:text-6xl">このプログラムで<br />大切にすること。</h2><p className="mt-9 max-w-2xl text-base leading-8 text-white/65 sm:text-lg">{program.description}</p></div></motion.div></section>
+
+<section className="border-b border-white/10 bg-[#0d0f12] py-24 sm:py-32"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><motion.div {...reveal} className="flex flex-col justify-between gap-7 md:flex-row md:items-end"><div><SectionLabel>UPCOMING SESSIONS</SectionLabel><h2 className="mt-6 text-4xl font-black tracking-[-0.045em] sm:text-5xl">参加できる開催予定。</h2><p className="mt-5 max-w-xl text-sm leading-7 text-white/55">全体スケジュールに登録された、このコース対象の直近予定です。日時や場所は変更になる場合があります。</p></div><CtaLink href="/schedule" variant="outline">全体スケジュールを見る</CtaLink></motion.div>{schedules.length ? <div className="mt-12 grid gap-4 md:grid-cols-2">{schedules.map((item) => <article key={item.id} className="rounded-2xl border border-white/10 bg-[#111317] p-6 sm:p-7"><div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-orange-400/25 bg-orange-400/10 px-2.5 py-1 text-[10px] font-black text-orange-300">{typeLabels[item.schedule_type] ?? "セッション"}</span><span className="flex items-center gap-1 text-xs font-bold text-white/40"><Users size={13} />{item.audience === "all" ? "全クラス対象" : `${item.program_class}対象`}</span></div><h3 className="mt-4 text-xl font-black">{item.title}</h3><div className="mt-5 grid gap-2 text-sm text-white/60"><p className="flex items-center gap-2"><CalendarDays size={15} className="text-orange-400" />{scheduleDate(item.starts_at)}</p><p className="flex items-center gap-2"><Clock3 size={15} className="text-orange-400" />{scheduleTime(item)}</p><p className="flex items-center gap-2"><MapPin size={15} className="text-orange-400" />{item.location || "場所は調整中"}</p></div></article>)}</div> : <div className="mt-12 rounded-2xl border border-white/10 bg-white/[.025] px-6 py-12 text-center"><CalendarDays className="mx-auto text-white/25" size={32} /><p className="mt-4 font-black">現在、公開中の開催予定はありません。</p><p className="mt-2 text-sm text-white/40">予定が決まり次第、全体スケジュールに掲載します。</p></div>}</div></section>
 
 <section className="bg-[#0d0f12] py-24 sm:py-32"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><motion.div {...reveal}><SectionLabel>WHAT WE BUILD</SectionLabel><h2 className="mt-6 text-4xl font-black tracking-[-0.045em] sm:text-5xl">OUR APPROACH.</h2></motion.div><div className="mt-14 grid gap-4 md:grid-cols-3">{program.highlights.map((item, index) => <motion.article key={item.title} initial={reduceMotion ? false : "hidden"} whileInView={reduceMotion ? undefined : "visible"} viewport={{ once: true, amount: 0.18 }} variants={fadeUp} transition={{ ...revealTransition, delay: index * 0.1 }}className="group relative min-h-[340px] overflow-hidden rounded-2xl border border-white/10 bg-[#111317] p-8 transition-all duration-500 hover:-translate-y-2 hover:border-orange-500 hover:shadow-2xl hover:shadow-orange-500/10"><p className="text-6xl font-black tracking-[-0.06em] text-white/10">0{index + 1}</p><h3 className="mt-10 text-2xl font-black tracking-[-0.04em]">{item.title}</h3><p className="mt-6 text-sm leading-7 text-white/60">{item.description}</p><span className="absolute bottom-0 left-0 h-1 w-0 bg-orange-500 transition-all duration-500 group-hover:w-full" /></motion.article>)}</div></div></section>
 
