@@ -39,15 +39,13 @@ export async function loadMypageDeferredData({
     { data: announcements },
     { data: ownRecords },
     { data: videoRequests },
-    { data: growthRecords },
     { data: latestScan },
     { data: currentStandard },
     { data: videoMessageReads },
   ] = await Promise.all([
     supabase.from("announcements").select("id, title, body, priority, created_at").order("created_at", { ascending: false }).limit(10),
-    supabase.from("performance_records").select("id, category, record_kind, value").eq("user_id", userId),
+    supabase.from("performance_records").select("id, category, record_kind, value, date, awareness_category, awareness_categories").eq("user_id", userId),
     supabase.from("video_feedback_requests").select("id, event_name").eq("user_id", userId),
-    supabase.from("performance_records").select("id, category, value, date, awareness_category, awareness_categories").eq("user_id", userId).gte("date", previousMonthStart).order("date", { ascending: false }),
     supabase.from("control_test_scans").select("id, scan_number, measured_on, athlete_standard_version, control_test_measurements(test_code, primary_value, metrics, implement_weight_kg, implement_name, equipment, distance_m, jump_count)").eq("user_id", userId).order("scan_number", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("athlete_scan_standard_sets").select("version, label").eq("is_current", true).maybeSingle(),
     supabase.from("video_feedback_message_reads").select("message_id").eq("user_id", userId).limit(1000),
@@ -121,14 +119,14 @@ export async function loadMypageDeferredData({
   });
 
   return {
-    currentMonthRecordCount: (growthRecords ?? []).filter((record) => record.date.startsWith(currentMonth)).length,
+    currentMonthRecordCount: (ownRecords ?? []).filter((record) => record.date.startsWith(currentMonth)).length,
     recordedEventCounts: {
       athletics: recordedEventsByKind.athletics.size,
       "unofficial-athletics": recordedEventsByKind["unofficial-athletics"].size,
       "control-test": recordedEventsByKind["control-test"].size,
     },
     unreadCount: newsItems.filter((item) => item.unread).length,
-    growthRecords: (growthRecords ?? []) as GrowthRecord[],
+    growthRecords: (ownRecords ?? []).filter((record) => record.date >= previousMonthStart).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) as GrowthRecord[],
     personalBests,
     newsItems,
     latestScan: latestScan as DeferredData["latestScan"],
@@ -192,7 +190,7 @@ export async function LatestNewsSummary({ dataPromise }: { dataPromise: Promise<
           </span>
           <strong className="mt-1.5 block truncate text-sm text-white/80">{latestItem.title}</strong>
           <span className="mt-1 flex items-center justify-between gap-3 text-[10px] text-white/30">
-            <time>{new Date(latestItem.date).toLocaleDateString("ja-JP")}</time>
+            <time>{new Date(latestItem.date).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}</time>
             <span className="inline-flex items-center gap-1 font-black text-orange-300/70">確認する<ChevronRight size={12} className="transition group-hover:translate-x-0.5"/></span>
           </span>
         </span>
@@ -230,19 +228,18 @@ export default async function MypageDeferredContent({
         <Link href="/mypage/control-tests" className="mt-3 flex items-center justify-center gap-1 text-xs font-bold text-white/50 transition hover:text-orange-300">CONTROL TESTの履歴・詳細<ChevronRight size={14}/></Link>
       </section>
     </div>
-    <section id="news" className="mt-5 md:hidden" aria-labelledby="mobile-news-heading">
-      <div className="mb-3 flex items-end justify-between gap-3 px-1">
-        <div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">NEWS &amp; TO CHECK</p><h2 id="mobile-news-heading" className="mt-1 text-xl font-black">お知らせ・確認</h2></div>
-        <span className={`rounded-full px-3 py-1.5 text-[10px] font-black ${data.unreadCount ? "bg-orange-500 text-black" : "bg-white/[.06] text-white/35"}`}>{data.unreadCount ? `未確認 ${data.unreadCount}件` : "確認済み"}</span>
-      </div>
-      <NewsPanel initialItems={data.newsItems} userId={userId}/>
-      <Link href="/mypage/menu" className="mt-3 flex items-center justify-between rounded-2xl border border-white/[.08] bg-[#111] px-4 py-3.5 text-xs font-bold text-white/45">
-        <span>成長レポート・記録・ランキングは「その他」へ</span><ChevronRight size={16}/>
-      </Link>
-    </section>
-    <div className="mt-7 hidden items-start gap-6 md:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]">
-      <MonthlyGrowthReport records={data.growthRecords} personalBests={data.personalBests} currentMonth={currentMonth} previousMonth={previousMonth}/>
-      <div id="news-desktop"><NewsPanel initialItems={data.newsItems} userId={userId}/></div>
+    <div className="mt-5 items-start gap-6 md:mt-7 md:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)]">
+      <div className="hidden md:block"><MonthlyGrowthReport records={data.growthRecords} personalBests={data.personalBests} currentMonth={currentMonth} previousMonth={previousMonth}/></div>
+      <section id="news" aria-labelledby="mobile-news-heading">
+        <div className="mb-3 flex items-end justify-between gap-3 px-1 md:hidden">
+          <div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">NEWS &amp; TO CHECK</p><h2 id="mobile-news-heading" className="mt-1 text-xl font-black">お知らせ・確認</h2></div>
+          <span className={`rounded-full px-3 py-1.5 text-[10px] font-black ${data.unreadCount ? "bg-orange-500 text-black" : "bg-white/[.06] text-white/35"}`}>{data.unreadCount ? `未確認 ${data.unreadCount}件` : "確認済み"}</span>
+        </div>
+        <NewsPanel initialItems={data.newsItems} userId={userId}/>
+        <Link href="/mypage/menu" className="mt-3 flex items-center justify-between rounded-2xl border border-white/[.08] bg-[#111] px-4 py-3.5 text-xs font-bold text-white/45 md:hidden">
+          <span>成長レポート・記録・ランキングは「その他」へ</span><ChevronRight size={16}/>
+        </Link>
+      </section>
     </div>
   </>;
 }

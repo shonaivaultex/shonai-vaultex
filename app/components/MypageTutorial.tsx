@@ -41,15 +41,8 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
   const [saving, setSaving] = useState(false);
   const [targetRect, setTargetRect] = useState<TutorialRect | null>(null);
   const [mobile, setMobile] = useState(false);
-  const [installState] = useState<"ios" | "android" | "desktop" | "installed">(() => {
-    if (typeof window === "undefined") return "desktop";
-    const standalone = window.matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-    if (standalone) return "installed";
-    const userAgent = navigator.userAgent.toLowerCase();
-    if (/iphone|ipad|ipod/.test(userAgent)) return "ios";
-    if (/android/.test(userAgent)) return "android";
-    return "desktop";
-  });
+  const [installState, setInstallState] = useState<"ios" | "android" | "desktop" | "installed">("desktop");
+  const [viewportHeight, setViewportHeight] = useState(800);
   const steps = mobile ? mobileSteps : desktopSteps;
   const current = steps[Math.min(step, steps.length - 1)];
   const Icon = current.icon;
@@ -57,10 +50,30 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)");
-    const update = () => setMobile(media.matches);
+    const update = () => {
+      setMobile(media.matches);
+      setViewportHeight(window.innerHeight);
+    };
     update();
     media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
+    window.addEventListener("resize", update);
+    return () => {
+      media.removeEventListener("change", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const standalone = window.matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+      if (standalone) {
+        setInstallState("installed");
+        return;
+      }
+      const userAgent = navigator.userAgent.toLowerCase();
+      setInstallState(/iphone|ipad|ipod/.test(userAgent) ? "ios" : /android/.test(userAgent) ? "android" : "desktop");
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -116,7 +129,6 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
     setOpen(true);
   }
 
-  const viewportHeight = typeof window === "undefined" ? 800 : window.innerHeight;
   const spotlightRect = current.target ? targetRect : null;
   const cardBelow = spotlightRect ? spotlightRect.bottom + 300 < viewportHeight : false;
   const cardAbove = spotlightRect ? spotlightRect.top > viewportHeight * 0.62 : false;

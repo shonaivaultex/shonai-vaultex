@@ -91,7 +91,7 @@ export default function NewsPanel({
             {item.body}
           </p>
           <span className="mt-1 block text-xs text-white/30">
-            {new Date(item.date).toLocaleString("ja-JP")}
+            {new Date(item.date).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
           </span>
           <div className="mt-2 flex gap-2">
             {item.href && (
