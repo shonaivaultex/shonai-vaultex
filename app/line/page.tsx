@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Activity, CalendarDays, ClipboardPen, Home, MessageCircle, Users } from "lucide-react";
 
 const items = [
-  { href: "/mypage", label: "マイページ", icon: Home },
+  { href: "/mypage?openExternalBrowser=1", label: "マイページ", icon: Home },
   { href: "/mypage/schedules", label: "今日・全体予定", icon: CalendarDays },
   { href: "/mypage/my-calendar?week=1", label: "1週間を作成", icon: ClipboardPen },
   { href: "/performance", label: "記録を入力", icon: Activity },
