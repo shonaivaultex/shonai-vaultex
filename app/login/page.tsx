@@ -1,14 +1,11 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, LockKeyhole, Mail, MessageCircle } from "lucide-react";
 
 export default function LoginPage() {
-  const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,8 +57,7 @@ const { error } = await supabase.auth.signInWithPassword({
       ? requestedPath
       : "/mypage";
 
-    router.replace(destination);
-    router.refresh();
+    window.location.replace(destination);
   }
 
   async function handlePasswordSetup(event: FormEvent<HTMLFormElement>) {
@@ -88,8 +84,7 @@ const { error } = await supabase.auth.signInWithPassword({
       return;
     }
 
-    router.replace("/mypage");
-    router.refresh();
+    window.location.replace("/mypage");
   }
 
   return (

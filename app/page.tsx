@@ -11,7 +11,7 @@ import { SectionLabel } from "./components/ui/SectionLabel";
 const features = [
   { icon: Trophy, title: "まずは、あなたを知ることから", text: "初めにカウンセリングを行い、好きなこと、挑戦したいこと、性格や傾向を理解するところから始めます。不安や生活のスケジュールも聞きながら、その人に合ったプランを一緒に考えます。" },
   { icon: Users, title: "仲間と一緒に成長する", text: "人数や練習内容に合わせて、ウォーミングアップにレクリエーションを取り入れます。準備や片付け、計測、動画撮影もできることを分担。自分のペースを大切にしながら、お互いを応援できる関係を育てます。" },
-  { icon: Dumbbell, title: "根拠を知り、納得して取り組む", text: "私自身の競技経験に加え、測定データ、動作分析、論文などの研究知見から競技力の向上を支えます。練習の根拠と、まだ確かではないことも分けて伝え、選手が納得して取り組める指導を大切にします。" },
+  { icon: Dumbbell, title: "根拠を知り、納得して取り組む", text: "コーチ陣の競技・指導経験に加え、測定データ、動作分析、論文などの研究知見から競技力の向上を支えます。練習の根拠と、まだ確かではないことも分けて伝え、選手が納得して取り組める指導を大切にします。" },
 ] as const;
 
 type HomeNewsItem = {
@@ -104,7 +104,7 @@ export default function HomePage() {
           <SectionLabel index="03">PROGRAM</SectionLabel>
           <div className="mt-7 grid gap-10 lg:grid-cols-12"><h2 className="text-3xl font-black tracking-[-0.045em] sm:text-5xl lg:col-span-5">FIND YOUR WAY.</h2><p className="max-w-md self-end text-sm leading-7 text-white/60 lg:col-span-5 lg:col-start-8">大会を目指す方も、フィットネスとして体を動かしたい方も。年齢や経験、生活に合わせた関わり方を、一緒に考えます。</p></div>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            <article><h3 className="text-lg font-black text-orange-400">KIDS</h3><p className="mt-2 text-sm font-bold text-white/85">小学生｜体験と成長を、未来に残す。</p><p className="mt-3 text-sm leading-7 text-white/65">いろいろな競技や動きを体験し、好きなことや得意なことを見つける。「自分も小学生の頃から成長の記録を残しておきたかった」という私自身の思いから、長い時間をかけた変化も大切にします。</p></article>
+            <article><h3 className="text-lg font-black text-orange-400">KIDS</h3><p className="mt-2 text-sm font-bold text-white/85">小学生｜体験と成長を、未来に残す。</p><p className="mt-3 text-sm leading-7 text-white/65">いろいろな競技や動きを体験し、好きなことや得意なことを見つける。「自分も小学生の頃から成長の記録を残しておきたかった」という代表コーチの思いから、長い時間をかけた変化も大切にします。</p></article>
             <article><h3 className="text-lg font-black text-orange-400">TEENS</h3><p className="mt-2 text-sm font-bold text-white/85">中学生・高校生｜納得して、挑戦する。</p><p className="mt-3 text-sm leading-7 text-white/65">学校や所属先によって、練習環境や専門的な指導を受けられる機会は異なります。今いる場所だけで挑戦の可能性が決まらないように、根拠のある説明と指導で「続けたい」「もっと伸びたい」を支えます。</p></article>
             <article><h3 className="text-lg font-black text-orange-400">ADULTS</h3><p className="mt-2 text-sm font-bold text-white/85">一般｜今の暮らしの中で、続ける。</p><p className="mt-3 text-sm leading-7 text-white/65">時間がない、場所や仲間がいない。そんな悩みも聞かせてください。カウンセリングで生活に合ったスケジュールや競技との向き合い方を考えます。試合には出ず、フィットネスとしての利用も相談できます。</p></article>
           </div>
