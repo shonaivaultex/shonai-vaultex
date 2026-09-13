@@ -19,7 +19,7 @@ export default function MyVideoLibrary({ items }: { items: MyVideoItem[] }) {
   const [savingId, setSavingId] = useState("");
   const [selectedDate, setSelectedDate] = useState("all");
   const [selectedKind, setSelectedKind] = useState("all");
-  const availableDates = [...new Set(items.map((item) => item.date))].sort((a, b) => b.localeCompare(a));
+  const availableDates = [...new Set(items.filter((item) => selectedKind === "all" || item.kind === selectedKind).map((item) => item.date))].sort((a, b) => b.localeCompare(a));
   const filteredItems = items.filter((item) => (selectedDate === "all" || item.date === selectedDate) && (selectedKind === "all" || item.kind === selectedKind));
   const groups = Object.entries(
     filteredItems.reduce<Record<string, MyVideoItem[]>>((result, item) => {
@@ -82,7 +82,7 @@ export default function MyVideoLibrary({ items }: { items: MyVideoItem[] }) {
       <section className="sticky top-20 z-20 rounded-2xl border border-sky-400/25 bg-[#101216]/95 p-3 shadow-xl backdrop-blur sm:p-4">
         <div className="grid gap-3 sm:grid-cols-[minmax(220px,1fr)_auto_auto_auto] sm:items-end">
           <label className="text-xs font-bold text-white/55">日付で選ぶ<select value={selectedDate} onChange={(event)=>{setSelectedDate(event.target.value);setOpenIds(new Set());}} className="mt-2 w-full rounded-xl border border-white/15 bg-[#090a0c] px-4 py-3 text-sm font-black text-white"><option value="all">すべての日付</option>{availableDates.map((date)=><option key={date} value={date}>{new Date(`${date}T00:00:00+09:00`).toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"short",timeZone:"Asia/Tokyo"})}</option>)}</select></label>
-          {["all","練習","大会"].map((kind)=><button type="button" key={kind} onClick={()=>{setSelectedKind(kind);setOpenIds(new Set());}} className={`rounded-xl border px-5 py-3 text-sm font-black ${selectedKind===kind?"border-sky-300 bg-sky-300 text-black":"border-white/15 text-white/55"}`}>{kind==="all"?"すべて":kind}</button>)}
+          {["all","練習","大会"].map((kind)=><button type="button" key={kind} onClick={()=>{setSelectedKind(kind);setSelectedDate("all");setOpenIds(new Set());}} className={`rounded-xl border px-5 py-3 text-sm font-black ${selectedKind===kind?"border-sky-300 bg-sky-300 text-black":"border-white/15 text-white/55"}`}>{kind==="all"?"すべて":kind}</button>)}
         </div>
         <p className="mt-3 text-right text-[11px] font-black text-sky-300">該当する動画 {filteredItems.length}本</p>
       </section>
