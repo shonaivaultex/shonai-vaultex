@@ -7,7 +7,7 @@ import { mergePerformanceFields, performanceRecordIdentity } from "@/lib/perform
 import { sendCoachRecordNotifications } from "@/lib/coach-record-notifications";
 import { barSummary, combinedEventCoefficients, combinedPoints, type AdvancedPerformanceDetails, type BarHeightRow, type CombinedEventResult } from "@/lib/advanced-performance-details";
 
-type SubmittedRecord={athleteId:string;value:number;windSpeed:number|null;details?:CompetitionDetailInput[];advancedDetails?:AdvancedPerformanceDetails|null};
+type SubmittedRecord={athleteId:string;value:number;windSpeed:number|null;videoPath?:string|null;details?:CompetitionDetailInput[];advancedDetails?:AdvancedPerformanceDetails|null};
 
 export async function GET() {
   const supabase=await createClient(); const {data:{user}}=await supabase.auth.getUser();
@@ -85,7 +85,7 @@ export async function POST(request:NextRequest) {
     const selectedDetailMode=kind==="athletics"?competitionDetailMode(category):null;
     const detailMode=selectedDetailMode==="attempt"||selectedDetailMode==="round"?selectedDetailMode:null;
     const advancedMode=selectedDetailMode==="bar"||selectedDetailMode==="combined"?selectedDetailMode:null;
-    const clean=records.flatMap((record)=>{const details=sanitizeDetails(record.details,detailMode);const advancedDetails=sanitizeAdvancedDetails(record.advancedDetails,advancedMode,category);const best=details.length?bestCompetitionDetail(details,detailMode==="round"):null;const advancedValue=advancedDetails?.type==="bar"?advancedDetails.bestHeight:advancedDetails?.type==="combined"?advancedDetails.totalPoints:null;const value=Number(best?.numericValue??advancedValue??record.value);const candidateWind=best?.windSpeed?.trim()?Number(best.windSpeed):record.windSpeed;const wind=candidateWind===null?null:Number(candidateWind);if(!record.athleteId||!Number.isFinite(value)||value<=0||value>=100000)return[];if(advancedMode&&!advancedDetails)return[];if(kind==="athletics"&&isWindAffectedEvent(category)&&(wind===null||!Number.isFinite(wind)||Math.abs(wind)>20))return[];return[{athleteId:record.athleteId,value,windSpeed:Number.isFinite(wind)?wind:null,details,advancedDetails}];});
+    const clean=records.flatMap((record)=>{const details=sanitizeDetails(record.details,detailMode);const advancedDetails=sanitizeAdvancedDetails(record.advancedDetails,advancedMode,category);const best=details.length?bestCompetitionDetail(details,detailMode==="round"):null;const advancedValue=advancedDetails?.type==="bar"?advancedDetails.bestHeight:advancedDetails?.type==="combined"?advancedDetails.totalPoints:null;const value=Number(best?.numericValue??advancedValue??record.value);const candidateWind=best?.windSpeed?.trim()?Number(best.windSpeed):record.windSpeed;const wind=candidateWind===null?null:Number(candidateWind);const videoPath=typeof record.videoPath==="string"&&record.videoPath.startsWith(`${record.athleteId}/`)&&record.videoPath.length<500?record.videoPath:null;if(!record.athleteId||!Number.isFinite(value)||value<=0||value>=100000)return[];if(advancedMode&&!advancedDetails)return[];if(kind==="athletics"&&isWindAffectedEvent(category)&&(wind===null||!Number.isFinite(wind)||Math.abs(wind)>20))return[];return[{athleteId:record.athleteId,value,windSpeed:Number.isFinite(wind)?wind:null,videoPath,details,advancedDetails}];});
     if(!clean.length)return NextResponse.json({error:"有効な記録がありません。風速が必要な種目も確認してください。"},{status:400});
     const admin=createAdminClient(); const athleteIds=[...new Set(clean.map((r)=>r.athleteId))];
     const [{data:players},{data:assignments}]=await Promise.all([admin.from("players").select("user_id,program_class,member_status").in("user_id",athleteIds),admin.from("coach_class_assignments").select("program_class").eq("coach_id",user.id)]);
@@ -98,7 +98,7 @@ export async function POST(request:NextRequest) {
     const existingByIdentity=new Map((existing??[]).map((item)=>[performanceRecordIdentity({userId:item.user_id,kind,category,date,value:Number(item.value)}),item]));
     const recordsToInsert=clean.filter((record)=>!existingByIdentity.has(performanceRecordIdentity({userId:record.athleteId,kind,category,date,value:record.value})));
     const recordsToMerge=clean.flatMap((record)=>{const found=existingByIdentity.get(performanceRecordIdentity({userId:record.athleteId,kind,category,date,value:record.value}));return found?[{record,found}]:[];});
-    const rows=recordsToInsert.map((record)=>({user_id:record.athleteId,category,value:record.value,date,record_kind:kind,wind_speed:record.windSpeed,advanced_details:record.advancedDetails,awareness_note:null,awareness_category:null,awareness_categories:null,entry_source:"coach",entered_by:user.id}));
+    const rows=recordsToInsert.map((record)=>({user_id:record.athleteId,category,value:record.value,date,record_kind:kind,wind_speed:record.windSpeed,video_path:record.videoPath,advanced_details:record.advancedDetails,awareness_note:null,awareness_category:null,awareness_categories:null,entry_source:"coach",entered_by:user.id}));
     if(rows.length){
       const {data:inserted,error}=await admin.from("performance_records").insert(rows).select("id,user_id");
       if(error)throw error;
@@ -112,7 +112,7 @@ export async function POST(request:NextRequest) {
       }
     }
     for(const {record,found} of recordsToMerge){
-      const merged={...mergePerformanceFields(found,{wind_speed:record.windSpeed}),advanced_details:record.advancedDetails??found.advanced_details??null};
+      const merged={...mergePerformanceFields(found,{wind_speed:record.windSpeed,video_path:record.videoPath}),advanced_details:record.advancedDetails??found.advanced_details??null};
       const {error:updateError}=await admin.from("performance_records").update(merged).eq("id",found.id);
       if(updateError)throw updateError;
       const detailRows=(record.details??[]).map((detail)=>({performance_record_id:found.id,detail_type:detailMode,sequence_number:detail.sequenceNumber,round_name:detail.roundName??null,value:detail.value?Number(detail.value):null,wind_speed:detail.windSpeed?Number(detail.windSpeed):null,place:detail.place?Number(detail.place):null,status:detail.status}));
