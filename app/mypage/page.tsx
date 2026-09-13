@@ -84,10 +84,11 @@ export default async function MyPage() {
   const attendanceByScheduleId = new Map((attendingSchedules ?? []).map((attendance) => [attendance.schedule_id, attendance.status]));
   const answeredScheduleIds = new Set((attendingSchedules ?? []).map((attendance) => attendance.schedule_id));
   const attendingScheduleIds = new Set((attendingSchedules ?? []).filter((attendance) => attendance.status === "attending").map((attendance) => attendance.schedule_id));
+  const attendanceEndKey = addTokyoDays(todayKey, 14);
   const isVisibleClubSchedule = (schedule: ScheduleItem) =>
     Boolean(coachRole) || schedule.audience === "all" || schedule.program_class === player.program_class;
   const isMyClubSchedule = (schedule: ScheduleItem) => attendingScheduleIds.has(schedule.id) || (schedule.schedule_type === "competition" && appliedCompetitionIds.has(schedule.id));
-  const unansweredScheduleCount = ((schedules ?? []) as ScheduleItem[]).filter((schedule) => !schedule.is_personal_slot && (schedule.audience === "all" || schedule.program_class === player.program_class) && !answeredScheduleIds.has(schedule.id)).length;
+  const unansweredScheduleCount = ((schedules ?? []) as ScheduleItem[]).filter((schedule) => !schedule.is_personal_slot && (schedule.audience === "all" || schedule.program_class === player.program_class) && !answeredScheduleIds.has(schedule.id) && tokyoDateKey(schedule.starts_at) <= attendanceEndKey).length;
   const personalSchedules: ScheduleItem[] = (personalCalendarEntries ?? []).map((entry) => ({ id: -entry.id, title: entry.title, details: entry.journal, location: entry.location, starts_at: entry.starts_at ?? `${entry.entry_date}T00:00:00+09:00`, ends_at: entry.ends_at, all_day: entry.all_day, schedule_type: entry.entry_type, audience: "all", program_class: null, registration_enabled: false, registration_opens_at: null, registration_deadline: null, personal: true }));
   const nextSchedules = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => appliedCompetitionIds.has(schedule.id) || attendingScheduleIds.has(schedule.id)), ...personalSchedules])
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
@@ -116,7 +117,7 @@ export default async function MyPage() {
   const hasTodayCompetitionRecord = todayRecords?.some((record) => record.record_kind === "athletics") ?? false;
   const todayActions = [
     unansweredScheduleCount > 0
-      ? { href: "/mypage/schedules?attendance=unanswered", label: `出欠を回答する（${unansweredScheduleCount}件）`, detail: "参加・欠席・未定を選択", tone: "orange" }
+      ? { href: "/mypage/schedules?attendance=unanswered", label: `出欠を回答する（${unansweredScheduleCount}件）`, detail: "向こう2週間の予定を回答", tone: "orange" }
       : null,
     !dailyCheckin
       ? { href: "#daily-checkin", label: "今日の状態を記録", detail: "体調・疲労・気分を30秒で入力", tone: "amber" }
@@ -175,7 +176,7 @@ export default async function MyPage() {
                 </Link>
                 <div className="flex items-center gap-2">
                   <Link href={`/mypage/my-calendar?date=${todayKey}&new=1`} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3 py-2 text-[10px] font-black text-emerald-200 transition hover:bg-emerald-400/15"><Plus size={13}/>個人予定</Link>
-                  {unansweredScheduleCount ? <Link href="/mypage/schedules" className="rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-2 text-[10px] font-black text-orange-300">出欠未回答 {unansweredScheduleCount}件</Link> : null}
+                  {unansweredScheduleCount ? <Link href="/mypage/schedules?attendance=unanswered" className="rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-2 text-[10px] font-black text-orange-300">2週間以内の未回答 {unansweredScheduleCount}件</Link> : null}
                 </div>
               </div>
               <Link href="/mypage/my-calendar" className="group mt-4 block rounded-2xl border border-emerald-400/25 bg-black/20 p-3 transition hover:border-emerald-300/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70">
