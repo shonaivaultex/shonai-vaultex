@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
-import { ArrowUpRight, CalendarDays, CalendarPlus, Check, ChevronRight, ClipboardPenLine, MessageCircle, NotebookPen, Plus, Settings2, Target, UserRoundCheck, Video } from "lucide-react";
+import { Activity, ArrowUpRight, CalendarDays, CalendarPlus, Check, ChevronRight, ClipboardPenLine, MessageCircle, NotebookPen, Plus, Settings2, Target, UserRoundCheck, Video } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { type ScheduleItem } from "@/app/components/SchedulePanel";
@@ -191,6 +191,11 @@ export default async function MyPage() {
       <section className="mt-7">
         <div><p className="text-[10px] font-black tracking-[.22em] text-orange-400">THIS MONTH</p><h2 className="mt-1 text-xl font-black tracking-[-.03em]">今月の成長</h2></div>
         <div className="mt-3"><Suspense fallback={<MypageStatsSkeleton/>}><MypageStats dataPromise={deferredDataPromise}/></Suspense></div>
+        <Link href="/mypage/control-tests" className="group mt-2 flex items-center gap-3 rounded-2xl border border-orange-400/20 bg-orange-400/[.05] p-4 transition hover:border-orange-400/45">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-400/10 text-orange-300"><Activity size={19}/></span>
+          <span className="min-w-0 flex-1"><strong className="block text-sm">VAULTEX SCANを見る</strong><span className="mt-1 block text-[10px] text-white/35">身体能力・特性とこれまでの測定結果</span></span>
+          <ChevronRight size={17} className="shrink-0 text-orange-300/60 transition group-hover:translate-x-1"/>
+        </Link>
       </section>
 
       <section id="news" className="mt-7 scroll-mt-24">
