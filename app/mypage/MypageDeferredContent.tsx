@@ -141,10 +141,10 @@ export async function MypageStats({ dataPromise }: { dataPromise: Promise<Deferr
     { kind: "unofficial-athletics", label: "練習" },
     { kind: "control-test", label: "CT" },
   ];
-  return <div className="contents max-md:hidden">
-    <Link href="/mypage/growth-report" className="border-r border-white/10 p-5 transition hover:bg-white/[.035] sm:p-7"><p className="text-[10px] font-black tracking-[.14em] text-white/30">THIS MONTH</p><strong className="mt-2 block text-3xl tracking-[-.04em]">{data.currentMonthRecordCount}<small className="ml-1 text-xs text-white/35">RECORDS</small></strong></Link>
-    <a href="#news" className="p-5 transition hover:bg-white/[.035] sm:p-7"><p className="text-[10px] font-black tracking-[.14em] text-white/30">TO CHECK</p><strong className={`mt-2 block text-3xl tracking-[-.04em] ${data.unreadCount ? "text-orange-400" : ""}`}>{data.unreadCount}<small className="ml-1 text-xs text-white/35">ITEMS</small></strong></a>
-    <Link href="/mypage/growth-report" className="col-span-2 border-t border-white/10 p-5 transition hover:bg-white/[.035] sm:p-7"><div className="flex flex-wrap items-end justify-between gap-4"><span><p className="text-[10px] font-black tracking-[.14em] text-white/30">YOUR PROGRESS</p><strong className="mt-2 block text-lg">記録のある種目</strong></span><span className="flex flex-wrap justify-end gap-2">{recordKinds.map(({ kind, label }) => <span key={kind} className="rounded-lg bg-white/[.05] px-3 py-2 text-center"><small className="block text-[9px] font-black text-white/35">{label}</small><strong className="mt-0.5 block text-sm text-orange-300">{data.recordedEventCounts[kind]} / {eventNamesByKind(kind).length}<span className="ml-1 text-[9px] text-white/30">種目</span></strong></span>)}</span></div></Link>
+  return <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[.7fr_.7fr_1.6fr]">
+    <Link href="/mypage/growth-report" className="rounded-2xl border border-white/[.08] bg-white/[.025] p-4 transition hover:border-orange-400/30"><p className="text-[9px] font-black tracking-[.14em] text-white/30">今月の記録</p><strong className="mt-2 block text-3xl tracking-[-.04em]">{data.currentMonthRecordCount}<small className="ml-1 text-[10px] text-white/35">件</small></strong></Link>
+    <a href="#news" className="rounded-2xl border border-white/[.08] bg-white/[.025] p-4 transition hover:border-orange-400/30"><p className="text-[9px] font-black tracking-[.14em] text-white/30">未読のお知らせ</p><strong className={`mt-2 block text-3xl tracking-[-.04em] ${data.unreadCount ? "text-orange-400" : ""}`}>{data.unreadCount}<small className="ml-1 text-[10px] text-white/35">件</small></strong></a>
+    <Link href="/mypage/growth-report" className="rounded-2xl border border-white/[.08] bg-white/[.025] p-4 transition hover:border-orange-400/30 sm:col-span-2 lg:col-span-1"><div className="flex flex-wrap items-center justify-between gap-3"><span><p className="text-[9px] font-black tracking-[.14em] text-white/30">記録のある種目</p><strong className="mt-1 block text-sm">成長レポートを見る</strong></span><span className="flex gap-1.5">{recordKinds.map(({ kind, label }) => <span key={kind} className="rounded-lg bg-white/[.05] px-2.5 py-2 text-center"><small className="block text-[8px] font-black text-white/35">{label}</small><strong className="mt-0.5 block text-xs text-orange-300">{data.recordedEventCounts[kind]}/{eventNamesByKind(kind).length}</strong></span>)}</span></div></Link>
   </div>;
 }
 
@@ -200,7 +200,7 @@ export async function LatestNewsSummary({ dataPromise }: { dataPromise: Promise<
 }
 
 export function MypageStatsSkeleton() {
-  return <>{[0, 1, 2].map((item) => <div key={item} className={`${item === 0 ? "border-r" : ""} ${item === 2 ? "col-span-2 border-t" : ""} border-white/10 p-5 sm:p-7`}><div className="h-2.5 w-20 animate-pulse rounded bg-white/10"/><div className="mt-3 h-8 w-14 animate-pulse rounded bg-white/10"/></div>)}</>;
+  return <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{[0, 1, 2].map((item) => <div key={item} className="h-24 animate-pulse rounded-2xl border border-white/[.08] bg-white/[.025]"/>)}</div>;
 }
 
 export function MypageDeferredSkeleton() {
