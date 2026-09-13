@@ -106,6 +106,8 @@ export default function PerformanceSession({
   const [sharedAthleteIds, setSharedAthleteIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const [quickAthleteId, setQuickAthleteId] = useState("");
+  const [quickNotice, setQuickNotice] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState("");
@@ -304,6 +306,20 @@ export default function PerformanceSession({
       else next.add(id);
       return next;
     });
+  const attachQuickVideo = (file: File) => {
+    const athlete = roster.find((item) => item.id === quickAthleteId);
+    if (!athlete) {
+      setQuickNotice("先に選手を選んでください。");
+      return;
+    }
+    const error = validateVideo(file);
+    if (error) {
+      setQuickNotice(error);
+      return;
+    }
+    setEntry(athlete.id, { video: file });
+    setQuickNotice(`${athlete.name}の動画をセットしました。続けて記録を入力できます。`);
+  };
   const chooseSharedVideo = (file: File) => {
     setSharedVideo(file);
     setSharedAthleteIds(
@@ -764,6 +780,17 @@ export default function PerformanceSession({
             ))}
           </select>
         </label>
+      </section>
+      <section className="rounded-3xl border border-emerald-400/30 bg-emerald-400/[.05] p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div><p className="text-[10px] font-black tracking-[.16em] text-emerald-300">QUICK CAPTURE</p><h2 className="mt-1 text-xl font-black">選手を選んで、そのまま撮影</h2><p className="mt-1 text-xs text-white/45">スマホで使えば、写真フォルダやAirDropを経由せず選手の記録へ直接セットできます。</p></div>
+          <span className="rounded-full bg-emerald-400/10 px-3 py-1.5 text-[10px] font-black text-emerald-300">練習中におすすめ</span>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(220px,1fr)_auto]">
+          <label className="text-xs font-bold text-white/55">撮影する選手<select value={roster.some((athlete)=>athlete.id===quickAthleteId)?quickAthleteId:""} onChange={(event)=>{setQuickAthleteId(event.target.value);setQuickNotice("");}} className="mt-2 w-full rounded-xl border border-white/15 bg-[#0b0c0e] px-4 py-4 text-base font-black text-white"><option value="">選手を選ぶ</option>{roster.map((athlete)=><option key={athlete.id} value={athlete.id}>{athlete.name}{entries[athlete.id]?.video?"（動画セット済み）":""}</option>)}</select></label>
+          <div className="self-end"><input id="quick-athlete-camera" type="file" accept="video/*" capture="environment" disabled={!quickAthleteId} className="sr-only" onChange={(event)=>{const file=event.target.files?.[0];if(file)attachQuickVideo(file);event.currentTarget.value="";}}/><label htmlFor="quick-athlete-camera" aria-disabled={!quickAthleteId} className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-black sm:w-auto ${quickAthleteId?"cursor-pointer bg-emerald-400 text-black":"cursor-not-allowed bg-white/10 text-white/30"}`}><Camera size={18}/>{quickAthleteId&&entries[quickAthleteId]?.video?"撮り直す":"動画を撮る"}</label></div>
+        </div>
+        {quickNotice?<p role="status" className="mt-3 rounded-xl border border-emerald-400/20 bg-black/20 px-4 py-3 text-xs font-bold text-emerald-200">✓ {quickNotice}</p>:null}
       </section>
       <section className="rounded-3xl border border-sky-400/25 bg-sky-400/[.04] p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
