@@ -17,8 +17,12 @@ export type MyVideoItem = {
 export default function MyVideoLibrary({ items }: { items: MyVideoItem[] }) {
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const [savingId, setSavingId] = useState("");
+  const [selectedDate, setSelectedDate] = useState("all");
+  const [selectedKind, setSelectedKind] = useState("all");
+  const availableDates = [...new Set(items.map((item) => item.date))].sort((a, b) => b.localeCompare(a));
+  const filteredItems = items.filter((item) => (selectedDate === "all" || item.date === selectedDate) && (selectedKind === "all" || item.kind === selectedKind));
   const groups = Object.entries(
-    items.reduce<Record<string, MyVideoItem[]>>((result, item) => {
+    filteredItems.reduce<Record<string, MyVideoItem[]>>((result, item) => {
       (result[item.date] ??= []).push(item);
       return result;
     }, {}),
@@ -62,7 +66,7 @@ export default function MyVideoLibrary({ items }: { items: MyVideoItem[] }) {
       setSavingId("");
     }
   }
-  if (!groups.length)
+  if (!items.length)
     return (
       <div className="mt-8 rounded-3xl border border-white/10 bg-[#111] p-10 text-center">
         <p className="text-sm font-bold text-white/45">
@@ -75,6 +79,14 @@ export default function MyVideoLibrary({ items }: { items: MyVideoItem[] }) {
     );
   return (
     <div className="mt-8 space-y-8">
+      <section className="sticky top-20 z-20 rounded-2xl border border-sky-400/25 bg-[#101216]/95 p-3 shadow-xl backdrop-blur sm:p-4">
+        <div className="grid gap-3 sm:grid-cols-[minmax(220px,1fr)_auto_auto_auto] sm:items-end">
+          <label className="text-xs font-bold text-white/55">日付で選ぶ<select value={selectedDate} onChange={(event)=>{setSelectedDate(event.target.value);setOpenIds(new Set());}} className="mt-2 w-full rounded-xl border border-white/15 bg-[#090a0c] px-4 py-3 text-sm font-black text-white"><option value="all">すべての日付</option>{availableDates.map((date)=><option key={date} value={date}>{new Date(`${date}T00:00:00+09:00`).toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"short",timeZone:"Asia/Tokyo"})}</option>)}</select></label>
+          {["all","練習","大会"].map((kind)=><button type="button" key={kind} onClick={()=>{setSelectedKind(kind);setOpenIds(new Set());}} className={`rounded-xl border px-5 py-3 text-sm font-black ${selectedKind===kind?"border-sky-300 bg-sky-300 text-black":"border-white/15 text-white/55"}`}>{kind==="all"?"すべて":kind}</button>)}
+        </div>
+        <p className="mt-3 text-right text-[11px] font-black text-sky-300">該当する動画 {filteredItems.length}本</p>
+      </section>
+      {!groups.length?<div className="rounded-3xl border border-white/10 bg-[#111] p-10 text-center"><p className="text-sm font-bold text-white/45">この条件の動画はありません。</p><button type="button" onClick={()=>{setSelectedDate("all");setSelectedKind("all");}} className="mt-4 rounded-xl border border-sky-400/30 px-4 py-2 text-xs font-black text-sky-300">絞り込みを解除</button></div>:null}
       {groups.map(([date, videos]) => (
         <section key={date}>
           <div className="flex items-end justify-between border-b border-white/10 pb-3">
