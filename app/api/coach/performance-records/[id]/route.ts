@@ -15,7 +15,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const {data:record}=await admin.from("performance_records").select("id,user_id,entered_by,entry_source").eq("id",id).maybeSingle();
   if(!record)return NextResponse.json({error:"記録が見つかりません。"},{status:404});
   if(record.entry_source!=="coach"||record.entered_by!==user.id)return NextResponse.json({error:"自分が入力した記録だけ編集できます。"},{status:403});
-  if(typeof body.videoPath==="string"&&body.videoPath.startsWith(`${record.user_id}/`)&&body.videoPath.length<500)updates.video_path=body.videoPath;
+  if(typeof body.videoPath==="string"&&/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.[a-z0-9]{1,10}$/i.test(body.videoPath)&&body.videoPath.length<500)updates.video_path=body.videoPath;
   if(!Object.keys(updates).length)return NextResponse.json({error:"変更内容を確認してください。"},{status:400});
   const {error}=await admin.from("performance_records").update(updates).eq("id",id);
   if(error)return NextResponse.json({error:"記録を編集できませんでした。"},{status:500});
