@@ -7,6 +7,8 @@ export type CompetitionDetailInput = {
   windSpeed?: string;
   place?: string;
   status: CompetitionDetailStatus;
+  video?: File;
+  videoPath?: string | null;
 };
 
 export const attemptStatusLabels: Record<CompetitionDetailStatus, string> = {

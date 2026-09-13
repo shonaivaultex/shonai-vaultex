@@ -11,33 +11,123 @@ import { formatWindSpeed } from "@/lib/performance-events";
 import type { PerformanceCompetitionContext } from "@/lib/performance-competition";
 import type { AdvancedPerformanceDetails } from "@/lib/advanced-performance-details";
 
-type CoachFeedback = { id: number; body: string; created_at: string; acknowledged_at?: string | null; coach_name: string };
-type FeedbackRequest = { id: number; request_type: string; message: string | null; priority: string; status: string };
-type CompetitionDetail = { id: number; detail_type: "attempt" | "round"; sequence_number: number; round_name?: string | null; value?: number | string | null; wind_speed?: number | string | null; place?: number | null; status: string };
-type RecordItem = { id: number; value: number | string; date: string; record_kind?: string | null; wind_speed?: number | string | null; awareness_category?: string | null; awareness_categories?: string[] | null; awareness_note?: string | null; video_path?: string | null; video_url?: string | null; coach_feedback?: CoachFeedback[]; feedback_request?: FeedbackRequest | null; performance_record_details?: CompetitionDetail[] | null; advanced_details?: AdvancedPerformanceDetails | null; competition_context?: PerformanceCompetitionContext | null };
-const statusLabels: Record<string, string> = { foul: "ファウル", pass: "パス", dns: "欠場", dnf: "途中棄権", dq: "失格" };
-const kindLabels: Record<string, string> = { athletics: "本番記録", "unofficial-athletics": "練習記録", "control-test": "コントロールテスト" };
-const formatCompetitionDate = (date: string) => new Date(`${date}T00:00:00+09:00`).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", timeZone: "Asia/Tokyo" });
+type CoachFeedback = {
+  id: number;
+  body: string;
+  created_at: string;
+  acknowledged_at?: string | null;
+  coach_name: string;
+};
+type FeedbackRequest = {
+  id: number;
+  request_type: string;
+  message: string | null;
+  priority: string;
+  status: string;
+};
+type CompetitionDetail = {
+  id: number;
+  detail_type: "attempt" | "round";
+  sequence_number: number;
+  round_name?: string | null;
+  value?: number | string | null;
+  wind_speed?: number | string | null;
+  place?: number | null;
+  status: string;
+  video_path?: string | null;
+};
+type RecordItem = {
+  id: number;
+  value: number | string;
+  date: string;
+  record_kind?: string | null;
+  wind_speed?: number | string | null;
+  awareness_category?: string | null;
+  awareness_categories?: string[] | null;
+  awareness_note?: string | null;
+  video_path?: string | null;
+  video_url?: string | null;
+  coach_feedback?: CoachFeedback[];
+  feedback_request?: FeedbackRequest | null;
+  performance_record_details?: CompetitionDetail[] | null;
+  advanced_details?: AdvancedPerformanceDetails | null;
+  competition_context?: PerformanceCompetitionContext | null;
+};
+const statusLabels: Record<string, string> = {
+  foul: "ファウル",
+  pass: "パス",
+  dns: "欠場",
+  dnf: "途中棄権",
+  dq: "失格",
+};
+const kindLabels: Record<string, string> = {
+  athletics: "本番記録",
+  "unofficial-athletics": "練習記録",
+  "control-test": "コントロールテスト",
+};
+const formatCompetitionDate = (date: string) =>
+  new Date(`${date}T00:00:00+09:00`).toLocaleDateString("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "Asia/Tokyo",
+  });
 
-export default function PerformanceHistoryModal({ records, unit, focusRecordId, initialOpen = false }: { records: RecordItem[]; unit: string; focusRecordId?: number | null; initialOpen?: boolean }) {
-  const [open, setOpen] = useState(() => initialOpen || Boolean(focusRecordId && records.some((record) => record.id === focusRecordId)));
+export default function PerformanceHistoryModal({
+  records,
+  unit,
+  focusRecordId,
+  initialOpen = false,
+}: {
+  records: RecordItem[];
+  unit: string;
+  focusRecordId?: number | null;
+  initialOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(
+    () =>
+      initialOpen ||
+      Boolean(
+        focusRecordId && records.some((record) => record.id === focusRecordId),
+      ),
+  );
   const [playingId, setPlayingId] = useState<number | null>(null);
   const [loadingVideoId, setLoadingVideoId] = useState<number | null>(null);
   const [videoUrls, setVideoUrls] = useState<Record<number, string>>({});
+  const [playingDetailId, setPlayingDetailId] = useState<number | null>(null);
+  const [loadingDetailId, setLoadingDetailId] = useState<number | null>(null);
+  const [detailVideoUrls, setDetailVideoUrls] = useState<
+    Record<number, string>
+  >({});
   const [acknowledgingId, setAcknowledgingId] = useState<number | null>(null);
   const [acknowledgedIds, setAcknowledgedIds] = useState<number[]>([]);
   const videoCount = records.filter((record) => record.video_path).length;
-  const unreadCount = records.flatMap((record) => record.coach_feedback ?? []).filter((item) => !item.acknowledged_at && !acknowledgedIds.includes(item.id)).length;
+  const unreadCount = records
+    .flatMap((record) => record.coach_feedback ?? [])
+    .filter(
+      (item) => !item.acknowledged_at && !acknowledgedIds.includes(item.id),
+    ).length;
   useEffect(() => {
     if (!open || !focusRecordId) return;
-    const timer = window.setTimeout(() => document.getElementById(`feedback-record-${focusRecordId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+    const timer = window.setTimeout(
+      () =>
+        document
+          .getElementById(`feedback-record-${focusRecordId}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+      100,
+    );
     return () => window.clearTimeout(timer);
   }, [open, focusRecordId]);
   async function acknowledge(feedbackId: number) {
     setAcknowledgingId(feedbackId);
-    const { error } = await createClient().rpc("acknowledge_coach_feedback", { p_feedback_id: feedbackId });
+    const { error } = await createClient().rpc("acknowledge_coach_feedback", {
+      p_feedback_id: feedbackId,
+    });
     setAcknowledgingId(null);
-    if (error) { alert("確認状態を保存できませんでした：" + error.message); return; }
+    if (error) {
+      alert("確認状態を保存できませんでした：" + error.message);
+      return;
+    }
     setAcknowledgedIds((current) => [...current, feedbackId]);
   }
   async function toggleVideo(record: RecordItem) {
@@ -51,8 +141,8 @@ export default function PerformanceHistoryModal({ records, unit, focusRecordId, 
       return;
     }
     setLoadingVideoId(record.id);
-    const { data, error } = await createClient().storage
-      .from(PERFORMANCE_VIDEO_BUCKET)
+    const { data, error } = await createClient()
+      .storage.from(PERFORMANCE_VIDEO_BUCKET)
       .createSignedUrl(record.video_path, 60 * 60);
     setLoadingVideoId(null);
     if (error || !data?.signedUrl) {
@@ -62,39 +152,398 @@ export default function PerformanceHistoryModal({ records, unit, focusRecordId, 
     setVideoUrls((current) => ({ ...current, [record.id]: data.signedUrl }));
     setPlayingId(record.id);
   }
+  async function toggleDetailVideo(detail: CompetitionDetail) {
+    if (playingDetailId === detail.id) {
+      setPlayingDetailId(null);
+      return;
+    }
+    if (!detail.video_path) return;
+    if (detailVideoUrls[detail.id]) {
+      setPlayingDetailId(detail.id);
+      return;
+    }
+    setLoadingDetailId(detail.id);
+    const { data, error } = await createClient()
+      .storage.from(PERFORMANCE_VIDEO_BUCKET)
+      .createSignedUrl(detail.video_path, 60 * 60);
+    setLoadingDetailId(null);
+    if (error || !data?.signedUrl) {
+      alert("試技動画を読み込めませんでした。");
+      return;
+    }
+    setDetailVideoUrls((current) => ({
+      ...current,
+      [detail.id]: data.signedUrl,
+    }));
+    setPlayingDetailId(detail.id);
+  }
   useEffect(() => {
     if (!open) return;
-    const close = (event: KeyboardEvent) => event.key === "Escape" && setOpen(false);
+    const close = (event: KeyboardEvent) =>
+      event.key === "Escape" && setOpen(false);
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", close);
-    return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", close); };
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", close);
+    };
   }, [open]);
-  return <>
-    <button type="button" onClick={() => setOpen(true)} className="w-full border-t border-white/10 px-6 py-4 text-left text-sm font-bold text-orange-400 hover:bg-white/[0.025]">▶ 記録を振り返る（{records.length}件・動画{videoCount}件）{unreadCount > 0 && <span className="ml-2 rounded-full bg-red-500 px-2 py-0.5 text-[10px] text-white">未確認{unreadCount}</span>}</button>
-    {open && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm sm:p-8" role="dialog" aria-modal="true" onClick={() => { setOpen(false); setPlayingId(null); }}>
-      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-orange-500/60 bg-[#111]" onClick={(event) => event.stopPropagation()}>
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#111] px-6 py-4"><h2 className="text-lg font-black text-white">記録履歴</h2><button type="button" onClick={() => { setOpen(false); setPlayingId(null); }} aria-label="履歴を閉じる" className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white"><X /></button></div>
-        <div className="px-6 pb-3">{records.map((record) => <div id={`feedback-record-${record.id}`} key={record.id} className={`border-b border-white/10 py-5 last:border-0 ${focusRecordId === record.id ? "scroll-mt-20 rounded-xl bg-orange-500/[0.06] px-3" : ""}`}>
-          {formatWindSpeed(record.wind_speed) ? <p className={`mb-2 text-xs font-bold ${Number(record.wind_speed) > 2 ? "text-amber-300" : "text-sky-300"}`}>風速 {formatWindSpeed(record.wind_speed)}</p> : null}
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0"><strong className="text-xl text-white">{record.value}<span className="ml-1 text-sm">{unit}</span></strong><div className="mt-2 flex flex-wrap items-center gap-2 text-xs"><span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 font-bold text-white/55">{kindLabels[record.record_kind ?? ""] ?? "記録"}</span><time className="font-bold text-white/55">{new Date(`${record.date}T00:00:00+09:00`).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "short", timeZone: "Asia/Tokyo" })}</time></div>{record.competition_context ? <div className="mt-3 rounded-xl border border-orange-500/25 bg-orange-500/[0.06] px-3 py-2.5"><p className="text-[9px] font-black tracking-[.14em] text-orange-300">参加大会</p><p className="mt-1 font-black text-white">{record.competition_context.title}</p><p className="mt-1 text-xs font-bold text-white/45">{record.competition_context.startDate === record.competition_context.endDate ? `開催日：${formatCompetitionDate(record.competition_context.startDate)}` : `開催期間：${formatCompetitionDate(record.competition_context.startDate)}〜${formatCompetitionDate(record.competition_context.endDate)}`}</p></div> : null}{(record.awareness_categories?.length || record.awareness_category) ? <div className="mt-3"><p className="text-[9px] font-black tracking-[.14em] text-white/35">今日の感覚・意識</p><div className="mt-1.5 flex flex-wrap gap-1">{(record.awareness_categories?.length ? record.awareness_categories : record.awareness_category ? [record.awareness_category] : []).map((tag) => <span key={tag} className="inline-flex rounded-full border border-orange-500/35 bg-orange-500/10 px-2.5 py-1 text-xs font-bold text-orange-300">{tag}</span>)}</div></div> : null}{record.awareness_note && <div className="mt-3"><p className="text-[9px] font-black tracking-[.14em] text-white/35">練習の振り返り</p><p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-white/70">{record.awareness_note}</p></div>}</div>
-            <div className="flex shrink-0 gap-2"><Link href={`/edit/${record.id}`} className="inline-flex h-9 items-center rounded-lg border border-white/20 px-3 text-sm text-white">編集</Link><DeleteRecordButton recordId={record.id} videoPath={record.video_path} compact /></div>
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full border-t border-white/10 px-6 py-4 text-left text-sm font-bold text-orange-400 hover:bg-white/[0.025]"
+      >
+        ▶ 記録を振り返る（{records.length}件・動画{videoCount}件）
+        {unreadCount > 0 && (
+          <span className="ml-2 rounded-full bg-red-500 px-2 py-0.5 text-[10px] text-white">
+            未確認{unreadCount}
+          </span>
+        )}
+      </button>
+      {open && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm sm:p-8"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => {
+            setOpen(false);
+            setPlayingId(null);
+          }}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-orange-500/60 bg-[#111]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#111] px-6 py-4">
+              <h2 className="text-lg font-black text-white">記録履歴</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setPlayingId(null);
+                }}
+                aria-label="履歴を閉じる"
+                className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white"
+              >
+                <X />
+              </button>
+            </div>
+            <div className="px-6 pb-3">
+              {records.map((record) => (
+                <div
+                  id={`feedback-record-${record.id}`}
+                  key={record.id}
+                  className={`border-b border-white/10 py-5 last:border-0 ${focusRecordId === record.id ? "scroll-mt-20 rounded-xl bg-orange-500/[0.06] px-3" : ""}`}
+                >
+                  {formatWindSpeed(record.wind_speed) ? (
+                    <p
+                      className={`mb-2 text-xs font-bold ${Number(record.wind_speed) > 2 ? "text-amber-300" : "text-sky-300"}`}
+                    >
+                      風速 {formatWindSpeed(record.wind_speed)}
+                    </p>
+                  ) : null}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <strong className="text-xl text-white">
+                        {record.value}
+                        <span className="ml-1 text-sm">{unit}</span>
+                      </strong>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 font-bold text-white/55">
+                          {kindLabels[record.record_kind ?? ""] ?? "記録"}
+                        </span>
+                        <time className="font-bold text-white/55">
+                          {new Date(
+                            `${record.date}T00:00:00+09:00`,
+                          ).toLocaleDateString("ja-JP", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            weekday: "short",
+                            timeZone: "Asia/Tokyo",
+                          })}
+                        </time>
+                      </div>
+                      {record.competition_context ? (
+                        <div className="mt-3 rounded-xl border border-orange-500/25 bg-orange-500/[0.06] px-3 py-2.5">
+                          <p className="text-[9px] font-black tracking-[.14em] text-orange-300">
+                            参加大会
+                          </p>
+                          <p className="mt-1 font-black text-white">
+                            {record.competition_context.title}
+                          </p>
+                          <p className="mt-1 text-xs font-bold text-white/45">
+                            {record.competition_context.startDate ===
+                            record.competition_context.endDate
+                              ? `開催日：${formatCompetitionDate(record.competition_context.startDate)}`
+                              : `開催期間：${formatCompetitionDate(record.competition_context.startDate)}〜${formatCompetitionDate(record.competition_context.endDate)}`}
+                          </p>
+                        </div>
+                      ) : null}
+                      {record.awareness_categories?.length ||
+                      record.awareness_category ? (
+                        <div className="mt-3">
+                          <p className="text-[9px] font-black tracking-[.14em] text-white/35">
+                            今日の感覚・意識
+                          </p>
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {(record.awareness_categories?.length
+                              ? record.awareness_categories
+                              : record.awareness_category
+                                ? [record.awareness_category]
+                                : []
+                            ).map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-flex rounded-full border border-orange-500/35 bg-orange-500/10 px-2.5 py-1 text-xs font-bold text-orange-300"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                      {record.awareness_note && (
+                        <div className="mt-3">
+                          <p className="text-[9px] font-black tracking-[.14em] text-white/35">
+                            練習の振り返り
+                          </p>
+                          <p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-white/70">
+                            {record.awareness_note}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <Link
+                        href={`/edit/${record.id}`}
+                        className="inline-flex h-9 items-center rounded-lg border border-white/20 px-3 text-sm text-white"
+                      >
+                        編集
+                      </Link>
+                      <DeleteRecordButton
+                        recordId={record.id}
+                        videoPath={record.video_path}
+                        compact
+                      />
+                    </div>
+                  </div>
+                  {record.performance_record_details?.length ? (
+                    <details className="mt-4 overflow-hidden rounded-xl border border-orange-500/25 bg-orange-500/[0.04]">
+                      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-black text-orange-300 marker:hidden">
+                        大会詳細を見る（
+                        {record.performance_record_details.length}件）
+                      </summary>
+                      <div className="border-t border-white/10 px-4 py-2">
+                        {[...record.performance_record_details]
+                          .sort((a, b) => a.sequence_number - b.sequence_number)
+                          .map((detail) => (
+                            <div
+                              key={detail.id}
+                              className="grid grid-cols-[minmax(72px,1fr)_auto] items-center gap-3 border-b border-white/[.07] py-3 last:border-0"
+                            >
+                              <div>
+                                <strong className="text-sm text-white">
+                                  {detail.detail_type === "attempt"
+                                    ? `${detail.sequence_number}回目`
+                                    : detail.round_name}
+                                </strong>
+                                {detail.place ? (
+                                  <span className="ml-2 text-xs text-white/40">
+                                    {detail.place}位
+                                  </span>
+                                ) : null}
+                              </div>
+                              {detail.status === "valid" ? (
+                                <div className="text-right">
+                                  <strong className="text-white">
+                                    {detail.value}
+                                    <span className="ml-1 text-xs">{unit}</span>
+                                  </strong>
+                                  {formatWindSpeed(detail.wind_speed) ? (
+                                    <span className="ml-2 text-xs text-sky-300">
+                                      {formatWindSpeed(detail.wind_speed)}
+                                    </span>
+                                  ) : null}
+                                </div>
+                              ) : (
+                                <span className="text-xs font-bold text-white/45">
+                                  {statusLabels[detail.status] ?? detail.status}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    </details>
+                  ) : null}
+                  {record.performance_record_details?.some((detail) => detail.video_path) ? (
+                    <div className="mt-3 space-y-2">
+                      {record.performance_record_details
+                        .filter((detail) => detail.video_path)
+                        .sort((a, b) => a.sequence_number - b.sequence_number)
+                        .map((detail) => (
+                          <div key={`video-${detail.id}`} className="rounded-xl border border-sky-400/20 bg-sky-400/[.04] p-2">
+                            <button type="button" disabled={loadingDetailId === detail.id} onClick={() => toggleDetailVideo(detail)} className="inline-flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-black text-sky-300">
+                              <Play size={14} fill="currentColor" />
+                              {detail.detail_type === "attempt" ? `${detail.sequence_number}回目` : detail.round_name}の動画を{playingDetailId === detail.id ? "閉じる" : "見る"}
+                            </button>
+                            {playingDetailId === detail.id && detailVideoUrls[detail.id] ? <video controls playsInline className="mt-2 max-h-[50vh] w-full rounded-lg bg-black object-contain" src={detailVideoUrls[detail.id]} /> : null}
+                          </div>
+                        ))}
+                    </div>
+                  ) : null}
+                  {record.advanced_details ? (
+                    <details className="mt-4 overflow-hidden rounded-xl border border-orange-500/25 bg-orange-500/[0.04]">
+                      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-black text-orange-300 marker:hidden">
+                        詳しい記録を見る
+                      </summary>
+                      <div className="border-t border-white/10 p-4">
+                        {record.advanced_details.type === "bar" ? (
+                          <div className="space-y-2">
+                            {record.advanced_details.heights.map(
+                              (row, index) => (
+                                <div
+                                  key={index}
+                                  className="grid grid-cols-[80px_1fr] gap-3 border-b border-white/[.07] pb-2"
+                                >
+                                  <strong>{row.height}m</strong>
+                                  <span className="tracking-[.4em] text-white/70">
+                                    {row.attempts
+                                      .map((attempt) =>
+                                        attempt === "o"
+                                          ? "○"
+                                          : attempt === "x"
+                                            ? "×"
+                                            : attempt === "pass"
+                                              ? "—"
+                                              : "・",
+                                      )
+                                      .join("")}
+                                  </span>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {record.advanced_details.events.map((item) => (
+                              <div
+                                key={item.event}
+                                className="grid grid-cols-[1fr_auto_auto] gap-3 border-b border-white/[.07] pb-2"
+                              >
+                                <strong>{item.event}</strong>
+                                <span className="text-white/60">
+                                  {item.value || "—"}
+                                </span>
+                                <span className="font-black text-orange-300">
+                                  {item.points ?? "—"}点
+                                </span>
+                              </div>
+                            ))}
+                            <p className="pt-2 text-right font-black text-emerald-300">
+                              合計 {record.advanced_details.totalPoints}点
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </details>
+                  ) : null}
+                  {record.video_path && (
+                    <button
+                      type="button"
+                      disabled={loadingVideoId === record.id}
+                      onClick={() => toggleVideo(record)}
+                      className="mt-4 inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-black text-white transition hover:bg-orange-400 disabled:opacity-60"
+                    >
+                      <Play size={15} fill="currentColor" />
+                      {loadingVideoId === record.id
+                        ? "動画を準備中…"
+                        : playingId === record.id
+                          ? "動画を閉じる"
+                          : "動画を見る"}
+                    </button>
+                  )}
+                  {playingId === record.id && videoUrls[record.id] && (
+                    <div className="mt-4 rounded-xl border border-orange-500/30 bg-black p-2">
+                      <video
+                        key={record.id}
+                        autoPlay
+                        controls
+                        playsInline
+                        className="max-h-[58vh] w-full rounded-lg object-contain"
+                        src={videoUrls[record.id]}
+                      >
+                        お使いのブラウザは動画再生に対応していません。
+                      </video>
+                    </div>
+                  )}
+                  <FeedbackRequestButton
+                    recordId={record.id}
+                    initialRequest={record.feedback_request}
+                  />
+                  {(record.coach_feedback ?? []).map((feedback) => {
+                    const acknowledged =
+                      Boolean(feedback.acknowledged_at) ||
+                      acknowledgedIds.includes(feedback.id);
+                    return (
+                      <div
+                        key={feedback.id}
+                        className="mt-4 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] p-4"
+                      >
+                        <p className="mb-3 border-b border-emerald-500/15 pb-2 text-xs font-black text-white/55">
+                          {new Date(feedback.created_at).toLocaleDateString(
+                            "ja-JP",
+                            { year: "numeric", month: "long", day: "numeric" },
+                          )}
+                          のフィードバック
+                        </p>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-xs font-black text-emerald-300">
+                            {feedback.coach_name}からのフィードバック
+                          </span>
+                          {!acknowledged && (
+                            <span className="rounded-full bg-red-500/15 px-2 py-1 text-[10px] font-bold text-red-300">
+                              未確認
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-white/80">
+                          {feedback.body}
+                        </p>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <span className="text-xs text-white/35">
+                            {new Date(feedback.created_at).toLocaleString(
+                              "ja-JP",
+                            )}
+                          </span>
+                          {acknowledged ? (
+                            <span className="text-xs font-bold text-emerald-400">
+                              確認済み
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={acknowledgingId === feedback.id}
+                              onClick={() => acknowledge(feedback.id)}
+                              className="rounded-lg border border-emerald-500/40 px-3 py-2 text-xs font-bold text-emerald-300 disabled:opacity-50"
+                            >
+                              {acknowledgingId === feedback.id
+                                ? "保存中"
+                                : "確認しました"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
-          {record.performance_record_details?.length ? <details className="mt-4 overflow-hidden rounded-xl border border-orange-500/25 bg-orange-500/[0.04]"><summary className="cursor-pointer list-none px-4 py-3 text-sm font-black text-orange-300 marker:hidden">大会詳細を見る（{record.performance_record_details.length}件）</summary><div className="border-t border-white/10 px-4 py-2">{[...record.performance_record_details].sort((a,b)=>a.sequence_number-b.sequence_number).map((detail)=><div key={detail.id} className="grid grid-cols-[minmax(72px,1fr)_auto] items-center gap-3 border-b border-white/[.07] py-3 last:border-0"><div><strong className="text-sm text-white">{detail.detail_type === "attempt" ? `${detail.sequence_number}回目` : detail.round_name}</strong>{detail.place ? <span className="ml-2 text-xs text-white/40">{detail.place}位</span> : null}</div>{detail.status === "valid" ? <div className="text-right"><strong className="text-white">{detail.value}<span className="ml-1 text-xs">{unit}</span></strong>{formatWindSpeed(detail.wind_speed) ? <span className="ml-2 text-xs text-sky-300">{formatWindSpeed(detail.wind_speed)}</span> : null}</div> : <span className="text-xs font-bold text-white/45">{statusLabels[detail.status] ?? detail.status}</span>}</div>)}</div></details> : null}
-          {record.advanced_details ? <details className="mt-4 overflow-hidden rounded-xl border border-orange-500/25 bg-orange-500/[0.04]"><summary className="cursor-pointer list-none px-4 py-3 text-sm font-black text-orange-300 marker:hidden">詳しい記録を見る</summary><div className="border-t border-white/10 p-4">{record.advanced_details.type === "bar" ? <div className="space-y-2">{record.advanced_details.heights.map((row,index)=><div key={index} className="grid grid-cols-[80px_1fr] gap-3 border-b border-white/[.07] pb-2"><strong>{row.height}m</strong><span className="tracking-[.4em] text-white/70">{row.attempts.map((attempt)=>attempt === "o" ? "○" : attempt === "x" ? "×" : attempt === "pass" ? "—" : "・").join("")}</span></div>)}</div> : <div className="space-y-2">{record.advanced_details.events.map((item)=><div key={item.event} className="grid grid-cols-[1fr_auto_auto] gap-3 border-b border-white/[.07] pb-2"><strong>{item.event}</strong><span className="text-white/60">{item.value || "—"}</span><span className="font-black text-orange-300">{item.points ?? "—"}点</span></div>)}<p className="pt-2 text-right font-black text-emerald-300">合計 {record.advanced_details.totalPoints}点</p></div>}</div></details> : null}
-          {record.video_path && <button type="button" disabled={loadingVideoId === record.id} onClick={() => toggleVideo(record)} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-black text-white transition hover:bg-orange-400 disabled:opacity-60"><Play size={15} fill="currentColor" />{loadingVideoId === record.id ? "動画を準備中…" : playingId === record.id ? "動画を閉じる" : "動画を見る"}</button>}
-          {playingId === record.id && videoUrls[record.id] && <div className="mt-4 rounded-xl border border-orange-500/30 bg-black p-2"><video key={record.id} autoPlay controls playsInline className="max-h-[58vh] w-full rounded-lg object-contain" src={videoUrls[record.id]}>お使いのブラウザは動画再生に対応していません。</video></div>}
-          <FeedbackRequestButton recordId={record.id} initialRequest={record.feedback_request} />
-          {(record.coach_feedback ?? []).map((feedback) => {
-            const acknowledged = Boolean(feedback.acknowledged_at) || acknowledgedIds.includes(feedback.id);
-            return <div key={feedback.id} className="mt-4 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] p-4"><p className="mb-3 border-b border-emerald-500/15 pb-2 text-xs font-black text-white/55">{new Date(feedback.created_at).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}のフィードバック</p>
-              <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-black text-emerald-300">{feedback.coach_name}からのフィードバック</span>{!acknowledged && <span className="rounded-full bg-red-500/15 px-2 py-1 text-[10px] font-bold text-red-300">未確認</span>}</div>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-white/80">{feedback.body}</p>
-              <div className="mt-3 flex items-center justify-between gap-3"><span className="text-xs text-white/35">{new Date(feedback.created_at).toLocaleString("ja-JP")}</span>{acknowledged ? <span className="text-xs font-bold text-emerald-400">確認済み</span> : <button type="button" disabled={acknowledgingId === feedback.id} onClick={() => acknowledge(feedback.id)} className="rounded-lg border border-emerald-500/40 px-3 py-2 text-xs font-bold text-emerald-300 disabled:opacity-50">{acknowledgingId === feedback.id ? "保存中" : "確認しました"}</button>}</div>
-            </div>;
-          })}
-        </div>)}</div>
-      </div>
-    </div>}
-  </>;
+        </div>
+      )}
+    </>
+  );
 }
