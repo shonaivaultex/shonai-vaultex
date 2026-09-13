@@ -98,10 +98,12 @@ export async function POST(request:NextRequest) {
     const existingByIdentity=new Map((existing??[]).map((item)=>[performanceRecordIdentity({userId:item.user_id,kind,category,date,value:Number(item.value)}),item]));
     const recordsToInsert=clean.filter((record)=>!existingByIdentity.has(performanceRecordIdentity({userId:record.athleteId,kind,category,date,value:record.value})));
     const recordsToMerge=clean.flatMap((record)=>{const found=existingByIdentity.get(performanceRecordIdentity({userId:record.athleteId,kind,category,date,value:record.value}));return found?[{record,found}]:[];});
+    const recordIdsByAthlete=new Map<string,number>();
     const rows=recordsToInsert.map((record)=>({user_id:record.athleteId,category,value:record.value,date,record_kind:kind,wind_speed:record.windSpeed,video_path:record.videoPath,advanced_details:record.advancedDetails,awareness_note:null,awareness_category:null,awareness_categories:null,entry_source:"coach",entered_by:user.id}));
     if(rows.length){
       const {data:inserted,error}=await admin.from("performance_records").insert(rows).select("id,user_id");
       if(error)throw error;
+      for(const record of inserted??[])recordIdsByAthlete.set(record.user_id,record.id);
       const detailRows=(inserted??[]).flatMap((parent)=>{
         const record=recordsToInsert.find((item)=>item.athleteId===parent.user_id);
         return (record?.details??[]).map((detail)=>({performance_record_id:parent.id,detail_type:detailMode,sequence_number:detail.sequenceNumber,round_name:detail.roundName??null,value:detail.value?Number(detail.value):null,wind_speed:detail.windSpeed?Number(detail.windSpeed):null,place:detail.place?Number(detail.place):null,status:detail.status}));
@@ -112,6 +114,7 @@ export async function POST(request:NextRequest) {
       }
     }
     for(const {record,found} of recordsToMerge){
+      recordIdsByAthlete.set(record.athleteId,found.id);
       const merged={...mergePerformanceFields(found,{wind_speed:record.windSpeed,video_path:record.videoPath}),advanced_details:record.advancedDetails??found.advanced_details??null};
       const {error:updateError}=await admin.from("performance_records").update(merged).eq("id",found.id);
       if(updateError)throw updateError;
@@ -122,6 +125,6 @@ export async function POST(request:NextRequest) {
       ...recordsToInsert.map((record)=>({athleteId:record.athleteId,kind,updated:false})),
       ...recordsToMerge.map(({record})=>({athleteId:record.athleteId,kind,updated:true})),
     ]);
-    return NextResponse.json({ok:true,saved:rows.length,merged:recordsToMerge.length,skipped:0});
+    return NextResponse.json({ok:true,saved:rows.length,merged:recordsToMerge.length,skipped:0,records:clean.map((record)=>({athleteId:record.athleteId,recordId:recordIdsByAthlete.get(record.athleteId)}))});
   }catch(error){console.error("performance session publish failed",error);return NextResponse.json({error:error instanceof Error?error.message:"一括反映に失敗しました。入力内容は端末に残っています。"},{status:500});}
 }

@@ -7,14 +7,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if(!user)return NextResponse.json({error:"ログインが必要です。"},{status:401});
   const {data:roles}=await supabase.from("user_roles").select("role").eq("user_id",user.id).in("role",["coach","admin"]);
   if(!roles?.length||!hasAdminKey())return NextResponse.json({error:"編集する権限がありません。"},{status:403});
-  const id=Number((await params).id); const body=await request.json() as {value?:unknown;windSpeed?:unknown};
-  const value=Number(body.value); const wind=body.windSpeed===null||body.windSpeed===""?null:Number(body.windSpeed);
-  if(!Number.isInteger(id)||id<1||!Number.isFinite(value)||value<=0||value>=100000||wind!==null&&(!Number.isFinite(wind)||Math.abs(wind)>20))return NextResponse.json({error:"記録または風速を確認してください。"},{status:400});
+  const id=Number((await params).id); const body=await request.json() as {value?:unknown;windSpeed?:unknown;videoPath?:unknown};
+  const updates:{value?:number;wind_speed?:number|null;video_path?:string}={};
+  if(body.value!==undefined){const value=Number(body.value);const wind=body.windSpeed===null||body.windSpeed===""?null:Number(body.windSpeed);if(!Number.isFinite(value)||value<=0||value>=100000||wind!==null&&(!Number.isFinite(wind)||Math.abs(wind)>20))return NextResponse.json({error:"記録または風速を確認してください。"},{status:400});updates.value=value;updates.wind_speed=wind;}
+  if(!Number.isInteger(id)||id<1)return NextResponse.json({error:"記録が見つかりません。"},{status:400});
   const admin=createAdminClient();
-  const {data:record}=await admin.from("performance_records").select("id,entered_by,entry_source").eq("id",id).maybeSingle();
+  const {data:record}=await admin.from("performance_records").select("id,user_id,entered_by,entry_source").eq("id",id).maybeSingle();
   if(!record)return NextResponse.json({error:"記録が見つかりません。"},{status:404});
   if(record.entry_source!=="coach"||record.entered_by!==user.id)return NextResponse.json({error:"自分が入力した記録だけ編集できます。"},{status:403});
-  const {error}=await admin.from("performance_records").update({value,wind_speed:wind}).eq("id",id);
+  if(typeof body.videoPath==="string"&&body.videoPath.startsWith(`${record.user_id}/`)&&body.videoPath.length<500)updates.video_path=body.videoPath;
+  if(!Object.keys(updates).length)return NextResponse.json({error:"変更内容を確認してください。"},{status:400});
+  const {error}=await admin.from("performance_records").update(updates).eq("id",id);
   if(error)return NextResponse.json({error:"記録を編集できませんでした。"},{status:500});
   return NextResponse.json({ok:true});
 }
