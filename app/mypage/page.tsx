@@ -203,9 +203,10 @@ export default async function MyPage() {
         <Suspense fallback={<div className="h-20 animate-pulse rounded-2xl bg-white/[.04]"/>}><LatestNewsSummary dataPromise={deferredDataPromise}/></Suspense>
       </section>
 
-      <section className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <section className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-5">
         <Link data-tutorial="all-schedules" href="/mypage/schedules" className="flex items-center gap-2 rounded-xl border border-white/[.07] px-3 py-3 text-xs font-black text-white/60 transition hover:text-white"><CalendarDays size={15} className="text-sky-300"/>全体予定</Link>
         <Link data-tutorial="video-action" href="/mypage/video-feedback" className="flex items-center gap-2 rounded-xl border border-white/[.07] px-3 py-3 text-xs font-black text-white/60 transition hover:text-white"><Video size={15} className="text-sky-300"/>動画を送る</Link>
+        <Link href="/mypage/videos" className="flex items-center gap-2 rounded-xl border border-sky-400/20 bg-sky-400/[.04] px-3 py-3 text-xs font-black text-sky-200 transition hover:border-sky-300/40"><Video size={15}/>マイ動画</Link>
         <Link href="/mypage/menu?settings=1#settings" className="flex items-center gap-2 rounded-xl border border-white/[.07] px-3 py-3 text-xs font-black text-white/60 transition hover:text-white"><Settings2 size={15} className="text-orange-300"/>LINE・設定</Link>
         <Link href="/mypage/menu" className="flex items-center justify-between rounded-xl border border-white/[.07] px-3 py-3 text-xs font-black text-white/60 transition hover:text-white"><span>その他</span><ChevronRight size={14}/></Link>
       </section>
