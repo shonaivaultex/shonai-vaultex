@@ -1,0 +1,13 @@
+"use client";
+import { useState } from "react";
+import { ArrowRight, LoaderCircle, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+export default function ScanDashboardClient({teams}:{teams:Array<{id:string;name:string;role:string;athleteCount:number;sessionCount:number}>}){
+ const router=useRouter();const [name,setName]=useState("");const [saving,setSaving]=useState(false);const [message,setMessage]=useState("");
+ async function create(){if(!name.trim())return;setSaving(true);setMessage("");try{const response=await fetch("/api/scan/teams",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name})});const result=await response.json();if(!response.ok)throw new Error(result.error);router.push(`/scan/${result.team.id}`);router.refresh();}catch(error){setMessage(error instanceof Error?error.message:"作成できませんでした。");}finally{setSaving(false)}}
+ return <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_360px]">
+  <section><h2 className="text-sm font-black tracking-[.16em] text-white/45">MY TEAMS</h2><div className="mt-4 grid gap-3">{teams.length?teams.map(team=><button key={team.id} onClick={()=>router.push(`/scan/${team.id}`)} className="group flex items-center rounded-2xl border border-white/10 bg-[#111412] p-5 text-left transition hover:border-emerald-400/50"><div><strong className="text-xl">{team.name}</strong><p className="mt-2 text-xs text-white/40">選手 {team.athleteCount}名 ・ 測定会 {team.sessionCount}回</p></div><ArrowRight className="ml-auto text-orange-500 transition group-hover:translate-x-1"/></button>):<div className="rounded-2xl border border-dashed border-white/15 p-10 text-center text-sm text-white/35">最初の部活動を作成してください。</div>}</div></section>
+  <aside className="h-fit rounded-3xl border border-orange-500/30 bg-orange-500/[.06] p-6"><p className="text-xs font-black tracking-[.16em] text-orange-400">NEW TEAM</p><h2 className="mt-2 text-2xl font-black">部活動を登録</h2><label className="mt-6 block text-xs font-bold text-white/50">学校・チーム名<input value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")create()}} placeholder="例：○○高校 陸上競技部" className="mt-2 w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3 text-white outline-none focus:border-orange-500"/></label><button disabled={saving||!name.trim()} onClick={create} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 font-black text-black disabled:opacity-40">{saving?<LoaderCircle className="animate-spin" size={18}/>:<Plus size={18}/>}チームを作成</button>{message&&<p className="mt-3 text-xs text-red-300">{message}</p>}</aside>
+ </div>
+}
