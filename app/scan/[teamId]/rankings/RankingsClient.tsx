@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Trophy } from "lucide-react";
+import { BarChart3, Trophy } from "lucide-react";
 import { controlTestByCode } from "@/lib/control-test";
 
 type Session = { id: string; title: string; measured_on: string };
@@ -26,6 +26,21 @@ export default function RankingsClient({ sessions, records }: { sessions: Sessio
   }, [definition?.betterDirection, records, scope, sessionId, testCode]);
 
   const groups = (["male", "female"] as const).map((gender) => ({ gender, rows: ranked.filter((row) => row.gender === gender) }));
+  const distribution = useMemo(() => {
+    if (!ranked.length) return [];
+    const values = ranked.map((row) => row.primary_value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const span = max - min;
+    const size = span === 0 ? 1 : span / 5;
+    return Array.from({ length: 5 }, (_, index) => {
+      const from = min + size * index;
+      const to = index === 4 ? max : min + size * (index + 1);
+      const rows = ranked.filter((row) => index === 4 ? row.primary_value >= from && row.primary_value <= to : row.primary_value >= from && row.primary_value < to);
+      return { label: span === 0 ? `${min}` : `${from.toFixed(2)}–${to.toFixed(2)}`, male: rows.filter((row) => row.gender === "male").length, female: rows.filter((row) => row.gender === "female").length, total: rows.length };
+    });
+  }, [ranked]);
+  const maxDistribution = Math.max(...distribution.map((bin) => bin.total), 1);
   return <>
     <section className="mt-7 rounded-3xl border border-white/10 bg-[#101311] p-5 sm:p-7">
       <div className="grid gap-3 sm:grid-cols-3">
@@ -35,7 +50,14 @@ export default function RankingsClient({ sessions, records }: { sessions: Sessio
       </div>
       {scope === "overall" ? <p className="mt-4 text-xs text-white/35">これまでに保存された全測定会から、選手ごとの自己ベストを比較します。</p> : null}
     </section>
-    {!testCode ? <p className="mt-8 rounded-3xl border border-dashed border-white/15 p-12 text-center text-sm text-white/35">表示できる記録がまだありません。</p> : <div className="mt-6 grid gap-6 lg:grid-cols-2">{groups.map((group) => <section key={group.gender} className="overflow-hidden rounded-3xl border border-white/10 bg-[#0f1110]"><header className="flex items-center gap-3 border-b border-white/10 p-5"><Trophy className={group.gender === "male" ? "text-sky-400" : "text-rose-400"} size={20}/><div><p className="text-xs font-black tracking-[.14em] text-white/35">{group.gender === "male" ? "BOYS" : "GIRLS"}</p><h2 className="font-black">{group.gender === "male" ? "男子" : "女子"}ランキング</h2></div><span className="ml-auto text-xs text-white/35">{group.rows.length}名</span></header><ol className="divide-y divide-white/[.07]">{group.rows.length ? group.rows.map((row, index) => <li key={row.athlete_id} className="flex items-center gap-4 px-5 py-4"><span className={`grid size-9 place-items-center rounded-full text-sm font-black ${index === 0 ? "bg-orange-500 text-black" : index < 3 ? "bg-white/10 text-white" : "text-white/35"}`}>{index + 1}</span><strong>{row.athlete_name}</strong><span className="ml-auto text-xl font-black text-orange-300">{row.primary_value}<small className="ml-1 text-xs text-white/40">{definition?.unit}</small></span></li>) : <li className="p-10 text-center text-sm text-white/30">該当する記録がありません</li>}</ol></section>)}</div>}
+    {!testCode ? <p className="mt-8 rounded-3xl border border-dashed border-white/15 p-12 text-center text-sm text-white/35">表示できる記録がまだありません。</p> : <>
+      <section className="mt-6 rounded-3xl border border-white/10 bg-[#101311] p-5 sm:p-7">
+        <header className="flex items-center gap-3"><BarChart3 className="text-orange-400" size={20}/><div><p className="text-xs font-black tracking-[.14em] text-orange-400">DISTRIBUTION</p><h2 className="font-black">記録の分布</h2></div><span className="ml-auto text-xs text-white/35">{ranked.length}名</span></header>
+        <div className="mt-6 flex h-44 items-end gap-2 border-b border-l border-white/10 px-2 pb-0 sm:gap-4">{distribution.map((bin) => <div key={bin.label} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2"><span className="text-xs font-bold text-white/55">{bin.total || ""}</span><div className="flex w-full max-w-16 flex-col justify-end" style={{ height: `${Math.max((bin.total / maxDistribution) * 100, bin.total ? 8 : 2)}%` }}><div className="flex h-full min-h-1 overflow-hidden rounded-t-lg bg-white/10">{bin.male ? <div className="bg-sky-400" style={{ width: `${(bin.male / bin.total) * 100}%` }}/> : null}{bin.female ? <div className="bg-rose-400" style={{ width: `${(bin.female / bin.total) * 100}%` }}/> : null}</div></div><span className="w-full truncate text-center text-[10px] text-white/35">{bin.label}</span></div>)}</div>
+        <div className="mt-4 flex flex-wrap gap-4 text-xs text-white/45"><span><i className="mr-2 inline-block size-2 rounded-full bg-sky-400"/>男子</span><span><i className="mr-2 inline-block size-2 rounded-full bg-rose-400"/>女子</span><span className="text-white/30">横軸：記録値　・　縦軸：人数</span></div>
+      </section>
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">{groups.map((group) => <section key={group.gender} className="overflow-hidden rounded-3xl border border-white/10 bg-[#0f1110]"><header className="flex items-center gap-3 border-b border-white/10 p-5"><Trophy className={group.gender === "male" ? "text-sky-400" : "text-rose-400"} size={20}/><div><p className="text-xs font-black tracking-[.14em] text-white/35">{group.gender === "male" ? "BOYS" : "GIRLS"}</p><h2 className="font-black">{group.gender === "male" ? "男子" : "女子"}ランキング</h2></div><span className="ml-auto text-xs text-white/35">{group.rows.length}名</span></header><ol className="divide-y divide-white/[.07]">{group.rows.length ? group.rows.map((row, index) => <li key={row.athlete_id} className="flex items-center gap-4 px-5 py-4"><span className={`grid size-9 place-items-center rounded-full text-sm font-black ${index === 0 ? "bg-orange-500 text-black" : index < 3 ? "bg-white/10 text-white" : "text-white/35"}`}>{index + 1}</span><strong>{row.athlete_name}</strong><span className="ml-auto text-xl font-black text-orange-300">{row.primary_value}<small className="ml-1 text-xs text-white/40">{definition?.unit}</small></span></li>) : <li className="p-10 text-center text-sm text-white/30">該当する記録がありません</li>}</ol></section>)}</div>
+    </>}
     {ranked.some((row) => !["male", "female"].includes(row.gender ?? "")) ? <p className="mt-5 rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 text-xs text-amber-200">男女区分が未設定の選手はランキングに表示されません。名簿登録時に区分を設定してください。</p> : null}
   </>;
 }
