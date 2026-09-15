@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 export function GET() {
   return NextResponse.json({
+    id: "/scan",
     name: "VAULTEX SCAN for Teams",
     short_name: "VAULTEX SCAN",
     description: "部活動向けCONTROL TEST測定アプリ",
@@ -14,9 +15,8 @@ export function GET() {
     lang: "ja",
     categories: ["sports", "education", "health"],
     icons: [
-      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/scan-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/scan-icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
     ],
     shortcuts: [
       { name: "チーム管理", short_name: "チーム", url: "/scan/dashboard" },
