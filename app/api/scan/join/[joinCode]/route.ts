@@ -4,6 +4,14 @@ import { controlTestByCode } from "@/lib/control-test";
 import { hashParticipantPin, hashParticipantSecret, randomAccessToken } from "@/lib/scan-participant-auth";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
+async function isSessionComplete(admin: AdminClient, session: Session) {
+ const [{data: athletes, error: ae}, {data: participants, error: pe}] = await Promise.all([
+  admin.from("scan_team_athletes").select("id").eq("team_id", session.team_id).eq("active", true),
+  admin.from("scan_session_participants").select("athlete_id,status").eq("session_id", session.id),
+ ]);
+ if (ae || pe) return false;
+ return !!athletes?.length && athletes.every(a => participants?.some(p => p.athlete_id === a.id && p.status === "submitted"));
+}
 type Session = { id:string; team_id:string; title:string; measured_on:string; status:string; selected_test_codes:string[]; scan_teams:unknown };
 type Athlete = { id:string; name:string; gender:string|null };
 type Measurement = { session_id:string; athlete_id:string; test_code:string; primary_value:number|string; attempts:unknown };
