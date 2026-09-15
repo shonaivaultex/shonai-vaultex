@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 export function GET() {
   return NextResponse.json({
     id: "/scan",
-    name: "VAULTEX SCAN for Teams",
-    short_name: "VAULTEX SCAN",
+    name: "CONTROL TEST for Teams",
+    short_name: "CONTROL TEST",
     description: "部活動向けCONTROL TEST測定アプリ",
     start_url: "/scan/dashboard",
     scope: "/scan",

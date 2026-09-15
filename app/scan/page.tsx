@@ -8,7 +8,7 @@ export default async function ScanLanding() {
   return <main className="px-5 pb-24 pt-28 sm:px-8">
     <div className="mx-auto max-w-6xl">
       <p className="text-xs font-black tracking-[.28em] text-emerald-400">VAULTEX PERFORMANCE SYSTEM</p>
-      <h1 className="mt-5 max-w-4xl text-5xl font-black leading-[.92] tracking-[-.06em] sm:text-8xl">VAULTEX<br/><span className="text-orange-500">SCAN</span></h1>
+      <h1 className="mt-5 max-w-4xl text-5xl font-black leading-[.92] tracking-[-.06em] sm:text-8xl">CONTROL<br/><span className="text-orange-500">TEST</span></h1>
       <p className="mt-7 max-w-2xl text-lg leading-8 text-white/60">部活動のCONTROL TESTを、名簿作成から一括測定、成長の確認まで。生徒のメール登録なしですぐに始められます。</p>
       <Link href={auth?.claims.sub?"/scan/dashboard":"/login?next=/scan/dashboard"} className="mt-8 inline-flex items-center gap-3 rounded-full bg-orange-500 px-7 py-4 font-black text-black">{auth?.claims.sub?"チーム管理を開く":"顧問として始める"}<ArrowRight size={19}/></Link>
       <section className="mt-20 grid gap-px overflow-hidden rounded-3xl border border-white/10 bg-white/10 sm:grid-cols-3">
