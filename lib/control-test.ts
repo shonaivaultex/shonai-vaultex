@@ -46,6 +46,24 @@ export const controlTestDefinitions: ControlTestDefinition[] = [
     protocol: { startMethod: "砲丸投ピット／サークルから投てき方向に背を向けて実施。", attempts: "最大2本。", rest: stationRest, measurementMethod: "投てき距離と使用した砲丸重量を記録する。", foulConditions: "サークル／投てきエリアの規定位置を越えた場合。", adoptedRecord: "ベスト記録。", equipment: "砲丸（男子4kg・女子3kg。JUNIORは要設定）", notes: "より詳細なフォーム規定は要設定。" },
   },
   {
+    code: "medicine_ball_3kg_front", category: "3kgメディシン投げ（フロント）", abilityJa: "全身爆発力", abilityEn: "TOTAL BODY POWER",
+    description: "3kgメディシンボールを前方へ投げ、下肢から上半身へ力を伝える全身の爆発力を見る。", measurement: "3kgメディシンボール・フロント投げ", relation: "一定重量のボールを使い、前方向への全身の力発揮を距離で確認する測定です。",
+    primaryMetric: "distance", unit: "m", betterDirection: "higher", sortOrder: 6,
+    protocol: { startMethod: "投てき方向を向き、両手で3kgメディシンボールを保持して開始する。", attempts: "最大2本。", rest: stationRest, measurementMethod: "投てき位置から最初の落下地点までの距離を測定する。", foulConditions: "規定の投てき位置を越えた場合。", adoptedRecord: "2本実施した場合は遠い方を採用。", equipment: "3kgメディシンボール・巻尺", notes: "実施場所の安全を確保する。" },
+  },
+  {
+    code: "medicine_ball_3kg_back", category: "3kgメディシン投げ（バック）", abilityJa: "全身爆発力", abilityEn: "TOTAL BODY POWER",
+    description: "3kgメディシンボールを後方へ投げ、下肢・体幹・上半身を連動させる爆発力を見る。", measurement: "3kgメディシンボール・バック投げ", relation: "一定重量のボールを使い、後方向への全身の力発揮を距離で確認する測定です。",
+    primaryMetric: "distance", unit: "m", betterDirection: "higher", sortOrder: 7,
+    protocol: { startMethod: "投てき方向に背を向け、両手で3kgメディシンボールを保持して開始する。", attempts: "最大2本。", rest: stationRest, measurementMethod: "投てき位置から最初の落下地点までの距離を測定する。", foulConditions: "規定の投てき位置を越えた場合。", adoptedRecord: "2本実施した場合は遠い方を採用。", equipment: "3kgメディシンボール・巻尺", notes: "後方の安全を十分に確認する。" },
+  },
+  {
+    code: "medicine_ball_3kg_one_arm", category: "3kgメディシン投げ（片手）", abilityJa: "片腕爆発力", abilityEn: "ONE-ARM POWER",
+    description: "3kgメディシンボールを片手で投げ、片側の上肢と体幹が連動して発揮する力を見る。", measurement: "3kgメディシンボール・片手投げ", relation: "一定重量のボールを使い、片手で発揮した投てき能力を距離で確認する測定です。",
+    primaryMetric: "distance", unit: "m", betterDirection: "higher", sortOrder: 8,
+    protocol: { startMethod: "片手で3kgメディシンボールを保持して開始する。左右どちらで実施したかを統一する。", attempts: "最大2本。", rest: stationRest, measurementMethod: "投てき位置から最初の落下地点までの距離を測定する。", foulConditions: "規定の投てき位置を越えた場合、または両手を使った場合。", adoptedRecord: "2本実施した場合は遠い方を採用。", equipment: "3kgメディシンボール・巻尺", notes: "左右を比較する場合は左右別に運用する。" },
+  },
+  {
     code: "rebound_jump", category: "リバウンドジャンプ", abilityJa: "反発パフォーマンス", abilityEn: "REACTIVE PERFORMANCE",
     description: "腕振りを使わず、短い接地から連続して跳躍へつなげる反発パフォーマンスを確認する。", measurement: "リバウンドジャンプ", relation: "両手を腰に置いた連続跳躍の反発パフォーマンスを実測値で確認する測定です。",
     primaryMetric: "rj_index", unit: "RJ-index", betterDirection: "higher", sortOrder: 6,
