@@ -104,11 +104,11 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
     : await supabase.rpc("get_official_ranking_page", { p_category: category, p_year: selectedYear, p_gender: gender, p_scope: scope });
   const rows = mode === "position" ? (data ?? []) as RankingRow[] : [];
   const growthRows = mode === "growth" ? (data ?? []) as GrowthRankingRow[] : [];
-  const podium = [1, 0, 2].map((index) => rows[index]).filter(Boolean) as RankingRow[];
+  const podium = rows.slice(0, 3);
   const current = rows.find((row) => row.is_current_user);
   const next = current ? [...rows].reverse().find((row) => row.leaderboard_position < current.leaderboard_position) : null;
   const gap = current && next ? Math.abs(Number(current.best_value) - Number(next.best_value)) : null;
-  const growthPodium = [1, 0, 2].map((index) => growthRows[index]).filter(Boolean) as GrowthRankingRow[];
+  const growthPodium = growthRows.slice(0, 3);
   const currentGrowth = growthRows.find((row) => row.is_current_user);
 
   return <main className="min-h-screen bg-[#090a0c] px-4 pb-28 pt-28 text-white sm:px-7">
@@ -150,14 +150,14 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
       {mode === "position" ? <section className="mt-8 rounded-[28px] border border-orange-500/35 bg-[radial-gradient(circle_at_50%_0%,rgba(249,115,22,.14),transparent_42%),#101010] p-5 sm:p-8">
         <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">{gender === "female" ? "WOMEN" : "MEN"} / {scope === "class" ? player.program_class ?? "CLASS" : "OVERALL"}</p><h2 className="mt-1 text-2xl font-black">{category}</h2></div><span className="text-xs text-white/35">{rows[0]?.total_count ?? 0}人</span></div>
         {error ? <p className="mt-6 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">ランキングを読み込めませんでした。しばらくしてから再度お試しください。</p> : rows.length ? <>
-          <div className="mt-9 grid gap-3 sm:grid-cols-3">{podium.map((row) => <PodiumCard key={`${row.leaderboard_position}-${row.display_name}`} row={row} unit={unit}/>)}</div>
+          <div className="mt-9 grid gap-3 sm:grid-cols-3">{podium.map((row, index) => <div key={`${row.leaderboard_position}-${row.display_name}`} className={index === 0 ? "sm:order-2" : index === 1 ? "sm:order-1" : "sm:order-3"}><PodiumCard row={row} unit={unit}/></div>)}</div>
           {rows.length > 3 ? <ol className="mt-8 overflow-hidden rounded-2xl border border-white/10">{rows.slice(3).map((row) => <li key={`${row.leaderboard_position}-${row.display_name}`} className={`flex items-center gap-3 border-t border-white/[.06] px-4 py-4 first:border-t-0 ${row.is_current_user ? "bg-orange-400/10 text-orange-300" : "bg-black/15"}`}><b className="w-8 text-white/35">{row.leaderboard_position}</b><span className="min-w-0 flex-1 truncate font-bold">{row.display_name}</span><strong>{formatValue(row.best_value, unit)}</strong>{row.is_current_user ? <span className="rounded-full bg-orange-400 px-2 py-1 text-[9px] font-black text-black">YOU</span> : null}</li>)}</ol> : null}
         </> : <div className="mt-8 rounded-2xl border border-dashed border-white/10 px-5 py-12 text-center"><Medal className="mx-auto text-white/20"/><p className="mt-4 font-bold text-white/45">この条件の本番記録はまだありません</p><Link href="/performance?kind=athletics" className="mt-5 inline-flex items-center gap-1 text-sm font-black text-orange-300">本番記録を追加<ChevronRight size={16}/></Link></div>}
       </section> : <section className="mt-8 rounded-[28px] border border-emerald-400/35 bg-[radial-gradient(circle_at_50%_0%,rgba(52,211,153,.12),transparent_42%),#101010] p-5 sm:p-8">
         <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-[10px] font-black tracking-[.2em] text-emerald-300">YEARLY GROWTH / {gender === "female" ? "WOMEN" : "MEN"}</p><h2 className="mt-1 text-2xl font-black">{category}</h2></div><span className="text-xs text-white/35">対象 {growthRows[0]?.total_count ?? 0}人</span></div>
         <p className="mt-3 text-xs leading-6 text-white/40">直近1年間に同じ種目の記録が2件以上ある選手を対象に、最初と最新の記録を比較します。タイム種目は短縮率、それ以外は向上率です。</p>
         {error ? <p className="mt-6 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">成長ランキングを読み込めませんでした。しばらくしてから再度お試しください。</p> : growthRows.length ? <>
-          <div className="mt-9 grid gap-3 sm:grid-cols-3">{growthPodium.map((row) => <GrowthPodiumCard key={`${row.leaderboard_position}-${row.display_name}`} row={row} unit={unit}/>)}</div>
+          <div className="mt-9 grid gap-3 sm:grid-cols-3">{growthPodium.map((row, index) => <div key={`${row.leaderboard_position}-${row.display_name}`} className={index === 0 ? "sm:order-2" : index === 1 ? "sm:order-1" : "sm:order-3"}><GrowthPodiumCard row={row} unit={unit}/></div>)}</div>
           {growthRows.length > 3 ? <ol className="mt-8 overflow-hidden rounded-2xl border border-white/10">{growthRows.slice(3).map((row) => { const value = Number(row.growth_percent); return <li key={`${row.leaderboard_position}-${row.display_name}`} className={`flex items-center gap-3 border-t border-white/[.06] px-4 py-4 first:border-t-0 ${row.is_current_user ? "bg-orange-400/10" : "bg-black/15"}`}><b className="w-8 text-white/35">{row.leaderboard_position}</b><span className={`min-w-0 flex-1 truncate font-bold ${row.is_current_user ? "text-orange-300" : "text-white"}`}>{row.display_name}</span><strong className={growthTone(value)}>{value > 0 ? "+" : ""}{value.toFixed(1)}%</strong>{row.is_current_user ? <span className="rounded-full bg-orange-400 px-2 py-1 text-[9px] font-black text-black">YOU</span> : null}</li>; })}</ol> : null}
         </> : <div className="mt-8 rounded-2xl border border-dashed border-white/10 px-5 py-12 text-center"><TrendingUp className="mx-auto text-white/20"/><p className="mt-4 font-bold text-white/45">集計できる記録がまだありません</p><p className="mt-2 text-xs leading-6 text-white/30">直近1年間に、同じ種目を2回以上記録すると参加できます。</p></div>}
       </section>}

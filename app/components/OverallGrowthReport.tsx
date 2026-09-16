@@ -1,4 +1,5 @@
 import { Award, CalendarRange, Sparkles, Target, TrendingUp } from "lucide-react";
+import Link from "next/link";
 import { eventKindMap, unitMap, type PerformanceKind } from "@/lib/performance-events";
 import type { GrowthRecord } from "@/app/components/MonthlyGrowthReport";
 
@@ -81,6 +82,7 @@ export default function OverallGrowthReport({ records }: { records: RecordWithKi
               <Metric label="全期間の伸び" value={`${item.growth > 0 ? "+" : "±"}${formatValue(item.growth, item.unit)}`} highlight={item.growth > 0} />
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs"><span className="text-white/40">成長率</span><strong className={item.growth > 0 ? "flex items-center gap-1 text-emerald-400" : "text-white/45"}>{item.growth > 0 && <TrendingUp size={14} />} {item.growthPercent > 0 ? "+" : ""}{item.growthPercent.toFixed(1)}%</strong></div>
+            <Link href={`/mypage/growth-report/history?${new URLSearchParams({ kind, category: item.category })}`} className="mt-4 block rounded-xl border border-orange-400/30 px-4 py-3 text-center text-sm font-bold text-orange-300 hover:bg-orange-400/10">これまでの記録を見る</Link>
           </article>)}
         </div>
       </section>;
