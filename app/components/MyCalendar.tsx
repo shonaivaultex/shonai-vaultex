@@ -312,7 +312,7 @@ export default function MyCalendar({
   const [quickPeriodOpen, setQuickPeriodOpen] = useState(false);
   const [weekPlanOpen, setWeekPlanOpen] = useState(Boolean(initialWeekPlan));
   const [weekPlanSaving, setWeekPlanSaving] = useState(false);
-  const [weekPlanRows, setWeekPlanRows] = useState<Array<{ date: string; type: keyof typeof entryTypes; title: string; scheduleId: number | null }>>(() => {
+  const [weekPlanRows, setWeekPlanRows] = useState<Array<{ date: string; type: keyof typeof entryTypes | ""; title: string; scheduleId: number | null }>>(() => {
     if (!initialWeekPlan) return [];
     const start = new Date(selectedDateValue.getFullYear(), selectedDateValue.getMonth(), selectedDateValue.getDate() - selectedDateValue.getDay());
     return Array.from({ length: 7 }, (_, index) => {
@@ -320,7 +320,7 @@ export default function MyCalendar({
       date.setDate(date.getDate() + index);
       const key = dateKey(date);
       const existing = initialEntries.find((entry) => !entry.schedule_id && entry.entry_date === key);
-      return { date: key, type: (existing?.entry_type && existing.entry_type in entryTypes ? existing.entry_type : "personal_training") as keyof typeof entryTypes, title: existing?.title ?? "", scheduleId: null };
+      return { date: key, type: (existing?.entry_type && existing.entry_type in entryTypes ? existing.entry_type : "") as keyof typeof entryTypes | "", title: existing?.title ?? "", scheduleId: null };
     });
   });
   const [restSaving, setRestSaving] = useState(false);
@@ -515,7 +515,7 @@ export default function MyCalendar({
         : entries.find((entry) => !entry.schedule_id && entry.entry_date === dateKey(target));
       return {
         date: dateKey(target),
-        type: (previous?.entry_type && previous.entry_type in entryTypes ? previous.entry_type : "personal_training") as keyof typeof entryTypes,
+        type: (previous?.entry_type && previous.entry_type in entryTypes ? previous.entry_type : "") as keyof typeof entryTypes | "",
         title: previous?.title ?? "",
         scheduleId: null,
       };
@@ -524,7 +524,7 @@ export default function MyCalendar({
     setWeekPlanOpen(true);
   }
   async function saveWeekPlan() {
-    const rows = weekPlanRows.filter((row) => row.scheduleId || row.title.trim() || row.type === "rest");
+    const rows = weekPlanRows.filter((row) => row.scheduleId || row.title.trim() || row.type !== "");
     if (!rows.length) return alert("1日以上の予定を入力してください。");
     setWeekPlanSaving(true);
     try {
@@ -545,8 +545,8 @@ export default function MyCalendar({
         starts_at: null,
         ends_at: null,
         all_day: true,
-        entry_type: row.type,
-        title: row.type === "rest" ? "REST" : row.title.trim(),
+        entry_type: row.type || "personal_training",
+        title: row.type === "rest" ? "REST" : row.title.trim() || entryTypes[row.type || "personal_training"],
         location: null,
         journal: null,
         awareness_categories: [],
@@ -1128,7 +1128,7 @@ export default function MyCalendar({
         <div className="fixed inset-0 z-[130] overflow-y-auto bg-black/80 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-labelledby="week-plan-title">
           <section className="mx-auto my-5 max-w-3xl rounded-[28px] border border-orange-500/35 bg-[#111] p-5 shadow-2xl sm:p-7">
             <div className="flex items-start justify-between gap-4">
-              <div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">WEEKLY PLAN</p><h2 id="week-plan-title" className="mt-1 text-2xl font-black">1週間のマイカレンダーを作る</h2><p className="mt-2 text-xs leading-5 text-white/45">{mobileWeekStart.getMonth() + 1}/{mobileWeekStart.getDate()}〜{mobileWeekDays[6].getMonth() + 1}/{mobileWeekDays[6].getDate()}・空欄の日は登録されません</p></div>
+              <div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">WEEKLY PLAN</p><h2 id="week-plan-title" className="mt-1 text-2xl font-black">1週間のマイカレンダーを作る</h2><p className="mt-2 text-xs leading-5 text-white/45">{mobileWeekStart.getMonth() + 1}/{mobileWeekStart.getDate()}〜{mobileWeekDays[6].getMonth() + 1}/{mobileWeekDays[6].getDate()}・種類だけでも登録できます。未選択・予定名なしの日は登録されません</p></div>
               <button type="button" onClick={() => setWeekPlanOpen(false)} aria-label="閉じる" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/[.07] text-white/60"><X size={19}/></button>
             </div>
             <button type="button" onClick={() => openWeekPlanner(true)} className="mt-5 inline-flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/[.06] px-4 py-3 text-xs font-black text-emerald-200"><CalendarDays size={16}/>前週の個人予定を読み込む</button>
@@ -1138,12 +1138,13 @@ export default function MyCalendar({
                 const daySchedules = schedulesByDate.get(row.date) ?? [];
                 return <div key={row.date} className="grid gap-2 rounded-2xl border border-white/[.08] bg-black/20 p-3 sm:grid-cols-[90px_150px_1fr] sm:items-center">
                   <div><strong className="text-sm">{day.getMonth() + 1}/{day.getDate()}（{weekdays[day.getDay()]}）</strong></div>
-                  <select aria-label={`${row.date}の種類`} disabled={Boolean(row.scheduleId)} value={row.type} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, type: event.target.value as keyof typeof entryTypes, title: event.target.value === "rest" ? "REST" : item.title === "REST" ? "" : item.title } : item))} className="rounded-xl border border-white/10 bg-[#181818] px-3 py-3 text-sm text-white [color-scheme:dark] disabled:opacity-40">
+                  <select aria-label={`${row.date}の種類`} disabled={Boolean(row.scheduleId)} value={row.type} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, type: event.target.value as keyof typeof entryTypes | "", title: event.target.value === "rest" ? "REST" : item.title === "REST" ? "" : item.title } : item))} className="rounded-xl border border-white/10 bg-[#181818] px-3 py-3 text-sm text-white [color-scheme:dark] disabled:opacity-40">
+                    <option value="" className="bg-[#181818] text-white">未選択（登録しない）</option>
                     {Object.entries(entryTypes).filter(([value]) => value !== "club_schedule").map(([value, label]) => <option key={value} value={value} className="bg-[#181818] text-white">{label}</option>)}
                   </select>
                   <div className="grid gap-2">
                     {daySchedules.length ? <select aria-label={`${row.date}の全体スケジュール`} value={row.scheduleId ?? ""} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, scheduleId: event.target.value ? Number(event.target.value) : null } : item))} className="rounded-xl border border-orange-400/25 bg-[#21170f] px-3 py-3 text-sm font-bold text-orange-100 [color-scheme:dark]"><option value="" className="bg-[#181818] text-white">自分の予定を入力する</option>{daySchedules.map((schedule) => <option key={schedule.id} value={schedule.id} className="bg-[#181818] text-white">全体予定：{schedule.title}{timeValue(schedule.starts_at) ? `（${timeValue(schedule.starts_at)}〜）` : ""}</option>)}</select> : null}
-                    {row.scheduleId ? <p className="px-1 text-[11px] font-bold text-emerald-300">保存すると、この予定の出欠が「参加」になります</p> : <input aria-label={`${row.date}の予定名`} maxLength={120} disabled={row.type === "rest"} value={row.type === "rest" ? "REST" : row.title} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item))} placeholder={row.type === "rest" ? "休養日" : "例：学校練習、ジョグ、補強"} className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm disabled:text-white/40"/>}
+                    {row.scheduleId ? <p className="px-1 text-[11px] font-bold text-emerald-300">保存すると、この予定の出欠が「参加」になります</p> : <input aria-label={`${row.date}の予定名`} maxLength={120} disabled={row.type === "rest"} value={row.type === "rest" ? "REST" : row.title} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item))} placeholder={row.type === "rest" ? "休養日" : "予定名（任意・空欄なら種類名で保存）"} className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm disabled:text-white/40"/>}
                   </div>
                 </div>;
               })}

@@ -2,35 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Activity, ArrowLeft, ArrowRight, Bell, Bot, CalendarDays, Check, Compass, Play, Plus, ScanLine, Settings, Share, Smartphone, Sparkles, X } from "lucide-react";
+import { Activity, ArrowLeft, ArrowRight, Bell, Bot, CalendarDays, Check, Compass, Plus, Share, Smartphone, Sparkles, X } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 
-export const MYPAGE_TUTORIAL_VERSION = 5;
+export const MYPAGE_TUTORIAL_VERSION = 6;
 
 type TutorialRect = { top: number; left: number; right: number; bottom: number; width: number; height: number };
 
-const desktopSteps = [
-  { eyebrow: "START HERE", title: "まずホーム画面に追加しよう", body: "VAULTEXをアプリのようにすぐ開けます。予定変更やフィードバックのプッシュ通知を受け取るためにも、最初にホーム画面への追加をおすすめします。", icon: Smartphone, target: null, install: true },
-  { eyebrow: "WELCOME TO SHONAI VAULTEX", title: "マイページを一緒に見てみよう", body: "これから実際の画面を1つずつ照らしながら説明します。いつでも「あとで見る」で閉じられます。", icon: Sparkles, target: null },
-  { eyebrow: "STEP 1 / ATHLETE SCAN", title: "身体能力の現在地を確認", body: "CONTROL TESTをまとめて記録すると、身体能力の特徴と変化をATHLETE SCANで振り返れます。初めて測定するときもここから始められます。", icon: ScanLine, target: "athlete-scan" },
-  { eyebrow: "STEP 2 / RECORD", title: "カレンダーから練習を記録", body: "MY CALENDARから今日または過去の日付を選び、練習記録・意識・動画を残せます。登録内容はPB、グラフ、成長レポートへ自動で反映されます。", icon: Plus, target: "schedule-action" },
-  { eyebrow: "STEP 3 / VIDEO & FEEDBACK", title: "動画だけでもコーチに相談できる", body: "記録がない日でも動画を送れます。相談内容を添えると、コーチとのトークでフィードバックを受け取れます。", icon: Play, target: "video-action" },
-  { eyebrow: "STEP 4 / PERFORMANCE", title: "記録・意識・動画を振り返る", body: "練習記録、本番記録、コントロールテストはここから見分けられます。良かった日の意識や動画も一緒に確認できます。", icon: Activity, target: "performance" },
-  { eyebrow: "STEP 5 / SCHEDULE", title: "参加予定をマイカレンダーへ追加", body: "全体スケジュールで練習会やクラス別予定を確認できます。「参加」を押した予定は、自分のマイカレンダーへ自動で追加されます。欠席・未定の予定は追加されません。", icon: CalendarDays, target: "all-schedules" },
-  { eyebrow: "STEP 6 / VAULTEX AI", title: "迷ったらVAULTEX AIへ", body: "使い方や競技の悩みをそのまま話しかけてOKです。状況を一緒に整理し、見るべき記録や次の行動、必要ならコーチ相談へ案内します。", icon: Compass, target: "ai-navigator" },
-  { eyebrow: "STEP 7 / SETTINGS", title: "設定・マニュアル・バックアップ", body: "通知設定、使用マニュアル、記録のCSV保存、プロフィール編集は「その他」にまとまっています。チュートリアルはページ上部の「マイページの使い方」から何度でも見直せます。", icon: Settings, target: "settings" },
-  { eyebrow: "READY", title: "準備完了。まず1つ触ってみよう", body: "最初から全部覚えなくて大丈夫です。分からないことがあればVAULTEX AIに聞けば、いつでも使い方を案内します。", icon: Bot, target: null },
+const guideSteps = [
+  { eyebrow: "はじめに", title: "まずは「予定・記録・振り返り」", body: "全部の機能を覚える必要はありません。参加する日を決め、練習や大会の記録を残し、あとから振り返る。この3つから始めましょう。", icon: Sparkles, target: null },
+  { eyebrow: "予定を作る", title: "1週間分をまとめて入力", body: "「マイカレンダー」→「1週間を作成」を開きます。各日の種類を選び、最後に「入力した予定をまとめて保存」を押します。学校練習などは予定名なしでも登録でき、未選択・予定名なしの日は登録されません。", icon: CalendarDays, target: "schedule-action" },
+  { eyebrow: "クラブに参加する", title: "全体予定から選ぶだけでもOK", body: "「1週間を作成」で全体スケジュールを選んで保存すると、出欠も「参加」になります。全体スケジュールの画面から出欠を回答することもできます。選んだだけでは保存されないので、最後の保存を忘れずに。", icon: CalendarDays, target: "all-schedules" },
+  { eyebrow: "記録する", title: "練習・本番・CTを選んで記録", body: "練習なら練習記録、大会なら本番記録、身体能力の測定ならCONTROL TESTを選びます。日付・種目・数値を確認して保存しましょう。マイカレンダーでは日付を選んで、その日の記録や日誌を残せます。", icon: Plus, target: "performance" },
+  { eyebrow: "振り返る", title: "成長レポートで過去の記録を見る", body: "「成長レポート」で種目ごとの変化を確認できます。「これまでの記録を見る」を押すと、その種目の日付と記録だけを新しい順に表示します。本番・練習・CTは別々なので、比較する区分も確認しましょう。", icon: Activity, target: "performance" },
+  { eyebrow: "困ったとき", title: "相談や設定は必要なときに", body: "動きを見てほしいときはコーチへ動画で相談できます。使い方に迷ったらVAULTEX AIへ。「その他」には通知設定やマニュアルがあります。この案内は「マイページの使い方」から何度でも開けます。", icon: Compass, target: "settings" },
+  { eyebrow: "最後に・任意", title: "ホーム画面に追加すると便利", body: "スマホのホーム画面に追加すると、次回からアイコンで開けます。今は追加せず、この案内を閉じて使い始めても大丈夫です。", icon: Smartphone, target: null, install: true },
 ] as const;
 
-const mobileSteps = [
-  { eyebrow: "START HERE", title: "まずホーム画面に追加しよう", body: "VAULTEXをアプリのようにすぐ開けます。予定変更やフィードバックの通知を受け取るためにも、最初にホーム画面への追加をおすすめします。", icon: Smartphone, target: null, install: true },
-  { eyebrow: "MOBILE HOME", title: "ホームは今日の確認に集中", body: "今日の予定と練習、お知らせ、未確認の項目をすぐ確認できます。成長レポートやランキングなどは「その他」にまとめています。", icon: Sparkles, target: "mobile-home" },
-  { eyebrow: "CALENDAR", title: "予定と記録はカレンダーへ", body: "マイカレンダーでは自分の予定・日誌を管理できます。全体スケジュールではクラブ予定を確認し、「参加」を押すとマイカレンダーへ反映されます。", icon: CalendarDays, target: "mobile-calendar" },
-  { eyebrow: "RECORD", title: "＋から記録を追加", body: "練習記録、本番記録、CONTROL TESTを選んで登録できます。意識・振り返り・動画も一緒に残せます。", icon: Plus, target: "mobile-record" },
-  { eyebrow: "CONSULT", title: "相談先を選ぶ", body: "動きを見てほしい時はコーチへ、考えを整理したい時や使い方に迷った時はVAULTEX AIへ相談できます。", icon: Compass, target: "mobile-consult" },
-  { eyebrow: "OTHER", title: "その他の機能をまとめて確認", body: "成長レポート、ランキング、各種記録、通知設定、マニュアルなどは「その他」から開けます。", icon: Settings, target: "mobile-menu" },
-  { eyebrow: "READY", title: "準備完了。まずホームを見てみよう", body: "最初から全部覚えなくて大丈夫です。分からないことがあればVAULTEX AIがいつでも案内します。", icon: Bot, target: null },
-] as const;
+const desktopSteps = guideSteps;
+const mobileTargets = [null, "mobile-calendar", "mobile-calendar", "mobile-record", "mobile-menu", "mobile-menu", null] as const;
+const mobileSteps = guideSteps.map((item, index) => ({ ...item, target: mobileTargets[index] }));
 
 type Props = { autoOpen: boolean; userId: string };
 
@@ -151,12 +142,12 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
           <button type="button" aria-label="あとで見る" disabled={saving} onClick={dismiss} className="absolute right-4 top-5 rounded-full bg-white/10 p-2 text-white/55 transition hover:text-white disabled:opacity-40"><X size={18} /></button>
           <div className="min-h-0 overflow-y-auto overscroll-contain px-5 pt-7 sm:px-7">
             <div className="flex items-start gap-4"><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-orange-500/15 text-orange-400"><Icon size={24} /></span><div className="min-w-0 pr-8"><p className="text-[10px] font-black tracking-[.18em] text-orange-400">{current.eyebrow}</p><h2 id="mypage-tutorial-title" className="mt-1 text-xl font-black leading-tight sm:text-2xl">{current.title}</h2></div></div>
-            <p className="mt-4 text-sm leading-6 text-white/65">{current.body}</p>
+            <p className="mt-4 text-base leading-7 text-white/85">{current.body}</p>
             {"install" in current && current.install ? <div className="mt-4 rounded-2xl border border-orange-500/25 bg-orange-500/[0.07] p-4">
               {installState === "installed" ? <div className="flex items-center gap-3 text-sm font-bold text-emerald-300"><Check size={19} />ホーム画面への追加は完了しています</div> : <>
                 <p className="flex items-center gap-2 text-sm font-black text-white"><Share size={17} className="text-orange-400" />{installState === "ios" ? "iPhone / iPadでの追加方法" : installState === "android" ? "Androidでの追加方法" : "スマホでこのページを開いて追加"}</p>
                 <ol className="mt-3 space-y-2 text-xs leading-5 text-white/65">
-                  {installState === "ios" ? <><li><b className="text-white">1.</b> Safari下部の共有ボタンを押す</li><li><b className="text-white">2.</b> 「ホーム画面に追加」を選ぶ</li><li><b className="text-white">3.</b> 右上の「追加」を押す</li></> : installState === "android" ? <><li><b className="text-white">1.</b> Chrome右上のメニューを押す</li><li><b className="text-white">2.</b> 「アプリをインストール」または「ホーム画面に追加」を選ぶ</li><li><b className="text-white">3.</b> 確認画面で追加する</li></> : <li>この案内はスマホで開くと、iPhone／Androidに合わせた手順に切り替わります。</li>}
+                  {installState === "ios" ? <><li><b className="text-white">1.</b> Safariの共有ボタンを押す</li><li><b className="text-white">2.</b> 「ホーム画面に追加」を選ぶ</li><li><b className="text-white">3.</b> 右上の「追加」を押す</li></> : installState === "android" ? <><li><b className="text-white">1.</b> Chrome右上のメニューを押す</li><li><b className="text-white">2.</b> 「アプリをインストール」または「ホーム画面に追加」を選ぶ</li><li><b className="text-white">3.</b> 確認画面で追加する</li></> : <li>この案内はスマホで開くと、iPhone／Androidに合わせた手順に切り替わります。</li>}
                 </ol>
               </>}
               <p className="mt-3 flex items-start gap-2 border-t border-white/10 pt-3 text-[11px] leading-5 text-white/45"><Bell size={15} className="mt-0.5 shrink-0 text-orange-400" />追加後、マイページの「通知設定」から通知をONにしてください。ホーム画面へ追加するだけでは通知はまだ有効になりません。</p>
@@ -166,7 +157,7 @@ export default function MypageTutorial({ autoOpen, userId }: Props) {
           <div className="shrink-0 border-t border-white/10 bg-[#101010] px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-7 sm:pb-5">
             <div className="flex items-center gap-3">
               {step > 0 ? <button type="button" aria-label="前へ" onClick={() => setStep((value) => value - 1)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/15 text-white/65 hover:text-white"><ArrowLeft size={18} /></button> : null}
-              {!last ? <button type="button" onClick={() => setStep((value) => value + 1)} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 font-black text-black transition hover:bg-orange-400">次へ <span className="text-xs opacity-60">{step + 1}/{steps.length}</span><ArrowRight size={18} /></button> : <button type="button" disabled={saving} onClick={() => void finish()} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 font-black text-black transition hover:bg-orange-400 disabled:opacity-50"><Check size={18} />マイページを始める</button>}
+              {!last ? <button type="button" onClick={() => setStep((value) => value + 1)} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 font-black text-black transition hover:bg-orange-400">次へ <span className="text-xs opacity-60">{step + 1}/{steps.length}</span><ArrowRight size={18} /></button> : <button type="button" disabled={saving} onClick={() => void finish()} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 font-black text-black transition hover:bg-orange-400 disabled:opacity-50"><Check size={18} />使い方を閉じる</button>}
             </div>
             {last ? <button type="button" disabled={saving} onClick={() => void goToAi()} className="mt-2 flex w-full items-center justify-center gap-2 py-2 text-sm font-bold text-orange-300 transition hover:text-orange-200"><Bot size={16} />VAULTEX AIに相談してみる</button> : <button type="button" disabled={saving} onClick={dismiss} className="mt-2 w-full py-2 text-xs font-bold text-white/35 transition hover:text-white/65">あとで見る</button>}
           </div>
