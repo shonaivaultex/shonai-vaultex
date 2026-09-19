@@ -14,6 +14,9 @@ import { createClient } from "@/lib/supabase-server";
 import MypageSettings from "@/app/components/MypageSettings";
 
 const links = [
+  { href: "/performance", label: "記録を追加", note: "練習・大会・CTの記録", icon: Medal },
+  { href: "/mypage/consult", label: "コーチ・AIに相談", note: "動画相談・使い方の相談", icon: Activity },
+  { href: "/mypage/checkins", label: "体調の履歴", note: "これまでの状態を確認", icon: Activity },
   {
     href: "/mypage/growth-report",
     label: "成長レポート",

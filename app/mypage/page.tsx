@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
-import { Activity, ArrowUpRight, CalendarDays, CalendarPlus, Check, ChevronRight, ClipboardPenLine, MessageCircle, NotebookPen, Plus, Settings2, Target, UserRoundCheck, Video } from "lucide-react";
+import { ArrowUpRight, CalendarDays, CalendarPlus, Check, ChevronRight, ClipboardPenLine, NotebookPen, Settings2, Target, UserRoundCheck } from "lucide-react";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { type ScheduleItem } from "@/app/components/SchedulePanel";
 import MypageTutorial, { MYPAGE_TUTORIAL_VERSION } from "@/app/components/MypageTutorial";
-import DailyCheckin, { type DailyCheckinValue } from "@/app/components/DailyCheckin";
-import { LatestNewsSummary, loadMypageDeferredData, MypageStats, MypageStatsSkeleton } from "./MypageDeferredContent";
+import { LatestNewsSummary, loadMypageDeferredData } from "./MypageDeferredContent";
 
 function japanMonthKeys() {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
@@ -105,46 +104,33 @@ export default async function MyPage() {
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
   const todayCompetitionItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && schedule.schedule_type === "competition" && (appliedCompetitionIds.has(schedule.id) || attendingScheduleIds.has(schedule.id)) && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type === "competition" && occursOnDate(schedule, todayKey))])
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
-  const todayRecordCount = todayRecords?.length ?? 0;
-  const hasTodayTrainingRecord = todayRecords?.some((record) => record.record_kind === "unofficial-athletics") ?? false;
-  const hasTodayCompetitionRecord = todayRecords?.some((record) => record.record_kind === "athletics") ?? false;
   const todayActions = [
     unansweredScheduleCount > 0
       ? { href: "/mypage/schedules?attendance=unanswered", label: `出欠を回答する（${unansweredScheduleCount}件）`, detail: "向こう2週間の予定を回答", tone: "orange" }
-      : null,
-    !dailyCheckin
-      ? { href: "#daily-checkin", label: "今日の状態を記録", detail: "体調・疲労・気分を30秒で入力", tone: "amber" }
-      : null,
-    todayCompetitionItems.length > 0 && !hasTodayCompetitionRecord
-      ? { href: `/performance?kind=athletics&date=${todayKey}&quick=1`, label: "今日の本番記録を残す", detail: "結果・気づき・動画を記録", tone: "orange" }
-      : null,
-    todayTrainingItems.length > 0 && !hasTodayTrainingRecord
-      ? { href: `/performance?kind=unofficial-athletics&date=${todayKey}&from=calendar`, label: "今日の練習を記録", detail: "記録・意識・振り返りを残す", tone: "emerald" }
       : null,
   ].filter((action): action is NonNullable<typeof action> => Boolean(action));
 
   return (
     <main className="mx-auto my-16 max-w-[1480px] px-4 pb-16 sm:px-7 lg:my-20 xl:px-10">
       <div className="flex items-end justify-between gap-4">
-        <div><p className="text-[10px] font-black tracking-[.28em] text-orange-400">ATHLETE DASHBOARD</p><h1 className="mt-1 text-3xl font-black tracking-[-.04em] lg:text-5xl">MY PAGE</h1></div>
+        <div><p className="text-[10px] font-black tracking-[.28em] text-orange-400">MY SCHEDULE</p><h1 className="mt-1 text-3xl font-black tracking-[-.04em] lg:text-5xl">予定と出欠</h1></div>
         <span className="hidden text-xs font-bold tracking-[.16em] text-white/25 sm:block">SHONAI VAULTEX</span>
       </div>
-      <MypageTutorial autoOpen={(player.mypage_tutorial_version ?? 0) < MYPAGE_TUTORIAL_VERSION} userId={userId} />
 
       <section data-tutorial="mobile-home" className="mt-5 rounded-[24px] border border-orange-400/25 bg-[linear-gradient(135deg,rgba(249,115,22,.11),rgba(18,18,18,.96)_55%)] p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
-          <div><p className="text-[9px] font-black tracking-[.2em] text-orange-400">TODAY</p><h2 className="mt-1 text-lg font-black">今日やること</h2></div>
+          <div><p className="text-[9px] font-black tracking-[.2em] text-orange-400">TODAY</p><h2 className="mt-1 text-lg font-black">出欠の確認</h2></div>
           <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${todayActions.length ? "bg-orange-400/10 text-orange-300" : "bg-emerald-400/10 text-emerald-300"}`}>{todayActions.length ? `${todayActions.length}件` : "完了"}</span>
         </div>
-        {todayActions.length ? <div className="mt-3 grid gap-2 md:grid-cols-2">{todayActions.map((action) => <Link key={action.href} href={action.href} className="flex min-h-16 items-center gap-3 rounded-xl border border-white/[.07] bg-black/20 px-3 py-2.5 transition hover:border-orange-400/30 active:scale-[.99]"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${action.tone === "emerald" ? "bg-emerald-400/10 text-emerald-300" : "bg-orange-400/10 text-orange-300"}`}><ClipboardPenLine size={17}/></span><span className="min-w-0 flex-1"><strong className="block text-sm">{action.label}</strong><span className="mt-0.5 block text-[10px] text-white/35">{action.detail}</span></span><ChevronRight size={16} className="shrink-0 text-white/25"/></Link>)}</div> : <div className="mt-3 flex items-center gap-3 rounded-xl border border-emerald-400/15 bg-emerald-400/[.04] px-3 py-3"><span className="grid h-8 w-8 place-items-center rounded-full bg-emerald-400/10 text-emerald-300"><Check size={17}/></span><span><strong className="block text-sm">今日の確認は完了</strong><span className="mt-0.5 block text-[10px] text-white/35">必要になったら下のメニューから記録できます</span></span></div>}
+        {todayActions.length ? <div className="mt-3 grid gap-2 md:grid-cols-2">{todayActions.map((action) => <Link key={action.href} href={action.href} className="flex min-h-16 items-center gap-3 rounded-xl border border-white/[.07] bg-black/20 px-3 py-2.5 transition hover:border-orange-400/30 active:scale-[.99]"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${action.tone === "emerald" ? "bg-emerald-400/10 text-emerald-300" : "bg-orange-400/10 text-orange-300"}`}><ClipboardPenLine size={17}/></span><span className="min-w-0 flex-1"><strong className="block text-sm">{action.label}</strong><span className="mt-0.5 block text-[10px] text-white/35">{action.detail}</span></span><ChevronRight size={16} className="shrink-0 text-white/25"/></Link>)}</div> : <div className="mt-3 flex items-center gap-3 rounded-xl border border-emerald-400/15 bg-emerald-400/[.04] px-3 py-3"><span className="grid h-8 w-8 place-items-center rounded-full bg-emerald-400/10 text-emerald-300"><Check size={17}/></span><span><strong className="block text-sm">未回答の出欠はありません</strong><span className="mt-0.5 block text-[10px] text-white/35">参加予定はカレンダーで確認できます</span></span></div>}
       </section>
 
       <section className="relative mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_85%_10%,rgba(249,115,22,.16),transparent_28%),linear-gradient(145deg,#151515,#0d0d0d_65%)] text-white shadow-[0_28px_90px_rgba(0,0,0,.28)]">
         <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-orange-400 via-orange-600 to-transparent" />
-        <div className="grid lg:grid-cols-[.72fr_1.28fr]">
-          <div className="relative p-6 sm:p-8 lg:p-9">
+        <div className="flex flex-col-reverse">
+          <div className="relative border-t border-white/10 p-4">
             <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-orange-500/35 bg-orange-500/10 px-3 py-1 text-[10px] font-black tracking-[.16em] text-orange-300">{player.program_class ?? "CLASS未設定"}</span><span className="text-xs text-white/35">{player.grade ?? "学年未設定"}</span></div>
-            <h2 className="mt-5 text-3xl font-black tracking-[-.04em] sm:text-4xl lg:text-5xl">{player.name}</h2>
+            <h2 className="mt-2 text-lg font-black">{player.name}</h2>
             <p className="mt-2 text-sm font-bold text-white/40">{player.event ?? "種目未設定"}</p>
             {coachRole ? <div className="mt-7 grid gap-2 sm:grid-cols-2"><Link href="/coach/dashboard" prefetch className="inline-flex items-center justify-between gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-300 transition hover:bg-emerald-400/15">COACH DASHBOARD <ArrowUpRight size={15}/></Link><Link href="/coach/performance-session" prefetch className="inline-flex items-center justify-between gap-2 rounded-full border border-sky-400/30 bg-sky-400/[.08] px-4 py-2 text-xs font-black text-sky-300 transition hover:bg-sky-400/15">現場で一括入力 <ClipboardPenLine size={15}/></Link></div> : null}
             <Link href="/mypage/menu?settings=1#settings" className="mt-7 inline-flex items-center gap-2 text-xs font-black text-white/35 transition hover:text-white/70"><Settings2 size={14}/>プロフィール・設定<ChevronRight size={14}/></Link>
@@ -154,10 +140,11 @@ export default async function MyPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <Link href="/mypage/my-calendar" className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl py-1 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70">
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300 transition group-hover:bg-emerald-400/15"><NotebookPen size={20}/></span>
-                  <span className="min-w-0"><span className="block text-[10px] font-black tracking-[.18em] text-emerald-300">MY CALENDAR</span><strong className="mt-0.5 block truncate">今日を確認・記録する</strong></span>
+                  <span className="min-w-0"><span className="block text-[10px] font-black tracking-[.18em] text-emerald-300">MY CALENDAR</span><strong className="mt-0.5 block truncate">マイカレンダーを開く</strong></span>
                 </Link>
                 <ChevronRight size={18} className="text-white/25"/>
               </div>
+              <div className="mt-4 rounded-xl border border-white/10 p-4"><h3 className="font-bold">今日の予定</h3>{weekMyCalendarSchedule[0]?.items.length ? <ul className="mt-2 space-y-2">{weekMyCalendarSchedule[0].items.map((item, index) => <li key={index}><Link href={`/mypage/my-calendar?date=${todayKey}`} className="block py-2 text-sm text-emerald-200">{item.title} →</Link></li>)}</ul> : <p className="mt-2 text-sm text-white/50">今日は登録された予定がありません。</p>}</div>
               <Link href="/mypage/my-calendar" className="group mt-4 block rounded-2xl border border-emerald-400/25 bg-black/20 p-3 transition hover:border-emerald-300/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70">
                 <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-black tracking-[.15em] text-white/35">これから1週間</span><span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-300">{weekMyCalendarItems.length}件<ChevronRight size={14} className="transition group-hover:translate-x-1"/></span></div>
                 <div className="mt-3 grid grid-cols-7 gap-1">
@@ -167,10 +154,8 @@ export default async function MyPage() {
                   })}
                 </div>
               </Link>
-              <div id="daily-checkin" className="mt-4 scroll-mt-28"><DailyCheckin userId={userId} date={todayKey} initialValue={(dailyCheckin as DailyCheckinValue | null) ?? null}/></div>
               <div className={`mt-5 grid gap-2 ${todayTrainingItems.length || todayCompetitionItems.length ? "sm:grid-cols-2" : ""}`}>
                 <Link href="/mypage/my-calendar" className="rounded-xl border border-white/10 bg-white/[.025] p-3 transition hover:border-orange-400/40"><span className="text-[10px] font-black text-white/30">NEXT</span>{nextSchedule && nextScheduleDate ? <><strong className="mt-1 block truncate text-sm">{nextSchedule.title}</strong><span className="mt-1 block truncate text-[11px] text-white/40">{nextScheduleDate.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short", timeZone: "Asia/Tokyo" })}{nextSchedule.location ? ` ・ ${nextSchedule.location}` : ""}</span></> : <strong className="mt-1 block text-sm text-white/35">次の予定はありません</strong>}</Link>
-                {todayTrainingItems.length || todayCompetitionItems.length ? <Link href={todayCompetitionItems.length ? `/performance?kind=athletics&date=${todayKey}&quick=1` : `/performance?kind=unofficial-athletics&date=${todayKey}&from=calendar`} className="flex items-center justify-between rounded-xl border border-emerald-400/20 bg-emerald-400/[.06] p-3 transition hover:bg-emerald-400/10"><span><span className="text-[10px] font-black text-emerald-300/70">TODAY&apos;S LOG</span><strong className="mt-1 block text-sm">{todayRecordCount ? `記録済み ${todayRecordCount}件` : todayCompetitionItems.length ? "今日の本番記録を残す" : "今日の練習を記録"}</strong></span><Plus size={18} className="text-emerald-300"/></Link> : null}
               </div>
               {activeGoal ? <Link href="/mypage/my-calendar" className="mt-3 flex min-w-0 items-center gap-2 text-xs text-white/40"><Target size={14} className="shrink-0 text-orange-400"/><span className="truncate">次の目標：{activeGoal.title}</span><span className="ml-auto shrink-0">{activeGoal.target_date.replaceAll("-", "/")}</span></Link> : null}
             </div>
@@ -178,38 +163,19 @@ export default async function MyPage() {
         </div>
       </section>
 
-      <section className="mt-7">
-        <div><p className="text-[10px] font-black tracking-[.22em] text-emerald-300">QUICK ACCESS</p><h2 className="mt-1 text-xl font-black tracking-[-.03em]">よく使う機能</h2></div>
-        <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
-          <Link prefetch href="/mypage/my-calendar?week=1" className="group flex min-h-24 flex-col justify-between rounded-2xl border border-emerald-400/20 bg-emerald-400/[.06] p-4 transition hover:border-emerald-400/45"><CalendarPlus size={20} className="text-emerald-300"/><span><strong className="block text-sm">予定を作る</strong><span className="mt-1 block text-[10px] text-white/35">1週間をまとめて登録</span></span></Link>
-          <Link prefetch data-tutorial="performance" href="/performance" className="group flex min-h-24 flex-col justify-between rounded-2xl border border-orange-400/20 bg-orange-400/[.05] p-4 transition hover:border-orange-400/45"><Plus size={20} className="text-orange-300"/><span><strong className="block text-sm">記録する</strong><span className="mt-1 block text-[10px] text-white/35">練習・大会・CT</span></span></Link>
-          <Link prefetch href="/mypage/personal" className="group flex min-h-24 flex-col justify-between rounded-2xl border border-white/10 bg-white/[.025] p-4 transition hover:border-white/25"><UserRoundCheck size={20} className="text-orange-300"/><span><strong className="block text-sm">パーソナル</strong><span className="mt-1 block text-[10px] text-white/35">空き枠を予約</span></span></Link>
-          <Link prefetch data-tutorial="ai-navigator" href="/mypage/ai-navigator" className="group flex min-h-24 flex-col justify-between rounded-2xl border border-white/10 bg-white/[.025] p-4 transition hover:border-white/25"><MessageCircle size={20} className="text-sky-300"/><span><strong className="block text-sm">相談する</strong><span className="mt-1 block text-[10px] text-white/35">AIナビゲーター</span></span></Link>
-        </div>
+      <section className="mt-6 grid gap-3 sm:grid-cols-3" aria-label="予定の管理">
+        <Link href="/mypage/my-calendar?week=1" className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-5"><CalendarPlus className="text-emerald-300"/><strong className="mt-3 block">1週間の予定を作る</strong><p className="mt-2 text-xs text-white/50">学校練習・自主練習・休養をまとめて登録</p></Link>
+        <Link data-tutorial="all-schedules" href="/mypage/schedules" className="rounded-2xl border border-orange-400/30 bg-orange-400/10 p-5"><CalendarDays className="text-orange-300"/><strong className="mt-3 block">クラブ予定・出欠</strong><p className="mt-2 text-xs text-white/50">セッションを選んで参加を回答</p></Link>
+        <Link href="/mypage/personal" className="rounded-2xl border border-white/15 p-5"><UserRoundCheck className="text-orange-300"/><strong className="mt-3 block">パーソナル予約</strong><p className="mt-2 text-xs text-white/50">空き枠を確認して申し込む</p></Link>
       </section>
-
-      <section className="mt-7">
-        <div><p className="text-[10px] font-black tracking-[.22em] text-orange-400">THIS MONTH</p><h2 className="mt-1 text-xl font-black tracking-[-.03em]">今月の成長</h2></div>
-        <div className="mt-3"><Suspense fallback={<MypageStatsSkeleton/>}><MypageStats dataPromise={deferredDataPromise}/></Suspense></div>
-        <Link href="/mypage/control-tests" className="group mt-2 flex items-center gap-3 rounded-2xl border border-orange-400/20 bg-orange-400/[.05] p-4 transition hover:border-orange-400/45">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-400/10 text-orange-300"><Activity size={19}/></span>
-          <span className="min-w-0 flex-1"><strong className="block text-sm">VAULTEX SCANを見る</strong><span className="mt-1 block text-[10px] text-white/35">身体能力・特性とこれまでの測定結果</span></span>
-          <ChevronRight size={17} className="shrink-0 text-orange-300/60 transition group-hover:translate-x-1"/>
-        </Link>
-      </section>
-
+      <p className="mt-4 text-sm leading-6 text-white/50">練習後の記録・動画は、マイカレンダーで日付を選んで確認・追加できます。</p>
       <section id="news" className="mt-7 scroll-mt-24">
         <div className="mb-3"><p className="text-[10px] font-black tracking-[.22em] text-orange-400">NEWS</p><h2 className="mt-1 text-xl font-black tracking-[-.03em]">お知らせ</h2></div>
         <Suspense fallback={<div className="h-20 animate-pulse rounded-2xl bg-white/[.04]"/>}><LatestNewsSummary dataPromise={deferredDataPromise}/></Suspense>
       </section>
 
-      <section className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-5">
-        <Link data-tutorial="all-schedules" href="/mypage/schedules" className="flex items-center gap-2 rounded-xl border border-white/[.07] px-3 py-3 text-xs font-black text-white/60 transition hover:text-white"><CalendarDays size={15} className="text-sky-300"/>全体予定</Link>
-        <Link data-tutorial="video-action" href="/mypage/video-feedback" className="flex items-center gap-2 rounded-xl border border-white/[.07] px-3 py-3 text-xs font-black text-white/60 transition hover:text-white"><Video size={15} className="text-sky-300"/>動画を送る</Link>
-        <Link href="/mypage/videos" className="flex items-center gap-2 rounded-xl border border-sky-400/20 bg-sky-400/[.04] px-3 py-3 text-xs font-black text-sky-200 transition hover:border-sky-300/40"><Video size={15}/>マイ動画</Link>
-        <Link href="/mypage/menu?settings=1#settings" className="flex items-center gap-2 rounded-xl border border-white/[.07] px-3 py-3 text-xs font-black text-white/60 transition hover:text-white"><Settings2 size={15} className="text-orange-300"/>LINE・設定</Link>
-        <Link href="/mypage/menu" className="flex items-center justify-between rounded-xl border border-white/[.07] px-3 py-3 text-xs font-black text-white/60 transition hover:text-white"><span>その他</span><ChevronRight size={14}/></Link>
-      </section>
+      <Link data-tutorial="settings" href="/mypage/menu" className="mt-6 flex items-center justify-between rounded-xl border border-white/10 p-4"><span>その他の機能・設定<span className="mt-1 block text-xs text-white/45">記録・動画・成長レポート・ランキング・相談</span></span><ChevronRight size={18}/></Link>
+      <MypageTutorial autoOpen={(player.mypage_tutorial_version ?? 0) < MYPAGE_TUTORIAL_VERSION} userId={userId} />
 
       <div
         style={{
