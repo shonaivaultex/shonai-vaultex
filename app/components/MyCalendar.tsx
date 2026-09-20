@@ -1,4 +1,5 @@
 "use client";
+import ScheduleStageAction from "./ScheduleStageAction";
 
 import { FormEvent, useMemo, useRef, useState } from "react";
 import {
@@ -1646,6 +1647,7 @@ function DailyItemCard({
           </button>
         )}
       </div>
+      {!record && !scan ? <ScheduleStageAction start={item.schedule?.starts_at ?? item.entry?.starts_at ?? `${item.date}T00:00:00+09:00`} end={item.schedule?.ends_at ?? item.entry?.ends_at} allDay={item.schedule?.all_day ?? item.entry?.all_day ?? true} rest={item.entry?.entry_type === "rest"} active={!item.schedule || item.active} recorded={Boolean(item.entry?.journal || item.entry?.record_value || item.entry?.performance_record_id || videoPath)} onOpen={onEdit} /> : null}
       {record ? (
         <div className="mt-3">
           <p className="text-lg font-black text-emerald-300">

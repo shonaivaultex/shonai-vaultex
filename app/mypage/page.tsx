@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ScheduleStageAction from "@/app/components/ScheduleStageAction";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import { ArrowUpRight, CalendarDays, CalendarPlus, Check, ChevronRight, ClipboardPenLine, NotebookPen, Settings2, Target, UserRoundCheck } from "lucide-react";
@@ -144,7 +145,7 @@ export default async function MyPage() {
                 </Link>
                 <ChevronRight size={18} className="text-white/25"/>
               </div>
-              <div className="mt-4 rounded-xl border border-white/10 p-4"><h3 className="font-bold">今日の予定</h3>{weekMyCalendarSchedule[0]?.items.length ? <ul className="mt-2 space-y-2">{weekMyCalendarSchedule[0].items.map((item, index) => <li key={index}><Link href={`/mypage/my-calendar?date=${todayKey}`} className="block py-2 text-sm text-emerald-200">{item.title} →</Link></li>)}</ul> : <p className="mt-2 text-sm text-white/50">今日は登録された予定がありません。</p>}</div>
+              <div className="mt-4 rounded-xl border border-white/10 p-4"><h3 className="font-bold">今日の予定</h3>{weekMyCalendarSchedule[0]?.items.length ? <ul className="mt-2 space-y-2">{weekMyCalendarSchedule[0].items.map((item, index) => <li key={index}><Link href={`/mypage/my-calendar?date=${todayKey}`} className="block py-2 text-sm text-emerald-200">{item.title}</Link><ScheduleStageAction start={item.starts_at} end={item.ends_at} allDay={item.all_day} rest={item.schedule_type === "rest"} href={`/mypage/my-calendar?date=${todayKey}`} /></li>)}</ul> : <p className="mt-2 text-sm text-white/50">今日は登録された予定がありません。</p>}</div>
               <Link href="/mypage/my-calendar" className="group mt-4 block rounded-2xl border border-emerald-400/25 bg-black/20 p-3 transition hover:border-emerald-300/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70">
                 <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-black tracking-[.15em] text-white/35">これから1週間</span><span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-300">{weekMyCalendarItems.length}件<ChevronRight size={14} className="transition group-hover:translate-x-1"/></span></div>
                 <div className="mt-3 grid grid-cols-7 gap-1">
