@@ -5,55 +5,73 @@ import {
   Target,
 } from "lucide-react";
 
-// International, national, then regional achievements; national senior category first.
+// Competition history in chronological order; events from the same meet share a card.
 const achievements = [
   {
-    "year": "2015",
-    "title": "第9回世界ユース陸上競技選手権（U18）",
-    "result": "男子走幅跳 日本代表・決勝進出（12位）",
-    "record": "予選 7m40（+1.0）",
-    "note": "カリ（コロンビア）開催",
-    "url": "https://www.jaaf.or.jp/taikai/1311/result.pdf"
-  },
-  {
-    "year": "2016",
-    "title": "日本学生陸上競技個人選手権",
-    "result": "男子走幅跳 4位",
-    "record": "7m60（+1.4）",
-    "note": "筑波大学",
-    "url": "https://www.iuau.jp/ev2016/16kojin/16kojin_results.pdf#page=23"
-  },
-  {
-    "year": "2014",
     "title": "全国高等学校総合体育大会（山梨インターハイ）",
-    "result": "男子走幅跳 4位",
-    "record": "7m53（+1.9）",
-    "note": "酒田西高校",
-    "url": "https://www.jaaf.or.jp/taikai/1196/result.pdf"
+    "date": "2014年",
+    "results": [
+      {
+        "result": "男子走幅跳 4位",
+        "record": "7m53（+1.9）",
+        "note": "酒田西高校",
+        "url": "https://www.jaaf.or.jp/taikai/1196/result.pdf"
+      }
+    ]
   },
   {
-    "year": "2019",
+    "title": "第70回東北高等学校陸上競技大会",
+    "date": "2015年6月",
+    "results": [
+      {
+        "result": "男子走幅跳 優勝",
+        "record": "7m50（+1.5）",
+        "note": "大会新記録（当時）／酒田西高校",
+        "url": "https://gold.jaic.org/fukushima/kekka/2015/2015%20touhoku%20IH.pdf#page=47"
+      },
+      {
+        "result": "男子三段跳 準優勝",
+        "record": "14m51（+3.1・追い風参考）",
+        "note": "同大会の公認条件内最高記録：14m46（+1.0）",
+        "url": "https://gold.jaic.org/fukushima/kekka/2015/2015%20touhoku%20IH.pdf#page=48"
+      }
+    ]
+  },
+  {
+    "title": "第9回世界ユース陸上競技選手権（U18）",
+    "date": "2015年7月",
+    "results": [
+      {
+        "result": "男子走幅跳 日本代表・決勝進出",
+        "record": "予選 7m40（+1.0）",
+        "note": "カリ（コロンビア）開催",
+        "url": "https://www.jaaf.or.jp/taikai/1311/result.pdf"
+      }
+    ]
+  },
+  {
+    "title": "日本学生陸上競技個人選手権",
+    "date": "2016年",
+    "results": [
+      {
+        "result": "男子走幅跳 4位",
+        "record": "7m60（+1.4）",
+        "note": "筑波大学",
+        "url": "https://www.iuau.jp/ev2016/16kojin/16kojin_results.pdf#page=23"
+      }
+    ]
+  },
+  {
     "title": "関東学生陸上競技対校選手権（関東インカレ）",
-    "result": "男子1部走幅跳 8位",
-    "record": "7m68（+4.0・追い風参考）",
-    "note": "筑波大学",
-    "url": "https://tsukubathletics.com/archives/11989"
-  },
-  {
-    "year": "2015",
-    "title": "第70回東北高等学校陸上競技大会",
-    "result": "男子走幅跳 優勝",
-    "record": "7m50（+1.5）",
-    "note": "大会新記録（当時）／酒田西高校",
-    "url": "https://gold.jaic.org/fukushima/kekka/2015/2015%20touhoku%20IH.pdf#page=47"
-  },
-  {
-    "year": "2015",
-    "title": "第70回東北高等学校陸上競技大会",
-    "result": "男子三段跳 準優勝",
-    "record": "14m51（+3.1・追い風参考）",
-    "note": "同大会の公認条件内最高記録：14m46（+1.0）",
-    "url": "https://gold.jaic.org/fukushima/kekka/2015/2015%20touhoku%20IH.pdf#page=48"
+    "date": "2019年",
+    "results": [
+      {
+        "result": "男子1部走幅跳 8位",
+        "record": "7m68（+4.0・追い風参考）",
+        "note": "筑波大学",
+        "url": "https://tsukubathletics.com/archives/11989"
+      }
+    ]
   }
 ];
 
@@ -115,6 +133,10 @@ export default function CoachPage() {
 
       <p className="mt-3 text-lg font-bold text-orange-500">
         SHONAI VAULTEX Head Coach
+      </p>
+
+      <p className="mt-4 text-sm font-semibold leading-7 text-white/80">
+        世界ユース日本代表／走幅跳 自己ベスト7m81
       </p>
 
       <p className="mt-8 leading-8 text-white/70">
@@ -197,77 +219,62 @@ export default function CoachPage() {
       選手として積み重ねた経験を、
       次世代のアスリート育成へ。
     </p>
-    <div className="mt-16 grid gap-8 lg:grid-cols-2">
+    <div className="mt-10 space-y-10">
 
-  {/* PERSONAL BEST */}
-  <div className="group rounded-3xl border border-white/10 bg-white/[0.03] p-10 transition-all duration-500 hover:-translate-y-2 hover:border-orange-500/40 hover:shadow-2xl hover:shadow-orange-500/10">
-
-    <p className="text-sm font-black tracking-[0.3em] text-orange-500">
-      PERSONAL BEST
-    </p>
-
-    <div className="mt-12">
-
-      <p className="text-7xl font-black leading-none tracking-[-0.08em]">
-        7.81
+  {/* Compact personal best strip above the full-width achievements. */}
+  <div className="grid items-center gap-6 rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8 lg:grid-cols-[1fr_2fr]">
+    <div>
+      <p className="text-xs font-black tracking-[0.25em] text-orange-500">PERSONAL BEST</p>
+      <p className="mt-4 text-5xl font-black tracking-tight">
+        7.81<span className="ml-2 text-xl text-white/60">m</span>
       </p>
-
-      <p className="mt-3 text-lg font-semibold text-white/60">
-        LONG JUMP
-      </p>
-
+      <p className="mt-2 text-sm text-white/60">走幅跳</p>
     </div>
-
-    <div className="mt-12 space-y-4 border-t border-white/10 pt-8">
-
-      <div className="flex justify-between">
-        <span className="text-white/50">Triple Jump</span>
-        <span className="font-bold">14.76m</span>
-      </div>
-
-      <div className="flex justify-between">
-        <span className="text-white/50">100m</span>
-        <span className="font-bold">10.81</span>
-      </div>
-
-      <div className="flex justify-between">
-        <span className="text-white/50">200m</span>
-        <span className="font-bold">21.70</span>
-      </div>
-
-      <div className="flex justify-between">
-        <span className="text-white/50">javelin throw</span>
-        <span className="font-bold">50.13m</span>
-      </div>
-
-    </div>
-
+    <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-white/10 pt-6 lg:grid-cols-4 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+      {[
+        ["三段跳", "14.76m"],
+        ["100m", "10.81"],
+        ["200m", "21.70"],
+        ["やり投", "50.13m"],
+      ].map(([event, record]) => (
+        <div key={event}>
+          <dt className="text-sm text-white/60">{event}</dt>
+          <dd className="mt-2 text-xl font-bold tabular-nums">{record}</dd>
+        </div>
+      ))}
+    </dl>
   </div>
 
-  <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10">
+  <div>
 
   <p className="text-sm font-black tracking-[0.3em] text-orange-500">
     MAJOR ACHIEVEMENTS
   </p>
 
-  <h3 className="mt-4 text-2xl font-black">主な競技実績</h3>
-  <ol className="mt-8 divide-y divide-white/10">
+  <h3 className="mt-4 text-2xl font-black">競技歴</h3>
+  <ol className="mt-6 grid gap-4 lg:grid-cols-2">
     {achievements.map((achievement) => (
-      <li key={achievement.title + achievement.result} className="py-6 first:pt-0">
-        <p className="text-sm font-bold text-orange-500">{achievement.year}年</p>
+      <li key={achievement.date + achievement.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+        <p className="text-sm font-bold text-orange-500">{achievement.date}</p>
         <h4 className="mt-2 font-bold leading-relaxed">{achievement.title}</h4>
-        <p className="mt-2 text-lg font-bold">{achievement.result}</p>
-        <p className="mt-2 text-white/80">{achievement.record}</p>
-        <p className="mt-2 text-sm leading-relaxed text-white/60">{achievement.note}</p>
+        <div className="mt-3 divide-y divide-white/10">
+        {achievement.results.map((entry) => (
+          <div key={entry.result} className="py-3 first:pt-0 last:pb-0">
+        <p className="text-lg font-bold">{entry.result}</p>
+        <p className="mt-2 text-white/80">{entry.record}</p>
+        <p className="mt-2 text-sm leading-relaxed text-white/60">{entry.note}</p>
         <a
-          href={achievement.url}
+          href={entry.url}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-3 inline-block text-sm text-orange-400 underline underline-offset-4 hover:text-orange-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4"
-          aria-label={achievement.year + "年 " + achievement.title + " " + achievement.result + "の出典（別タブ）"}
+          aria-label={achievement.date + " " + achievement.title + " " + entry.result + "の出典（別タブ）"}
         >
           出典を見る
         </a>
+          </div>
+        ))}
+        </div>
       </li>
     ))}
   </ol>
