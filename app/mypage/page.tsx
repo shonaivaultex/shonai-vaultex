@@ -115,7 +115,7 @@ export default async function MyPage() {
     <main className="mx-auto my-16 max-w-[1480px] px-4 pb-16 sm:px-7 lg:my-20 xl:px-10">
       <div className="flex items-end justify-between gap-4">
         <div><p className="text-[10px] font-black tracking-[.28em] text-orange-400">MY SCHEDULE</p><h1 className="mt-1 text-3xl font-black tracking-[-.04em] lg:text-5xl">予定と出欠</h1></div>
-        <span className="hidden text-xs font-bold tracking-[.16em] text-white/25 sm:block">SHONAI VAULTEX</span>
+        <Link href="/mypage/menu?settings=1#settings" className="max-w-[45%] text-right text-sm text-white/60 hover:text-white"><span className="block break-words">{player.name}さん</span><span className="mt-1 inline-flex items-center gap-1 text-xs"><Settings2 size={13}/>プロフィール・設定</span></Link>
       </div>
 
       <section data-tutorial="mobile-home" className="mt-5 rounded-[24px] border border-orange-400/25 bg-[linear-gradient(135deg,rgba(249,115,22,.11),rgba(18,18,18,.96)_55%)] p-4 sm:p-5">
@@ -129,13 +129,7 @@ export default async function MyPage() {
       <section className="relative mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_85%_10%,rgba(249,115,22,.16),transparent_28%),linear-gradient(145deg,#151515,#0d0d0d_65%)] text-white shadow-[0_28px_90px_rgba(0,0,0,.28)]">
         <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-orange-400 via-orange-600 to-transparent" />
         <div className="flex flex-col-reverse">
-          <div className="relative border-t border-white/10 p-4">
-            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-orange-500/35 bg-orange-500/10 px-3 py-1 text-[10px] font-black tracking-[.16em] text-orange-300">{player.program_class ?? "CLASS未設定"}</span><span className="text-xs text-white/35">{player.grade ?? "学年未設定"}</span></div>
-            <h2 className="mt-2 text-lg font-black">{player.name}</h2>
-            <p className="mt-2 text-sm font-bold text-white/40">{player.event ?? "種目未設定"}</p>
-            {coachRole ? <div className="mt-7 grid gap-2 sm:grid-cols-2"><Link href="/coach/dashboard" prefetch className="inline-flex items-center justify-between gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-300 transition hover:bg-emerald-400/15">COACH DASHBOARD <ArrowUpRight size={15}/></Link><Link href="/coach/performance-session" prefetch className="inline-flex items-center justify-between gap-2 rounded-full border border-sky-400/30 bg-sky-400/[.08] px-4 py-2 text-xs font-black text-sky-300 transition hover:bg-sky-400/15">現場で一括入力 <ClipboardPenLine size={15}/></Link></div> : null}
-            <Link href="/mypage/menu?settings=1#settings" className="mt-7 inline-flex items-center gap-2 text-xs font-black text-white/35 transition hover:text-white/70"><Settings2 size={14}/>プロフィール・設定<ChevronRight size={14}/></Link>
-          </div>
+            {coachRole ? <div className="border-t border-white/10 p-4 grid gap-2 sm:grid-cols-2"><Link href="/coach/dashboard" prefetch className="inline-flex items-center justify-between gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-300 transition hover:bg-emerald-400/15">COACH DASHBOARD <ArrowUpRight size={15}/></Link><Link href="/coach/performance-session" prefetch className="inline-flex items-center justify-between gap-2 rounded-full border border-sky-400/30 bg-sky-400/[.08] px-4 py-2 text-xs font-black text-sky-300 transition hover:bg-sky-400/15">現場で一括入力 <ClipboardPenLine size={15}/></Link></div> : null}
           <div className="grid grid-cols-2 border-t border-white/10 lg:border-l lg:border-t-0">
             <div data-tutorial="schedule-action" className="col-span-2 border-b border-white/10 p-5 sm:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3">
