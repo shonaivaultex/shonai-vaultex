@@ -3,10 +3,59 @@ import {
   Dumbbell,
   Users,
   Target,
-  Trophy,
-  Medal,
-  Award,
 } from "lucide-react";
+
+// International, national, then regional achievements; national senior category first.
+const achievements = [
+  {
+    "year": "2015",
+    "title": "第9回世界ユース陸上競技選手権（U18）",
+    "result": "男子走幅跳 日本代表・決勝進出（12位）",
+    "record": "予選 7m40（+1.0）",
+    "note": "カリ（コロンビア）開催",
+    "url": "https://www.jaaf.or.jp/taikai/1311/result.pdf"
+  },
+  {
+    "year": "2016",
+    "title": "日本学生陸上競技個人選手権",
+    "result": "男子走幅跳 4位",
+    "record": "7m60（+1.4）",
+    "note": "筑波大学",
+    "url": "https://www.iuau.jp/ev2016/16kojin/16kojin_results.pdf#page=23"
+  },
+  {
+    "year": "2014",
+    "title": "全国高等学校総合体育大会（山梨インターハイ）",
+    "result": "男子走幅跳 4位",
+    "record": "7m53（+1.9）",
+    "note": "酒田西高校",
+    "url": "https://www.jaaf.or.jp/taikai/1196/result.pdf"
+  },
+  {
+    "year": "2019",
+    "title": "関東学生陸上競技対校選手権（関東インカレ）",
+    "result": "男子1部走幅跳 8位",
+    "record": "7m68（+4.0・追い風参考）",
+    "note": "筑波大学",
+    "url": "https://tsukubathletics.com/archives/11989"
+  },
+  {
+    "year": "2015",
+    "title": "第70回東北高等学校陸上競技大会",
+    "result": "男子走幅跳 優勝",
+    "record": "7m50（+1.5）",
+    "note": "大会新記録（当時）／酒田西高校",
+    "url": "https://gold.jaic.org/fukushima/kekka/2015/2015%20touhoku%20IH.pdf#page=47"
+  },
+  {
+    "year": "2015",
+    "title": "第70回東北高等学校陸上競技大会",
+    "result": "男子三段跳 準優勝",
+    "record": "14m51（+3.1・追い風参考）",
+    "note": "同大会の公認条件内最高記録：14m46（+1.0）",
+    "url": "https://gold.jaic.org/fukushima/kekka/2015/2015%20touhoku%20IH.pdf#page=48"
+  }
+];
 
 export default function CoachPage() {
   return (
@@ -201,112 +250,30 @@ export default function CoachPage() {
     MAJOR ACHIEVEMENTS
   </p>
 
-  <div className="mt-10 space-y-8">
-
-    <div className="flex items-start gap-4">
-      <Trophy
-        size={26}
-        className="mt-1 text-orange-500"
-      />
-
-      <div>
-        <h3 className="font-bold">
-          東北大会
-        </h3>
-
-        <p className="text-white/60">
-          走幅跳 優勝
-        </p>
-      </div>
-    </div>
-
-    <div className="flex items-start gap-4">
-      <Medal
-        size={26}
-        className="mt-1 text-orange-500"
-      />
-
-      <div>
-        <h3 className="font-bold">
-          東北大会
-        </h3>
-
-        <p className="text-white/60">
-          三段跳 準優勝
-        </p>
-      </div>
-    </div>
-
-    <div className="flex items-start gap-4">
-      <Award
-        size={26}
-        className="mt-1 text-orange-500"
-      />
-
-      <div>
-        <h3 className="font-bold">
-          インターハイ
-        </h3>
-
-        <p className="text-white/60">
-          4位
-        </p>
-      </div>
-    </div>
-
-    <div className="flex items-start gap-4">
-      <Award
-        size={26}
-        className="mt-1 text-orange-500"
-      />
-
-      <div>
-        <h3 className="font-bold">
-          U18世界選手権
-        </h3>
-
-        <p className="text-white/60">
-          日本代表・出場
-        </p>
-      </div>
-    </div>
-
-    <div className="flex items-start gap-4">
-      <Award
-        size={26}
-        className="mt-1 text-orange-500"
-      />
-
-      <div>
-        <h3 className="font-bold">
-          学生個人選手権
-        </h3>
-
-        <p className="text-white/60">
-          4位
-        </p>
-      </div>
-    </div>
-
-    <div className="flex items-start gap-4">
-      <Award
-        size={26}
-        className="mt-1 text-orange-500"
-      />
-
-      <div>
-        <h3 className="font-bold">
-          関東インカレ
-        </h3>
-
-        <p className="text-white/60">
-          8位
-        </p>
-      </div>
-    </div>
-
-  </div>
-
+  <h3 className="mt-4 text-2xl font-black">主な競技実績</h3>
+  <ol className="mt-8 divide-y divide-white/10">
+    {achievements.map((achievement) => (
+      <li key={achievement.title + achievement.result} className="py-6 first:pt-0">
+        <p className="text-sm font-bold text-orange-500">{achievement.year}年</p>
+        <h4 className="mt-2 font-bold leading-relaxed">{achievement.title}</h4>
+        <p className="mt-2 text-lg font-bold">{achievement.result}</p>
+        <p className="mt-2 text-white/80">{achievement.record}</p>
+        <p className="mt-2 text-sm leading-relaxed text-white/60">{achievement.note}</p>
+        <a
+          href={achievement.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-block text-sm text-orange-400 underline underline-offset-4 hover:text-orange-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4"
+          aria-label={achievement.year + "年 " + achievement.title + " " + achievement.result + "の出典（別タブ）"}
+        >
+          出典を見る
+        </a>
+      </li>
+    ))}
+  </ol>
+  <p className="mt-4 text-xs leading-6 text-white/60">
+    括弧内は風速（m/s）。追い風参考記録は大会順位の記録として掲載しています。
+  </p>
 </div>
 </div>
 
