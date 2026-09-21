@@ -3,7 +3,7 @@ import ScheduleStageAction from "./ScheduleStageAction";
 import ScheduleAttendance from "./ScheduleAttendance";
 import { followingWeek, newPlans } from "@/lib/calendar-plan";
 
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { Fragment, FormEvent, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
   CalendarPlus,
@@ -333,6 +333,7 @@ export default function MyCalendar({
   });
   const [restSaving, setRestSaving] = useState(false);
   const dailyLogRef = useRef<HTMLElement>(null);
+  const [dayPanelMode, setDayPanelMode] = useState<"mobile" | "desktop" | null>(null);
   const [mobileCalendarView, setMobileCalendarView] = useState<
     "week" | "month"
   >("week");
@@ -487,6 +488,7 @@ export default function MyCalendar({
       ),
   );
   function startNew() {
+    setDayPanelMode(null);
     setEditing(null);
     setLinkedSchedule(null);
     setOpen(true);
@@ -527,17 +529,7 @@ export default function MyCalendar({
   }
   function startNewForDate(key: string) {
     setSelectedDate(key);
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia("(max-width: 1279px)").matches
-    ) {
-      window.requestAnimationFrame(() => {
-        dailyLogRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      });
-    }
+    setDayPanelMode(window.matchMedia("(min-width: 1024px)").matches ? "desktop" : "mobile");
   }
   function moveWeek(amount: number) {
     const next = new Date(
@@ -605,6 +597,7 @@ export default function MyCalendar({
     setSelectedDate(dateKey(next));
   }
   function editItem(item: DisplayItem) {
+    setDayPanelMode(null);
     setEditing(item.entry ?? null);
     setLinkedSchedule(item.schedule ?? null);
     setOpen(true);
@@ -738,9 +731,234 @@ export default function MyCalendar({
           86400000,
       )
     : null;
+  const dayPanel = (
+<section
+        ref={dailyLogRef}
+        id="calendar-day-editor"
+        aria-label="選択した日の予定を編集"
+        className="scroll-mt-24 rounded-[26px] border border-orange-400/40 bg-[#111] p-5 text-white sm:p-6"
+      >
+        <button type="button" onClick={() => setDayPanelMode(null)} className="float-right rounded-xl border border-white/20 px-4 py-2 text-sm font-bold" aria-label="日付の編集を閉じる">閉じる</button>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black tracking-[.18em] text-orange-400">
+              この日の予定を編集
+            </p>
+            <h2 className="mt-1 text-xl font-black">
+              {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(
+                "ja-JP",
+                { month: "long", day: "numeric", weekday: "long" },
+              )}
+            </h2>
+          </div>
+        </div>
+        <div className="mt-4 rounded-2xl border border-orange-400/20 bg-orange-400/5 p-3">
+          <p className="text-sm font-bold">種類を選ぶだけで予定を追加</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {(["school_practice", "personal_training", "rest"] as const).map((type) => <button key={type} type="button" disabled={quickSaving || weekPlanSaving} onClick={() => quickPlan(type)} className="min-h-11 rounded-xl border border-white/15 px-3 py-2 text-sm font-bold disabled:opacity-40">＋ {entryTypes[type]}</button>)}
+          </div>
+          <p className="mt-2 text-xs text-white/55">時間・予定名なしで保存します。詳細は追加後に編集できます。</p>
+        </div>
+        {<div className="mt-4 space-y-3">
+          <h3 className="text-sm font-bold">この日のクラブ予定・出欠</h3>
+          {(schedulesByDate.get(selectedDate) ?? []).map((schedule) => <article key={schedule.id} className="rounded-xl border border-white/10 p-3">
+            <h4 className="font-bold">{schedule.title}</h4>
+            <p className="mt-1 text-xs text-white/60">{schedule.all_day ? "終日" : timeValue(schedule.starts_at)}{schedule.location ? ` ・ ${schedule.location}` : ""}</p>
+            <ScheduleAttendance scheduleId={schedule.id} scheduleType={schedule.schedule_type} onSaved={(status) => setAttendanceOverrides((current) => ({ ...current, [schedule.id]: status === "attending" }))}/>
+          </article>)}
+          {!(schedulesByDate.get(selectedDate) ?? []).length ? <p className="text-sm text-white/55">この日のクラブ予定はありません。</p> : null}
+        </div>}
+        <p role="status" className="mt-3 text-sm text-emerald-200">{quickSaving ? "保存中…" : planNotice}</p>
+        <details className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-3">
+          <summary className="cursor-pointer text-sm font-bold text-white/70">日誌・記録・詳細な予定を追加</summary>
+          <p className="mb-2 text-[10px] font-bold text-white/35">
+            この日について行うことを選んでください
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            <button
+              type="button"
+              onClick={() => void toggleRestDay()}
+              disabled={restSaving}
+              aria-pressed={Boolean(selectedRestEntry)}
+              className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-black transition disabled:opacity-50 ${selectedRestEntry ? "border-sky-300 bg-sky-300 text-black" : "border-white/15 bg-white/[.03] text-white/60 hover:border-sky-300/50 hover:text-sky-200"}`}
+            >
+              <span
+                className={`grid h-5 w-5 place-items-center rounded-md border ${selectedRestEntry ? "border-black/20 bg-black/10" : "border-white/25"}`}
+              >
+                {selectedRestEntry ? <CircleCheck size={15} /> : null}
+              </span>
+              {restSaving
+                ? "更新中"
+                : selectedRestEntry
+                  ? "休養日を解除"
+                  : "休養日にする"}
+            </button>
+            <Link
+              href={`/performance?kind=unofficial-athletics&date=${selectedDate}&from=calendar`}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-black text-black"
+            >
+              <Plus size={15} />
+              練習記録を追加
+            </Link>
+            <button
+              type="button"
+              onClick={() => { setDayPanelMode(null); setQuickPeriodOpen(true); }}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-sky-500/35 px-3 py-2 text-xs font-black text-sky-300"
+              aria-label="この日から期間を設定"
+            >
+              <CalendarDays size={18} />
+              期間を設定
+            </button>
+            <button
+              onClick={startNew}
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-orange-500/35 px-3 py-2 text-xs font-black text-orange-300"
+            >
+              <Plus size={15} />
+              予定・日誌を追加
+            </button>
+          </div>
+        </details>
+        {(() => {
+          const period = periodForDate(selectedDate);
+          if (!period) return null;
+          const theme = schedulePhase(period.phase);
+          return (
+            <div className={`mt-4 rounded-xl border px-4 py-3 ${theme.badge}`}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <strong className="text-sm">
+                    {period.label || theme.label}
+                  </strong>
+                  <p className="mt-1 text-[10px] opacity-65">
+                    {period.starts_on.replaceAll("-", "/")}〜
+                    {period.ends_on.replaceAll("-", "/")}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Link
+                    href={`/mypage/my-calendar?period=${period.id}#period-management`}
+                    className="rounded-lg border border-current/30 p-2"
+                    aria-label="期間カラーを編集"
+                  >
+                    <Pencil size={14} />
+                  </Link>
+                  <button
+                    onClick={() => void removePeriod(period)}
+                    className="rounded-lg border border-red-400/30 p-2 text-red-300"
+                    aria-label="期間カラーを削除"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+        {selectedGoals.length ? (
+          <div className="mt-5 space-y-3">
+            {selectedGoals.map((calendarGoal) => (
+              <article
+                key={calendarGoal.id}
+                className="rounded-2xl border border-orange-500/30 bg-orange-500/[.07] p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[9px] font-black tracking-[.18em] text-orange-300">
+                      {calendarGoal.status === "active"
+                        ? "CURRENT TARGET"
+                        : "TARGET REVIEW"}
+                    </p>
+                    <h3 className="mt-1 text-lg font-black">
+                      {calendarGoal.title}
+                    </h3>
+                    <p className="mt-1 text-xs text-white/45">
+                      {calendarGoal.event_name
+                        ? `${calendarGoal.event_name} ・ `
+                        : ""}
+                      {calendarGoal.target_value
+                        ? `目標 ${calendarGoal.target_value}${calendarGoal.target_unit ?? ""}`
+                        : "記録目標なし"}
+                    </p>
+                  </div>
+                  <Flag
+                    size={18}
+                    className="shrink-0 fill-orange-400 text-orange-400"
+                  />
+                </div>
+                {calendarGoal.status !== "active" ? (
+                  <div className="mt-4 space-y-3 border-t border-orange-500/15 pt-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-orange-500/30 px-2.5 py-1 text-[10px] font-black text-orange-200">
+                        {goalOutcomeLabels[calendarGoal.outcome ?? ""] ??
+                          "振り返り済み"}
+                      </span>
+                      {calendarGoal.result_value != null ? (
+                        <span className="text-sm font-black text-white">
+                          実際の記録 {calendarGoal.result_value}
+                          {calendarGoal.result_unit ?? ""}
+                        </span>
+                      ) : null}
+                    </div>
+                    {calendarGoal.reflection ? (
+                      <div>
+                        <p className="text-[10px] font-black tracking-[.12em] text-white/35">
+                          当時の振り返り
+                        </p>
+                        <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-white/75">
+                          {calendarGoal.reflection}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-white/35">
+                        振り返りの文章はありません
+                      </p>
+                    )}
+                    {calendarGoal.next_action ? (
+                      <p className="text-xs font-bold text-orange-200/80">
+                        次の行動：
+                        {goalNextActionLabels[calendarGoal.next_action] ??
+                          calendarGoal.next_action}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-xs text-orange-200/70">
+                    この日に向けて取り組んでいる目標です。
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
+        ) : null}
+        {selectedItems.length ? (
+          <div className="mt-5 space-y-3">
+            {selectedItems.map((item) => (
+              <DailyItemCard
+                key={item.key}
+                item={item}
+                onEdit={() => editItem(item)}
+                onRemove={remove}
+                onRemovePerformance={removePerformance}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-8 rounded-2xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-white/35">
+            <p>この日の予定・練習記録はありません</p>
+            <Link
+              href={`/performance?kind=unofficial-athletics&date=${selectedDate}&from=calendar`}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 px-4 py-3 font-black text-emerald-300"
+            >
+              <Plus size={15} />
+              この日の練習記録を追加
+            </Link>
+          </div>
+        )}
+      </section>
+  );
   return (
-    <div className="mt-8 grid items-start gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,.75fr)]">
-      <section className="rounded-[26px] border border-orange-500/35 bg-[linear-gradient(135deg,rgba(249,115,22,.14),rgba(17,17,17,.96)_55%)] p-5 sm:p-6 xl:col-span-2">
+    <div className="mt-8 grid items-start gap-5">
+      <section className="rounded-[26px] border border-orange-500/35 bg-[linear-gradient(135deg,rgba(249,115,22,.14),rgba(17,17,17,.96)_55%)] p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex min-w-0 items-start gap-4">
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-orange-500 text-black">
@@ -1088,8 +1306,11 @@ export default function MyCalendar({
               );
               const goalDay = Boolean(calendarGoal);
               return (
+                <Fragment key={key}>
                 <button
-                  key={key}
+                  type="button"
+                  aria-expanded={dayPanelMode === "desktop" && key === selectedDate}
+                  aria-controls={key === selectedDate && dayPanelMode === "desktop" ? "calendar-day-editor" : undefined}
                   onClick={() => startNewForDate(key)}
                   aria-label={`${day.getMonth() + 1}月${day.getDate()}日の予定・練習記録を表示`}
                   className={`h-24 overflow-hidden rounded-lg border p-1.5 text-left transition hover:border-orange-400/70 ${goalDay ? "border-orange-400 bg-orange-500/15 ring-1 ring-orange-400" : key === selectedDate ? "border-white/40 ring-1 ring-white/25" : "border-white/[.07]"} ${theme.day} ${current ? "text-white" : "text-white/20"}`}
@@ -1130,6 +1351,8 @@ export default function MyCalendar({
                     ))}
                   </span>
                 </button>
+                {day.getDay() === 6 && dayPanelMode === "desktop" && selectedDate >= dateKey(new Date(day.getFullYear(), day.getMonth(), day.getDate() - 6)) && selectedDate <= key ? <div className="col-span-7 my-3">{dayPanel}</div> : null}
+                </Fragment>
               );
             })}
           </div>
@@ -1190,225 +1413,17 @@ export default function MyCalendar({
           </section>
         </div>
       ) : null}
-      <section
-        ref={dailyLogRef}
-        className="scroll-mt-20 rounded-[26px] border border-white/10 bg-[#111] p-5 sm:p-6 xl:sticky xl:top-20"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-black tracking-[.18em] text-orange-400">
-              この日の管理
-            </p>
-            <h2 className="mt-1 text-xl font-black">
-              {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(
-                "ja-JP",
-                { month: "long", day: "numeric", weekday: "long" },
-              )}
-            </h2>
-          </div>
-        </div>
-        <div className="mt-4 rounded-2xl border border-orange-400/20 bg-orange-400/5 p-3">
-          <p className="text-sm font-bold">種類を選ぶだけで予定を追加</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {(["school_practice", "personal_training", "rest"] as const).map((type) => <button key={type} type="button" disabled={quickSaving || weekPlanSaving} onClick={() => quickPlan(type)} className="min-h-11 rounded-xl border border-white/15 px-3 py-2 text-sm font-bold disabled:opacity-40">＋ {entryTypes[type]}</button>)}
-          </div>
-          <p className="mt-2 text-xs text-white/55">時間・予定名なしで保存します。詳細は追加後に編集できます。</p>
-        </div>
-        {showClubSchedules ? <div className="mt-4 space-y-3">
-          <h3 className="text-sm font-bold">この日のクラブ予定・出欠</h3>
-          {(schedulesByDate.get(selectedDate) ?? []).map((schedule) => <article key={schedule.id} className="rounded-xl border border-white/10 p-3">
-            <h4 className="font-bold">{schedule.title}</h4>
-            <p className="mt-1 text-xs text-white/60">{schedule.all_day ? "終日" : timeValue(schedule.starts_at)}{schedule.location ? ` ・ ${schedule.location}` : ""}</p>
-            <ScheduleAttendance scheduleId={schedule.id} scheduleType={schedule.schedule_type} onSaved={(status) => setAttendanceOverrides((current) => ({ ...current, [schedule.id]: status === "attending" }))}/>
-          </article>)}
-          {!(schedulesByDate.get(selectedDate) ?? []).length ? <p className="text-sm text-white/55">この日のクラブ予定はありません。</p> : null}
-        </div> : null}
-        <details className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-3">
-          <summary className="cursor-pointer text-sm font-bold text-white/70">日誌・記録・詳細な予定を追加</summary>
-          <p className="mb-2 text-[10px] font-bold text-white/35">
-            この日について行うことを選んでください
-          </p>
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-            <button
-              type="button"
-              onClick={() => void toggleRestDay()}
-              disabled={restSaving}
-              aria-pressed={Boolean(selectedRestEntry)}
-              className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-black transition disabled:opacity-50 ${selectedRestEntry ? "border-sky-300 bg-sky-300 text-black" : "border-white/15 bg-white/[.03] text-white/60 hover:border-sky-300/50 hover:text-sky-200"}`}
-            >
-              <span
-                className={`grid h-5 w-5 place-items-center rounded-md border ${selectedRestEntry ? "border-black/20 bg-black/10" : "border-white/25"}`}
-              >
-                {selectedRestEntry ? <CircleCheck size={15} /> : null}
-              </span>
-              {restSaving
-                ? "更新中"
-                : selectedRestEntry
-                  ? "休養日を解除"
-                  : "休養日にする"}
-            </button>
-            <Link
-              href={`/performance?kind=unofficial-athletics&date=${selectedDate}&from=calendar`}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-black text-black"
-            >
-              <Plus size={15} />
-              練習記録を追加
-            </Link>
-            <button
-              type="button"
-              onClick={() => setQuickPeriodOpen(true)}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-sky-500/35 px-3 py-2 text-xs font-black text-sky-300"
-              aria-label="この日から期間を設定"
-            >
-              <CalendarDays size={18} />
-              期間を設定
-            </button>
-            <button
-              onClick={startNew}
-              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-orange-500/35 px-3 py-2 text-xs font-black text-orange-300"
-            >
-              <Plus size={15} />
-              予定・日誌を追加
-            </button>
-          </div>
-        </details>
-        {(() => {
-          const period = periodForDate(selectedDate);
-          if (!period) return null;
-          const theme = schedulePhase(period.phase);
-          return (
-            <div className={`mt-4 rounded-xl border px-4 py-3 ${theme.badge}`}>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <strong className="text-sm">
-                    {period.label || theme.label}
-                  </strong>
-                  <p className="mt-1 text-[10px] opacity-65">
-                    {period.starts_on.replaceAll("-", "/")}〜
-                    {period.ends_on.replaceAll("-", "/")}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Link
-                    href={`/mypage/my-calendar?period=${period.id}#period-management`}
-                    className="rounded-lg border border-current/30 p-2"
-                    aria-label="期間カラーを編集"
-                  >
-                    <Pencil size={14} />
-                  </Link>
-                  <button
-                    onClick={() => void removePeriod(period)}
-                    className="rounded-lg border border-red-400/30 p-2 text-red-300"
-                    aria-label="期間カラーを削除"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-        {selectedGoals.length ? (
-          <div className="mt-5 space-y-3">
-            {selectedGoals.map((calendarGoal) => (
-              <article
-                key={calendarGoal.id}
-                className="rounded-2xl border border-orange-500/30 bg-orange-500/[.07] p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[9px] font-black tracking-[.18em] text-orange-300">
-                      {calendarGoal.status === "active"
-                        ? "CURRENT TARGET"
-                        : "TARGET REVIEW"}
-                    </p>
-                    <h3 className="mt-1 text-lg font-black">
-                      {calendarGoal.title}
-                    </h3>
-                    <p className="mt-1 text-xs text-white/45">
-                      {calendarGoal.event_name
-                        ? `${calendarGoal.event_name} ・ `
-                        : ""}
-                      {calendarGoal.target_value
-                        ? `目標 ${calendarGoal.target_value}${calendarGoal.target_unit ?? ""}`
-                        : "記録目標なし"}
-                    </p>
-                  </div>
-                  <Flag
-                    size={18}
-                    className="shrink-0 fill-orange-400 text-orange-400"
-                  />
-                </div>
-                {calendarGoal.status !== "active" ? (
-                  <div className="mt-4 space-y-3 border-t border-orange-500/15 pt-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-orange-500/30 px-2.5 py-1 text-[10px] font-black text-orange-200">
-                        {goalOutcomeLabels[calendarGoal.outcome ?? ""] ??
-                          "振り返り済み"}
-                      </span>
-                      {calendarGoal.result_value != null ? (
-                        <span className="text-sm font-black text-white">
-                          実際の記録 {calendarGoal.result_value}
-                          {calendarGoal.result_unit ?? ""}
-                        </span>
-                      ) : null}
-                    </div>
-                    {calendarGoal.reflection ? (
-                      <div>
-                        <p className="text-[10px] font-black tracking-[.12em] text-white/35">
-                          当時の振り返り
-                        </p>
-                        <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-white/75">
-                          {calendarGoal.reflection}
-                        </p>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-white/35">
-                        振り返りの文章はありません
-                      </p>
-                    )}
-                    {calendarGoal.next_action ? (
-                      <p className="text-xs font-bold text-orange-200/80">
-                        次の行動：
-                        {goalNextActionLabels[calendarGoal.next_action] ??
-                          calendarGoal.next_action}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-xs text-orange-200/70">
-                    この日に向けて取り組んでいる目標です。
-                  </p>
-                )}
-              </article>
-            ))}
-          </div>
-        ) : null}
-        {selectedItems.length ? (
-          <div className="mt-5 space-y-3">
-            {selectedItems.map((item) => (
-              <DailyItemCard
-                key={item.key}
-                item={item}
-                onEdit={() => editItem(item)}
-                onRemove={remove}
-                onRemovePerformance={removePerformance}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="mt-8 rounded-2xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-white/35">
-            <p>この日の予定・練習記録はありません</p>
-            <Link
-              href={`/performance?kind=unofficial-athletics&date=${selectedDate}&from=calendar`}
-              className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 px-4 py-3 font-black text-emerald-300"
-            >
-              <Plus size={15} />
-              この日の練習記録を追加
-            </Link>
-          </div>
-        )}
-      </section>
+      {dayPanelMode === "mobile" ? (
+        <dialog
+          ref={(node) => { if (node && !node.open) node.showModal(); }}
+          onCancel={() => setDayPanelMode(null)}
+          onClick={(event) => { if (event.target === event.currentTarget) setDayPanelMode(null); }}
+          aria-label="選択した日の予定を編集"
+          className="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[88dvh] w-full max-w-none overflow-y-auto rounded-t-[26px] bg-[#111] p-0 pb-[env(safe-area-inset-bottom)] backdrop:bg-black/65"
+        >
+          {dayPanel}
+        </dialog>
+      ) : null}
       {open && (
         <EntryEditor
           userId={userId}
