@@ -27,7 +27,7 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
 
   const { data: availableSchedules } = await supabase
     .from("schedules")
-    .select("id,title,details,location,starts_at,ends_at,all_day,schedule_type,audience,program_class")
+    .select("id,title,details,location,starts_at,ends_at,all_day,schedule_type,audience,program_class,is_personal_slot")
     .order("starts_at");
 
   const absentScheduleIds = new Set<number>();
@@ -38,10 +38,10 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
   const activeScheduleIds = new Set<number>();
   (attendance ?? []).forEach((row) => { if (row.status === "attending") activeScheduleIds.add(row.schedule_id); });
   (applications ?? []).forEach((row) => { if (row.status === "submitted") activeScheduleIds.add(row.schedule_id); });
+  (attendance ?? []).forEach((row) => { if (row.status !== "attending") activeScheduleIds.delete(row.schedule_id); });
   const savedScheduleIds = (entries ?? []).flatMap((row) => row.schedule_id && !absentScheduleIds.has(row.schedule_id) ? [row.schedule_id] : []);
   const retainedScheduleIds = new Set([...activeScheduleIds, ...savedScheduleIds]);
   const schedules = (availableSchedules ?? []).filter((row) => row.audience === "all" || row.program_class === playerProfile?.program_class || retainedScheduleIds.has(row.id));
-  schedules.filter((row) => row.schedule_type === "competition" && !absentScheduleIds.has(row.id)).forEach((row) => activeScheduleIds.add(row.id));
 
   const recordIds = (records ?? []).map((record) => record.id);
   const { data: feedbackRequests } = recordIds.length
@@ -61,8 +61,8 @@ export default async function MyCalendarPage({ searchParams }: { searchParams: P
       <Link href="/mypage" className="inline-flex items-center gap-2 text-xs font-bold tracking-[.14em] text-white/55"><ArrowLeft size={16}/>MY PAGE</Link>
       <header className="mt-8 border-l-2 border-orange-500 pl-5">
         <p className="text-xs font-black tracking-[.22em] text-orange-400">MY CALENDAR</p>
-        <h1 className="mt-2 text-4xl font-black tracking-[-.04em] sm:text-5xl">自分の競技生活を残す</h1>
-        <p className="mt-3 max-w-2xl leading-7 text-white/55">クラブ予定と、学校・自主練習・休養を一つのカレンダーで管理できます。登録した練習記録・意識・動画は、実施日のカレンダーへ自動で反映されます。</p>
+        <h1 className="mt-2 text-4xl font-black tracking-[-.04em] sm:text-5xl">自分の予定</h1>
+        <p className="mt-3 max-w-2xl leading-7 text-white/55">日付を選んで、学校練習・自主練習・休養を簡単に追加。クラブ予定の出欠もこの画面で回答できます。</p>
       </header>
       <nav className="mt-6 grid gap-2 sm:grid-cols-2" aria-label="カレンダー切り替え">
         <div className="rounded-2xl border border-emerald-400/45 bg-emerald-400/10 p-4 text-emerald-200"><span className="flex items-center gap-2 text-sm font-black"><CalendarDays size={18}/>マイカレンダー</span><span className="mt-1 block text-xs text-white/45">自分の予定・練習日誌・目標</span></div>

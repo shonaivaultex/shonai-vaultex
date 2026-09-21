@@ -1,5 +1,7 @@
 "use client";
 import ScheduleStageAction from "./ScheduleStageAction";
+import ScheduleAttendance from "./ScheduleAttendance";
+import { followingWeek, newPlans } from "@/lib/calendar-plan";
 
 import { FormEvent, useMemo, useRef, useState } from "react";
 import {
@@ -74,6 +76,7 @@ type ClubSchedule = {
   ends_at: string | null;
   all_day: boolean;
   schedule_type: string;
+  is_personal_slot?: boolean;
 };
 type FeedbackRequest = {
   id: number;
@@ -301,6 +304,11 @@ export default function MyCalendar({
     initialSelectedDate ?? localDate(),
   );
   const [entries, setEntries] = useState(initialEntries);
+  const [showClubSchedules, setShowClubSchedules] = useState(false);
+  const [attendanceOverrides, setAttendanceOverrides] = useState<Record<number, boolean>>({});
+  const [planNotice, setPlanNotice] = useState("");
+  const [quickSaving, setQuickSaving] = useState(false);
+  const planSavingRef = useRef(false);
   const [editing, setEditing] = useState<Entry | null>(null);
   const [linkedSchedule, setLinkedSchedule] = useState<ClubSchedule | null>(
     null,
@@ -320,8 +328,7 @@ export default function MyCalendar({
       const date = new Date(start);
       date.setDate(date.getDate() + index);
       const key = dateKey(date);
-      const existing = initialEntries.find((entry) => !entry.schedule_id && entry.entry_date === key);
-      return { date: key, type: (existing?.entry_type && existing.entry_type in entryTypes ? existing.entry_type : "") as keyof typeof entryTypes | "", title: existing?.title ?? "", scheduleId: null };
+      return { date: key, type: "", title: "", scheduleId: null };
     });
   });
   const [restSaving, setRestSaving] = useState(false);
@@ -330,8 +337,12 @@ export default function MyCalendar({
     "week" | "month"
   >("week");
   const activeIds = useMemo(
-    () => new Set(activeScheduleIds),
-    [activeScheduleIds],
+    () => {
+      const ids = new Set(activeScheduleIds);
+      Object.entries(attendanceOverrides).forEach(([id, attending]) => attending ? ids.add(Number(id)) : ids.delete(Number(id)));
+      return ids;
+    },
+    [activeScheduleIds, attendanceOverrides],
   );
   const entryByScheduleId = useMemo(
     () => new Map(entries.flatMap((entry) => entry.schedule_id ? [[entry.schedule_id, entry] as const] : [])),
@@ -367,7 +378,7 @@ export default function MyCalendar({
       const entry = entryByScheduleId.get(schedule.id);
       const active = activeIds.has(schedule.id);
       if (
-        !active &&
+        !showClubSchedules && !active &&
         !entry?.journal &&
         !entry?.video_path &&
         !entry?.record_value &&
@@ -422,7 +433,7 @@ export default function MyCalendar({
       active: true,
     }));
     return result;
-  }, [entries, schedules, activeIds, performanceRecords, scans, entryByScheduleId, scheduleDatesById]);
+  }, [entries, schedules, activeIds, performanceRecords, scans, entryByScheduleId, scheduleDatesById, showClubSchedules]);
   const byDate = useMemo(
     () =>
       displayItems.reduce<Record<string, DisplayItem[]>>((all, item) => {
@@ -480,6 +491,40 @@ export default function MyCalendar({
     setLinkedSchedule(null);
     setOpen(true);
   }
+  async function addPlans(candidates: Array<Pick<Entry, "entry_date" | "entry_type" | "title" | "starts_at" | "ends_at" | "all_day" | "location" | "color">>) {
+    const supabase = createClient();
+    const { data: existing, error: readError } = await supabase.from("personal_calendar_entries")
+      .select("*").eq("user_id", userId).is("schedule_id", null)
+      .in("entry_date", [...new Set(candidates.map((entry) => entry.entry_date))]);
+    if (readError) throw readError;
+    const payload = newPlans(candidates, existing ?? []).map((entry) => ({ ...entry, user_id: userId, schedule_id: null }));
+    if (!payload.length) { setPlanNotice("同じ予定は登録済みです。重複追加しませんでした。"); return; }
+    const { data, error } = await supabase.from("personal_calendar_entries").insert(payload).select("*");
+    if (error) throw error;
+    setEntries((current) => [...current, ...(data ?? []).map((entry) => ({ ...entry, video_url: null }) as Entry)]);
+    setPlanNotice(`${data?.length ?? 0}件の予定を追加しました。`);
+    router.refresh();
+  }
+  async function quickPlan(type: "school_practice" | "personal_training" | "rest") {
+    if (planSavingRef.current) return;
+    planSavingRef.current = true; setQuickSaving(true); setPlanNotice("");
+    try {
+      await addPlans([{ entry_date: selectedDate, entry_type: type, title: type === "rest" ? "REST" : entryTypes[type], starts_at: null, ends_at: null, all_day: true, location: null, color: type === "rest" ? "slate" : type === "school_practice" ? "sky" : "emerald" }]);
+    } catch { setPlanNotice("保存できませんでした。時間をおいて再度お試しください。"); }
+    finally { planSavingRef.current = false; setQuickSaving(false); }
+  }
+  async function copyPreviousWeek() {
+    if (planSavingRef.current) return;
+    const start = new Date(mobileWeekStart); start.setDate(start.getDate() - 7);
+    const previous = entries.filter((entry) => !entry.schedule_id && entry.entry_date >= dateKey(start) && entry.entry_date < dateKey(mobileWeekStart));
+    if (!previous.length) { setPlanNotice("先週の個人予定がありません。"); return; }
+    if (!confirm(`先週の個人予定${previous.length}件を、表示中の週へコピーします。日誌・記録・動画・クラブ出欠はコピーしません。続けますか？`)) return;
+    planSavingRef.current = true; setQuickSaving(true);
+    try {
+      await addPlans(previous.map((entry) => followingWeek({ entry_date: entry.entry_date, entry_type: entry.entry_type, title: entry.title, starts_at: entry.starts_at, ends_at: entry.ends_at, all_day: entry.all_day, location: entry.location, color: entry.color })));
+    } catch { setPlanNotice("コピーできませんでした。時間をおいて再度お試しください。"); }
+    finally { planSavingRef.current = false; setQuickSaving(false); }
+  }
   function startNewForDate(key: string) {
     setSelectedDate(key);
     if (
@@ -503,30 +548,15 @@ export default function MyCalendar({
     setSelectedDate(dateKey(next));
     setMonth(new Date(next.getFullYear(), next.getMonth(), 1));
   }
-  function openWeekPlanner(copyPrevious = false) {
-    const sourceStart = new Date(mobileWeekStart);
-    if (copyPrevious) sourceStart.setDate(sourceStart.getDate() - 7);
-    const rows = Array.from({ length: 7 }, (_, index) => {
-      const target = new Date(mobileWeekStart);
-      target.setDate(target.getDate() + index);
-      const source = new Date(sourceStart);
-      source.setDate(source.getDate() + index);
-      const previous = copyPrevious
-        ? entries.find((entry) => !entry.schedule_id && entry.entry_date === dateKey(source))
-        : entries.find((entry) => !entry.schedule_id && entry.entry_date === dateKey(target));
-      return {
-        date: dateKey(target),
-        type: (previous?.entry_type && previous.entry_type in entryTypes ? previous.entry_type : "") as keyof typeof entryTypes | "",
-        title: previous?.title ?? "",
-        scheduleId: null,
-      };
-    });
-    setWeekPlanRows(rows);
+  function openWeekPlanner() {
+    setWeekPlanRows(mobileWeekDays.map((date) => ({ date: dateKey(date), type: "", title: "", scheduleId: null })));
     setWeekPlanOpen(true);
   }
   async function saveWeekPlan() {
+    if (planSavingRef.current) return;
     const rows = weekPlanRows.filter((row) => row.scheduleId || row.title.trim() || row.type !== "");
     if (!rows.length) return alert("1日以上の予定を入力してください。");
+    planSavingRef.current = true;
     setWeekPlanSaving(true);
     try {
       const scheduleIds = [...new Set(rows.flatMap((row) => row.scheduleId ? [row.scheduleId] : []))];
@@ -538,6 +568,7 @@ export default function MyCalendar({
           { onConflict: "schedule_id,user_id" },
         );
         if (attendanceError) throw attendanceError;
+        setAttendanceOverrides((current) => ({ ...current, ...Object.fromEntries(scheduleIds.map((id) => [id, true])) }));
       }
       const payload = personalRows.map((row) => ({
         user_id: userId,
@@ -557,16 +588,14 @@ export default function MyCalendar({
         video_path: null,
         color: row.type === "rest" ? "slate" : row.type === "competition" ? "violet" : row.type === "school_practice" ? "sky" : "emerald",
       }));
-      const { data, error } = payload.length
-        ? await supabase.from("personal_calendar_entries").insert(payload).select("*")
-        : { data: [], error: null };
-      if (error) throw error;
-      setEntries((current) => [...current, ...((data ?? []).map((entry) => ({ ...entry, video_url: null })) as Entry[])]);
+      if (payload.length) await addPlans(payload);
+      else setPlanNotice("クラブ予定の出欠を保存しました。");
       setWeekPlanOpen(false);
       router.refresh();
     } catch (caught) {
       alert(caught instanceof Error ? caught.message : "1週間の予定を保存できませんでした。");
     } finally {
+      planSavingRef.current = false;
       setWeekPlanSaving(false);
     }
   }
@@ -780,10 +809,11 @@ export default function MyCalendar({
               マイカレンダー
             </h2>
             <div className="flex flex-wrap gap-2">
+              <button type="button" disabled={quickSaving || weekPlanSaving} onClick={copyPreviousWeek} className="rounded-xl border border-emerald-400/30 px-3 py-2.5 text-xs font-bold text-emerald-200 disabled:opacity-40">先週をコピー</button>
               <CalendarSyncButton />
               <button
                 type="button"
-                onClick={() => openWeekPlanner(false)}
+                onClick={openWeekPlanner}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-orange-500 px-3 py-2.5 text-xs font-black text-black"
               >
                 <CalendarPlus size={15} />
@@ -798,6 +828,12 @@ export default function MyCalendar({
               </button>
             </div>
           </div>
+          <div className="mt-4 grid grid-cols-2 gap-2" aria-label="表示する予定">
+            <button type="button" aria-pressed={!showClubSchedules} onClick={() => setShowClubSchedules(false)} className={`rounded-xl px-3 py-3 text-sm font-bold ${!showClubSchedules ? "bg-orange-500 text-black" : "bg-white/5 text-white/65"}`}>自分の予定</button>
+            <button type="button" aria-pressed={showClubSchedules} onClick={() => setShowClubSchedules(true)} className={`rounded-xl px-3 py-3 text-sm font-bold ${showClubSchedules ? "bg-orange-500 text-black" : "bg-white/5 text-white/65"}`}>クラブ予定も見る</button>
+          </div>
+          <p className="mt-3 text-xs leading-5 text-white/60">日付を選んで予定を追加。クラブ予定は「参加」と回答すると自分の予定に入ります。</p>
+          <p role="status" className="mt-2 text-sm text-emerald-200">{planNotice}</p>
           <div className="mt-6 flex items-center justify-between">
             <button
               onClick={() => moveMonth(-1)}
@@ -1132,11 +1168,11 @@ export default function MyCalendar({
               <div><p className="text-[10px] font-black tracking-[.2em] text-orange-400">WEEKLY PLAN</p><h2 id="week-plan-title" className="mt-1 text-2xl font-black">1週間のマイカレンダーを作る</h2><p className="mt-2 text-xs leading-5 text-white/45">{mobileWeekStart.getMonth() + 1}/{mobileWeekStart.getDate()}〜{mobileWeekDays[6].getMonth() + 1}/{mobileWeekDays[6].getDate()}・種類だけでも登録できます。未選択・予定名なしの日は登録されません</p></div>
               <button type="button" onClick={() => setWeekPlanOpen(false)} aria-label="閉じる" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/[.07] text-white/60"><X size={19}/></button>
             </div>
-            <button type="button" onClick={() => openWeekPlanner(true)} className="mt-5 inline-flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/[.06] px-4 py-3 text-xs font-black text-emerald-200"><CalendarDays size={16}/>前週の個人予定を読み込む</button>
+            <p className="mt-5 text-xs leading-5 text-white/55">既存の予定は残ります。同じ予定は追加しません。先週の全予定は、カレンダー上部の「先週をコピー」から追加できます。</p>
             <div className="mt-5 space-y-2">
               {weekPlanRows.map((row, index) => {
                 const day = new Date(`${row.date}T00:00:00`);
-                const daySchedules = schedulesByDate.get(row.date) ?? [];
+                const daySchedules = (schedulesByDate.get(row.date) ?? []).filter((schedule) => !schedule.is_personal_slot && schedule.schedule_type !== "personal");
                 return <div key={row.date} className="grid gap-2 rounded-2xl border border-white/[.08] bg-black/20 p-3 sm:grid-cols-[90px_150px_1fr] sm:items-center">
                   <div><strong className="text-sm">{day.getMonth() + 1}/{day.getDate()}（{weekdays[day.getDay()]}）</strong></div>
                   <select aria-label={`${row.date}の種類`} disabled={Boolean(row.scheduleId)} value={row.type} onChange={(event) => setWeekPlanRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, type: event.target.value as keyof typeof entryTypes | "", title: event.target.value === "rest" ? "REST" : item.title === "REST" ? "" : item.title } : item))} className="rounded-xl border border-white/10 bg-[#181818] px-3 py-3 text-sm text-white [color-scheme:dark] disabled:opacity-40">
@@ -1171,7 +1207,24 @@ export default function MyCalendar({
             </h2>
           </div>
         </div>
-        <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-3">
+        <div className="mt-4 rounded-2xl border border-orange-400/20 bg-orange-400/5 p-3">
+          <p className="text-sm font-bold">種類を選ぶだけで予定を追加</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {(["school_practice", "personal_training", "rest"] as const).map((type) => <button key={type} type="button" disabled={quickSaving || weekPlanSaving} onClick={() => quickPlan(type)} className="min-h-11 rounded-xl border border-white/15 px-3 py-2 text-sm font-bold disabled:opacity-40">＋ {entryTypes[type]}</button>)}
+          </div>
+          <p className="mt-2 text-xs text-white/55">時間・予定名なしで保存します。詳細は追加後に編集できます。</p>
+        </div>
+        {showClubSchedules ? <div className="mt-4 space-y-3">
+          <h3 className="text-sm font-bold">この日のクラブ予定・出欠</h3>
+          {(schedulesByDate.get(selectedDate) ?? []).map((schedule) => <article key={schedule.id} className="rounded-xl border border-white/10 p-3">
+            <h4 className="font-bold">{schedule.title}</h4>
+            <p className="mt-1 text-xs text-white/60">{schedule.all_day ? "終日" : timeValue(schedule.starts_at)}{schedule.location ? ` ・ ${schedule.location}` : ""}</p>
+            <ScheduleAttendance scheduleId={schedule.id} scheduleType={schedule.schedule_type} onSaved={(status) => setAttendanceOverrides((current) => ({ ...current, [schedule.id]: status === "attending" }))}/>
+          </article>)}
+          {!(schedulesByDate.get(selectedDate) ?? []).length ? <p className="text-sm text-white/55">この日のクラブ予定はありません。</p> : null}
+        </div> : null}
+        <details className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-3">
+          <summary className="cursor-pointer text-sm font-bold text-white/70">日誌・記録・詳細な予定を追加</summary>
           <p className="mb-2 text-[10px] font-bold text-white/35">
             この日について行うことを選んでください
           </p>
@@ -1218,7 +1271,7 @@ export default function MyCalendar({
               予定・日誌を追加
             </button>
           </div>
-        </div>
+        </details>
         {(() => {
           const period = periodForDate(selectedDate);
           if (!period) return null;
