@@ -3,8 +3,6 @@
 import { Dumbbell, Mail, MapPin, Phone, Trophy, Users } from "lucide-react";
 import Hero from "./components/Hero";
 import { useEffect, useState } from "react";
-import { ProgramCard } from "./components/ProgramCard";
-import { programs } from "./components/program-data";
 import { ContactLine } from "./components/ui/ContactLine";
 import { CtaLink } from "./components/ui/CtaLink";
 import { SectionLabel } from "./components/ui/SectionLabel";
@@ -71,7 +69,7 @@ export default function HomePage() {
           <div className="mt-14 grid gap-px bg-white/10 md:grid-cols-3">{features.map(({ icon: Icon, title, text }, index) => <article key={title} className="group bg-[#101216] p-7 sm:p-9"><div className="flex items-start justify-between"><Icon aria-hidden="true" size={30} strokeWidth={1.5} className="text-orange-500" /><span className="text-xs font-bold text-white/35">0{index + 1}</span></div><h3 className="mt-16 text-lg font-black tracking-wide">{title}</h3><p className="mt-4 text-sm leading-7 text-white/60">{text}</p><div className="mt-8 h-px w-10 bg-orange-500 transition-all duration-300 group-hover:w-full" /></article>)}</div>
           <div className="mt-10 max-w-3xl"><h3 className="text-xl font-black">READY TO COMPETE.</h3><p className="mt-4 text-sm leading-8 text-white/65">選手を否定する言葉ではなく、どうすれば次につながるかを一緒に考えます。試合に向けて十分に準備を重ね、不安を少しずつ減らしていく。自信を持ってスタートラインに立てるように、技術だけでなく気持ちの面にも向き合います。</p><CtaLink href="/coach" variant="outline" className="mt-5">コーチについて知る</CtaLink></div>
           <div className="mt-8 flex flex-wrap gap-4">
-            <CtaLink href="/program">プログラムを詳しく見る</CtaLink>
+            <CtaLink href="#program">これからの活動を見る</CtaLink>
             <CtaLink href="/mypage" variant="outline">マイページを開く</CtaLink>
           </div>
             <div className="mt-12 rounded-2xl border border-white/10 bg-[#0c0d10] p-6 sm:p-10">
@@ -101,28 +99,26 @@ export default function HomePage() {
 
       <section id="program" className="py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-          <SectionLabel index="03">PROGRAM</SectionLabel>
-          <div className="mt-7 grid gap-10 lg:grid-cols-12"><h2 className="text-3xl font-black tracking-[-0.045em] sm:text-5xl lg:col-span-5">FIND YOUR WAY.</h2><p className="max-w-md self-end text-sm leading-7 text-white/60 lg:col-span-5 lg:col-start-8">大会を目指す方も、フィットネスとして体を動かしたい方も。年齢や経験、生活に合わせた関わり方を、一緒に考えます。</p></div>
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            <article><h3 className="text-lg font-black text-orange-400">KIDS</h3><p className="mt-2 text-sm font-bold text-white/85">小学生｜体験と成長を、未来に残す。</p><p className="mt-3 text-sm leading-7 text-white/65">いろいろな競技や動きを体験し、好きなことや得意なことを見つける。「自分も小学生の頃から成長の記録を残しておきたかった」という代表コーチの思いから、長い時間をかけた変化も大切にします。</p></article>
-            <article><h3 className="text-lg font-black text-orange-400">TEENS</h3><p className="mt-2 text-sm font-bold text-white/85">中学生・高校生｜納得して、挑戦する。</p><p className="mt-3 text-sm leading-7 text-white/65">学校や所属先によって、練習環境や専門的な指導を受けられる機会は異なります。今いる場所だけで挑戦の可能性が決まらないように、根拠のある説明と指導で「続けたい」「もっと伸びたい」を支えます。</p></article>
-            <article><h3 className="text-lg font-black text-orange-400">ADULTS</h3><p className="mt-2 text-sm font-bold text-white/85">一般｜今の暮らしの中で、続ける。</p><p className="mt-3 text-sm leading-7 text-white/65">時間がない、場所や仲間がいない。そんな悩みも聞かせてください。カウンセリングで生活に合ったスケジュールや競技との向き合い方を考えます。試合には出ず、フィットネスとしての利用も相談できます。</p></article>
+          <SectionLabel index="03">2027 SEASON</SectionLabel>
+          <h2 className="mt-7 text-3xl font-black tracking-[-0.045em] sm:text-5xl">ENJOY ATHLETICS. TOGETHER.</h2>
+          <p className="mt-6 max-w-3xl text-base leading-8 text-white/75">2027年度は、事前申込制の陸上練習会を開催予定です。中学生以上を対象に、初心者から自己ベストを目指す競技者まで。好きな種目に挑戦できる、居心地のいい場所を一緒につくっていきます。</p>
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {[
+              ["土日中心・不定期開催", "仕事や大会の日程に合わせて開催します。毎週の開催ではありません。日時・場所は開催ごとにお知らせします。"],
+              ["事前申込みで参加", "開催ごとに定員・申込締切・受付方法をご案内します。参加前に各回の案内をご確認ください。"],
+              ["活動とアプリを一緒に育てる", "予定の確認や参加申込みを中心に、VAULTEXの使いやすさも確かめる一年に。記録や動画は希望に応じて活用し、参加者の声を改善につなげます。"],
+            ].map(([title, body]) => (
+              <article key={title} className="rounded-2xl border border-white/15 bg-[#111317] p-6">
+                <h3 className="text-lg font-black text-orange-400">{title}</h3>
+                <p className="mt-4 text-sm leading-7 text-white/70">{body}</p>
+              </article>
+            ))}
           </div>
-          <div className="mt-16 grid gap-8 md:grid-cols-2">
-  {programs.map((program) => (
-    <ProgramCard
-      key={program.slug}
-      program={program}
-      
-    />
-  ))}
-</div>
-
-<div className="mt-12 flex justify-center">
-  <CtaLink href="/program" variant="outline">
-    VIEW ALL PROGRAMS
-  </CtaLink>
-</div>
+          <p className="mt-6 text-sm leading-7 text-white/60">小学生向けの定期コースは、今回の募集対象には含みません。今後の開催については、体制が整い次第ご案内します。</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <CtaLink href="/schedule">開催予定を確認する</CtaLink>
+            <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline">活動について相談する</CtaLink>
+          </div>
         </div>
       </section>
 
@@ -132,41 +128,41 @@ export default function HomePage() {
           <div className="mt-7 grid items-center gap-8 lg:grid-cols-12 lg:gap-10">
             <div className="lg:col-span-5">
               <h2 className="text-4xl font-black tracking-[-0.05em] sm:text-6xl">KEEP IT<br/><span className="text-orange-500">SIMPLE.</span></h2>
-              <p className="mt-6 max-w-md text-sm leading-7 text-white/60">年代や競技レベルで基本会費を分けず、一人ひとりに必要な関わり方をカウンセリングから考えます。</p>
+              <p className="mt-6 max-w-md text-sm leading-7 text-white/60">2027年度（2027年4月〜2028年3月）は、無理なく続けられる活動の土台をつくる一年に。土日中心の不定期開催とし、固定の月会費は設けません。</p>
             </div>
             <div className="rounded-3xl border border-orange-500/30 bg-[#111317] p-7 sm:p-9 lg:col-span-7">
-              <p className="text-xs font-black tracking-[0.2em] text-orange-400">MONTHLY MEMBERSHIP</p>
-              <div className="mt-4 flex items-end gap-2"><strong className="text-5xl font-black tracking-[-0.06em] sm:text-6xl">5,000</strong><span className="pb-1 text-lg font-black">円 / 月</span></div>
-              <p className="mt-4 text-sm leading-7 text-white/55">JUNIOR・YOUTH・ELITE・MASTERS 共通の基本会費です。</p>
+              <p className="text-xs font-black tracking-[0.2em] text-orange-400">2027 SEASON / MONTHLY FEE</p>
+              <div className="mt-4 flex items-end gap-2"><strong className="text-5xl font-black tracking-[-0.06em] sm:text-6xl">0</strong><span className="pb-1 text-lg font-black">円 / 月</span></div>
+              <p className="mt-4 text-sm leading-7 text-white/55">2027年度の練習会は月会費なし。施設利用料・保険料などの必要な実費は別途ご案内します。</p>
             </div>
           </div>
           <div className="mt-8 grid items-stretch gap-8 lg:grid-cols-12">
             <div className="rounded-3xl border border-white/10 bg-[#111317] p-6 sm:p-8 lg:col-span-7">
-              <p className="text-xs font-black tracking-[0.18em] text-orange-400">MEMBERSHIP BENEFITS</p>
-              <h3 className="mt-2 text-xl font-black">基本会費に含まれるもの</h3>
+              <p className="text-xs font-black tracking-[0.18em] text-orange-400">HOW TO JOIN</p>
+              <h3 className="mt-2 text-xl font-black">参加までの流れ</h3>
               <div className="mt-5 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-2">
                 <div className="bg-[#111317] p-5">
                   <p className="text-xs font-black tracking-[0.14em] text-white/40">SESSION</p>
-                  <h4 className="mt-1 font-bold">グループセッション</h4>
-                  <p className="mt-2 text-sm leading-6 text-white/55">走り方・基礎、クラス別、種目練習、オープントレーニングなど、公開されているセッションに参加できます。</p>
+                  <h4 className="mt-1 font-bold">開催案内を確認</h4>
+                  <p className="mt-2 text-sm leading-6 text-white/55">スケジュールで日時・場所・練習内容を確認。定員や締切、必要な費用は各回の案内でお知らせします。</p>
                 </div>
                 <div className="bg-[#111317] p-5">
                   <p className="text-xs font-black tracking-[0.14em] text-white/40">COUNSELING</p>
-                  <h4 className="mt-1 font-bold">カウンセリングと目標整理</h4>
-                  <p className="mt-2 text-sm leading-6 text-white/55">目標や競技経験、学校・仕事との両立、本人の傾向を確認し、活動の進め方やスケジュールを一緒に考えます。</p>
+                  <h4 className="mt-1 font-bold">事前に参加を申し込む</h4>
+                  <p className="mt-2 text-sm leading-6 text-white/55">各回で案内する方法からお申し込みください。初めての方や、参加方法が分からない方は公式LINEでご相談いただけます。</p>
                 </div>
                 <div className="bg-[#111317] p-5">
                   <p className="text-xs font-black tracking-[0.14em] text-white/40">RECORD &amp; REVIEW</p>
-                  <h4 className="mt-1 font-bold">記録と振り返り</h4>
-                  <p className="mt-2 text-sm leading-6 text-white/55">練習・大会の記録、CONTROL TEST、動画などを蓄積。必要に応じて測定や動作を振り返り、次の課題につなげます。</p>
+                  <h4 className="mt-1 font-bold">仲間と練習する</h4>
+                  <p className="mt-2 text-sm leading-6 text-white/55">いろいろな種目を楽しみながら、自分の課題にも取り組む。計測や準備も協力し合い、お互いの挑戦を応援します。</p>
                 </div>
                 <div className="bg-[#111317] p-5">
                   <p className="text-xs font-black tracking-[0.14em] text-white/40">APP &amp; SUPPORT</p>
-                  <h4 className="mt-1 font-bold">アプリでの継続サポート</h4>
-                  <p className="mt-2 text-sm leading-6 text-white/55">予定・出欠、1週間のマイカレンダー、成長レポートを一括管理。LINE通知や保護者向けページにも対応します。</p>
+                  <h4 className="mt-1 font-bold">使ってみた感想を伝える</h4>
+                  <p className="mt-2 text-sm leading-6 text-white/55">予定確認・参加申込みの分かりやすさを、実際の活動を通じて改善します。記録や動画などの利用は任意です。</p>
                 </div>
               </div>
-              <p className="mt-4 text-xs leading-6 text-white/40">※ パーソナルセッション、大会参加費、交通費、競技場利用料などは基本会費に含まれません。</p>
+              <p className="mt-4 text-xs leading-6 text-white/40">2028年度からは、定期開催・有料化と平日セッションの拡充を予定しています。活動状況や運営体制を踏まえて決定し、料金・開催日などは事前にお知らせします。</p>
             </div>
             <div className="flex flex-col rounded-3xl border border-white/10 bg-[#111317] p-6 sm:p-8 lg:col-span-5">
               <p className="text-xs font-black tracking-[0.18em] text-orange-400">PERSONAL SESSION</p>

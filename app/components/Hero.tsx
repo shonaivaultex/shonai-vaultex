@@ -53,6 +53,7 @@ export default function Hero() {
               <span className="block text-orange-500">YOUR CHALLENGE.</span>
             </h1>
             <p className="mt-7 text-xl font-black tracking-[-0.04em] text-white sm:text-3xl">自分のペースで、挑戦できる場所。</p>
+            <p className="mt-5 max-w-xl text-sm font-bold leading-7 text-orange-300">2027年度｜土日中心・不定期の陸上練習会を開催予定<br />事前申込制・月会費なし（必要な実費は別途）</p>
           </div>
 
           <aside className="border-l border-white/20 pl-5 lg:mb-1 lg:pl-7">
@@ -64,7 +65,7 @@ export default function Hero() {
 
         <div className="mt-10 flex flex-wrap items-center gap-3 sm:mt-12">
           <CtaLink href="https://line.me/R/ti/p/@082fhyco" className="bg-orange-500 text-black hover:bg-white">公式LINEで相談する</CtaLink>
-          <CtaLink href="/program" variant="outline" className="border-white/35 text-white">プログラムを見る</CtaLink>
+          <CtaLink href="#program" variant="outline" className="border-white/35 text-white">2027年度の活動について</CtaLink>
           <p className="ml-auto hidden text-[10px] font-black tracking-[0.3em] text-white/40 md:block">EST. 2026 / SHONAI / JAPAN</p>
         </div>
 
