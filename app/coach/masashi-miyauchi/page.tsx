@@ -72,6 +72,18 @@ const achievements = [
         "url": "https://tsukubathletics.com/archives/11989"
       }
     ]
+  },
+  {
+    "title": "日本学生陸上競技個人選手権",
+    "date": "2021年6月",
+    "results": [
+      {
+        "result": "男子走幅跳 7位",
+        "record": "7m60（+1.8）",
+        "note": "筑波大学／6月5日開催",
+        "url": "https://iuau.jp/ev2021/21kojin/21kojin_results.pdf#page=2"
+      }
+    ]
   }
 ];
 
