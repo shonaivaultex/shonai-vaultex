@@ -107,7 +107,7 @@ export default async function MyPage() {
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
   const todayActions = [
     unansweredScheduleCount > 0
-      ? { href: "/mypage/schedules?attendance=unanswered", label: `出欠を回答する（${unansweredScheduleCount}件）`, detail: "向こう2週間の予定を回答", tone: "orange" }
+      ? { href: "/mypage/schedules?attendance=unanswered", label: `参加する予定を選ぶ（${unansweredScheduleCount}件）`, detail: "向こう2週間の練習会・大会を確認", tone: "orange" }
       : null,
   ].filter((action): action is NonNullable<typeof action> => Boolean(action));
 

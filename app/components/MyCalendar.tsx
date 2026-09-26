@@ -559,7 +559,7 @@ export default function MyCalendar({
           scheduleIds.map((scheduleId) => ({ schedule_id: scheduleId, user_id: userId, status: "attending", comment: null, updated_at: new Date().toISOString() })),
           { onConflict: "schedule_id,user_id" },
         );
-        if (attendanceError) throw attendanceError;
+        if (attendanceError) throw new Error(attendanceError.message);
         setAttendanceOverrides((current) => ({ ...current, ...Object.fromEntries(scheduleIds.map((id) => [id, true])) }));
       }
       const payload = personalRows.map((row) => ({
@@ -581,7 +581,7 @@ export default function MyCalendar({
         color: row.type === "rest" ? "slate" : row.type === "competition" ? "violet" : row.type === "school_practice" ? "sky" : "emerald",
       }));
       if (payload.length) await addPlans(payload);
-      else setPlanNotice("クラブ予定の出欠を保存しました。");
+      else setPlanNotice("クラブ予定への申込み・参加予定を保存しました。");
       setWeekPlanOpen(false);
       router.refresh();
     } catch (caught) {
