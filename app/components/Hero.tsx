@@ -53,7 +53,7 @@ export default function Hero() {
               <span className="block text-orange-500">YOUR CHALLENGE.</span>
             </h1>
             <p className="mt-7 text-xl font-black tracking-[-0.04em] text-white sm:text-3xl">自分のペースで、挑戦できる場所。</p>
-            <p className="mt-5 max-w-xl text-sm font-bold leading-7 text-orange-300">2027年度｜土日中心・不定期の陸上練習会を開催予定<br />事前申込制・月会費なし（必要な実費は別途）</p>
+            <p className="mt-5 max-w-xl text-sm font-bold leading-7 text-orange-300">2027年度｜トライアル活動を開催予定<br />土日中心・不定期／事前申込制・各回定員あり<br />月会費無料（施設利用料などの実費は別途）</p>
           </div>
 
           <aside className="border-l border-white/20 pl-5 lg:mb-1 lg:pl-7">

@@ -115,6 +115,17 @@ export default function HomePage() {
             ))}
           </div>
           <p className="mt-6 text-sm leading-7 text-white/60">小学生向けの定期コースは、今回の募集対象には含みません。今後の開催については、体制が整い次第ご案内します。</p>
+          <div className="mt-8 rounded-2xl border border-emerald-400/25 bg-emerald-400/[.05] p-6 sm:p-8">
+            <p className="text-xs font-black tracking-[0.18em] text-emerald-300">GROW WITH US</p>
+            <h3 className="mt-3 text-xl font-black">継続して陸上を楽しみたい方へ</h3>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-white/70">一人ひとりに目が届く、居心地のいい環境を大切にするため、受入人数に上限を設ける予定です。継続して参加したい方も、まずは体験したい方も、自分に合う関わり方を見つけていただけるよう準備しています。</p>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-white/10 p-5"><h4 className="font-bold">継続参加の登録枠</h4><p className="mt-2 text-sm leading-6 text-white/65">この場所で継続して練習したい方に向けた枠を設ける予定です。</p></div>
+              <div className="rounded-xl border border-white/10 p-5"><h4 className="font-bold">初めての方の体験枠</h4><p className="mt-2 text-sm leading-6 text-white/65">実際に参加して、練習内容やクラブの雰囲気を確かめられる枠を残します。</p></div>
+            </div>
+            <p className="mt-5 text-sm font-bold text-emerald-200">募集人数・優先受付のルールは調整中です。決まり次第、このページでご案内します。</p>
+            <p className="mt-2 text-sm leading-6 text-white/65">継続参加の希望は、2028年度の入会を約束するものではありません。</p>
+          </div>
           <div className="mt-8 flex flex-wrap gap-3">
             <CtaLink href="/schedule">開催予定を確認する</CtaLink>
             <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline">活動について相談する</CtaLink>
@@ -125,17 +136,21 @@ export default function HomePage() {
       <section id="price" className="border-y border-white/10 bg-[#0d0f12] py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
           <SectionLabel index="04">PRICE</SectionLabel>
-          <div className="mt-7 grid items-center gap-8 lg:grid-cols-12 lg:gap-10">
-            <div className="lg:col-span-5">
-              <h2 className="text-4xl font-black tracking-[-0.05em] sm:text-6xl">KEEP IT<br/><span className="text-orange-500">SIMPLE.</span></h2>
-              <p className="mt-6 max-w-md text-sm leading-7 text-white/60">2027年度（2027年4月〜2028年3月）は、無理なく続けられる活動の土台をつくる一年に。土日中心の不定期開催とし、固定の月会費は設けません。</p>
-            </div>
-            <div className="rounded-3xl border border-orange-500/30 bg-[#111317] p-7 sm:p-9 lg:col-span-7">
-              <p className="text-xs font-black tracking-[0.2em] text-orange-400">2027 SEASON / MONTHLY FEE</p>
-              <div className="mt-4 flex items-end gap-2"><strong className="text-5xl font-black tracking-[-0.06em] sm:text-6xl">0</strong><span className="pb-1 text-lg font-black">円 / 月</span></div>
-              <p className="mt-4 text-sm leading-7 text-white/55">2027年度の練習会は月会費なし。施設利用料・保険料などの必要な実費は別途ご案内します。</p>
-            </div>
+          <h2 className="mt-7 text-3xl font-black tracking-[-0.045em] sm:text-5xl">OUR NEXT STEPS.</h2>
+          <p className="mt-5 max-w-3xl text-sm leading-7 text-white/70">まずは活動の土台をつくる一年に。その先の正式運営に向けた方針も、あらかじめお伝えします。</p>
+          <div className="mt-8 grid gap-5 md:grid-cols-2">
+            {[
+              { year: "2027", title: "試行期間", period: "2027年4月〜2028年3月", fee: "月会費無料", rows: [["開催", "土日中心・不定期（毎週開催ではありません）"], ["参加", "事前申込制・各回定員あり"], ["費用", "施設利用料・保険料などの必要な実費は別途案内"]] },
+              { year: "2028", title: "正式運営予定", period: "2028年4月〜", fee: "月額5,000円予定", rows: [["開催", "定期開催・平日セッションの拡充を予定"], ["参加", "内容をご確認いただき、改めて正式会員として登録"], ["費用", "会費・開催日・サービス内容は正式決定後に案内"]] },
+            ].map((season) => <article key={season.year} className="rounded-3xl border border-orange-500/25 bg-[#111317] p-6 sm:p-8">
+              <p className="text-xs font-black tracking-[0.18em] text-orange-400">{season.year} SEASON</p>
+              <h3 className="mt-3 text-xl font-black">{season.title}</h3>
+              <p className="mt-2 text-sm text-white/60">{season.period}</p>
+              <p className="mt-6 text-2xl font-black sm:text-3xl">{season.fee}</p>
+              <dl className="mt-6 divide-y divide-white/10 border-t border-white/10">{season.rows.map(([label, body]) => <div key={label} className="grid grid-cols-[3rem_1fr] gap-3 py-4 text-sm leading-6"><dt className="font-bold text-white/80">{label}</dt><dd className="text-white/65">{body}</dd></div>)}</dl>
+            </article>)}
           </div>
+          <p className="mt-5 rounded-xl border border-white/15 px-5 py-4 text-sm leading-7 text-white/80">有料会員へ自動移行することはありません。2028年度の運営内容は活動状況・体制を踏まえて決定し、正式入会の前に改めてご確認いただきます。</p>
           <div className="mt-8 grid items-stretch gap-8 lg:grid-cols-12">
             <div className="rounded-3xl border border-white/10 bg-[#111317] p-6 sm:p-8 lg:col-span-7">
               <p className="text-xs font-black tracking-[0.18em] text-orange-400">HOW TO JOIN</p>
@@ -162,7 +177,7 @@ export default function HomePage() {
                   <p className="mt-2 text-sm leading-6 text-white/55">予定確認・参加申込みの分かりやすさを、実際の活動を通じて改善します。記録や動画などの利用は任意です。</p>
                 </div>
               </div>
-              <p className="mt-4 text-xs leading-6 text-white/40">2028年度からは、定期開催・有料化と平日セッションの拡充を予定しています。活動状況や運営体制を踏まえて決定し、料金・開催日などは事前にお知らせします。</p>
+              <p className="mt-4 text-xs leading-6 text-white/60">2027年度の登録枠・体験枠の受付方法は準備中です。募集開始時に改めてご案内します。</p>
             </div>
             <div className="flex flex-col rounded-3xl border border-white/10 bg-[#111317] p-6 sm:p-8 lg:col-span-5">
               <p className="text-xs font-black tracking-[0.18em] text-orange-400">PERSONAL SESSION</p>
