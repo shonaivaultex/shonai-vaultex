@@ -21,6 +21,7 @@ export default function ScheduleAttendance({ scheduleId, scheduleType, onSaved }
   const [personalSlot, setPersonalSlot] = useState(scheduleType === "personal");
   const [availability, setAvailability] = useState<Availability | null>(null);
   const [reload, setReload] = useState(0);
+  const [restriction, setRestriction] = useState("");
   const registration = !personalSlot && (type === "practice" || type === "measurement");
 
   useEffect(() => {
@@ -31,13 +32,16 @@ export default function ScheduleAttendance({ scheduleId, scheduleType, onSaved }
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("ログインして予定を確認してください。");
-        const [{ data, error }, { data: schedule, error: scheduleError }] = await Promise.all([
+        const [{ data, error }, { data: schedule, error: scheduleError }, roles, player] = await Promise.all([
           supabase.from("schedule_attendance").select("status, comment").eq("schedule_id", scheduleId).eq("user_id", user.id).maybeSingle(),
-          supabase.from("schedules").select("is_personal_slot,schedule_type").eq("id", scheduleId).single(),
+          supabase.from("schedules").select("is_personal_slot,schedule_type,audience,program_class").eq("id", scheduleId).single(),
+          supabase.from("user_roles").select("role").eq("user_id", user.id),
+          supabase.from("players").select("program_class").eq("user_id", user.id).maybeSingle(),
         ]);
         if (error || scheduleError || !schedule) throw new Error("予定を読み込めませんでした。");
         let info: Availability | null = null;
         if (!schedule.is_personal_slot && ["practice", "measurement"].includes(schedule.schedule_type)) {
+          if (roles.error || player.error) throw new Error("申込み対象を確認できませんでした。");
           const result = await supabase.rpc("practice_availability", { p_schedule_id: scheduleId });
           if (result.error) throw new Error("受付状況を確認できませんでした。");
           info = result.data as Availability;
@@ -48,6 +52,10 @@ export default function ScheduleAttendance({ scheduleId, scheduleType, onSaved }
           setPersonalSlot(schedule.is_personal_slot);
           setType(schedule.schedule_type);
           setAvailability(info);
+          setRestriction(info ? roles.data?.some((row) => row.role === "coach")
+            ? "コーチは参加申込み不要です。参加者一覧から申込状況を確認してください。"
+            : schedule.audience !== "all" && (!player.data?.program_class || player.data.program_class !== schedule.program_class)
+              ? "対象クラスの選手のみ申込みできます。" : "" : "");
           setLoaded(true);
         }
       } catch (error) {
@@ -62,6 +70,7 @@ export default function ScheduleAttendance({ scheduleId, scheduleType, onSaved }
 
   async function save(nextStatus: AttendanceStatus) {
     if (busy.current || !loaded) return;
+    if (registration && restriction && nextStatus === "attending") return;
     if (registration && nextStatus === "absent" && !confirm("この練習会の申込みをキャンセルしますか？")) return;
     busy.current = true;
     setNotice(""); setSaving(true);
@@ -73,7 +82,7 @@ export default function ScheduleAttendance({ scheduleId, scheduleType, onSaved }
         schedule_id: scheduleId, user_id: user.id, status: nextStatus,
         comment: comment.trim() || null, updated_at: new Date().toISOString(),
       }, { onConflict: "schedule_id,user_id" });
-      if (error) throw new Error(error.message.includes("定員") || error.message.includes("締切") ? error.message : "保存できませんでした。もう一度お試しください。");
+      if (error) throw new Error(["定員", "締切", "対象クラス", "コーチ"].some((text) => error.message.includes(text)) ? error.message : "保存できませんでした。もう一度お試しください。");
       setStatus(nextStatus);
       onSaved?.(nextStatus);
       setNotice(registration ? nextStatus === "attending" ? "申込み済みです。参加が確定しました。" : "申込みをキャンセルしました。" : "回答を保存しました。");
@@ -90,6 +99,14 @@ export default function ScheduleAttendance({ scheduleId, scheduleType, onSaved }
     ? { attending: "参加する", absent: "参加しない", undecided: "あとで決める" }
     : { attending: "参加", absent: "欠席", undecided: "未定" };
   if (personalSlot) return <div className="mt-3 border-t border-white/10 pt-3"><Link href="/mypage/personal" className="inline-flex rounded-lg bg-orange-500 px-4 py-2 text-xs font-black text-black">空き状況を見て予約</Link></div>;
+  if (loaded && registration && restriction) return <div className="mt-3 border-t border-white/10 pt-3">
+    <p className="text-sm text-white/65">{restriction}</p>
+    {status === "attending" && <div className="mt-3">
+      <p className="mb-2 text-xs text-white/60">以前の申込みが残っています。不要な場合はキャンセルしてください。</p>
+      <button type="button" disabled={saving} onClick={() => save("absent")} className="min-h-11 rounded-lg border border-white/20 px-4 py-2 text-sm disabled:opacity-40">以前の申込みをキャンセル</button>
+    </div>}
+    <p role="status" className="mt-2 text-xs text-emerald-200">{saving ? "保存中…" : notice}</p>
+  </div>;
   return <div className="mt-3 border-t border-white/10 pt-3">
     <p className="mb-2 text-sm font-bold">{!loaded ? "確認中…" : registration ? status === "attending" ? "申込み済み・参加確定" : "未申込み" : `あなたの回答：${status ? labels[status] : "未回答"}`}</p>
     {registration ? <>
