@@ -12,7 +12,7 @@ type TutorialRect = { top: number; left: number; right: number; bottom: number; 
 const guideSteps = [
   { eyebrow: "はじめに", title: "まずは予定を決めよう", body: "ホームで予定と未回答の出欠を確認します。「自分の予定」で学校練習や休養を管理し、「クラブ予定」で参加を回答しましょう。", icon: Sparkles, target: null },
   { eyebrow: "予定を作る", title: "1週間分をまとめて入力", body: "「マイカレンダー」→「1週間を作成」を開きます。各日の種類を選び、最後に「入力した予定をまとめて保存」を押します。学校練習などは予定名なしでも登録でき、未選択・予定名なしの日は登録されません。", icon: CalendarDays, target: "schedule-action" },
-  { eyebrow: "クラブに参加する", title: "全体予定から選ぶだけでもOK", body: "「1週間を作成」で全体スケジュールを選んで保存すると、出欠も「参加」になります。全体スケジュールの画面から出欠を回答することもできます。選んだだけでは保存されないので、最後の保存を忘れずに。", icon: CalendarDays, target: "all-schedules" },
+  { eyebrow: "クラブに参加する", title: "参加したい日を選んで申し込む", body: "「クラブ予定・申込み」で日時・場所を確認し、参加を申し込みます。「申込み済み・参加確定」になった予定は「自分の予定」に表示されます。大会は参加予定を回答してください。", icon: CalendarDays, target: "all-schedules" },
   { eyebrow: "記録する", title: "練習後は予定の日付を開く", body: "マイカレンダーで日付を選ぶと、その日の記録や日誌・動画を確認、追加できます。記録を直接追加したいときや測定機能を使うときは「その他」から開けます。", icon: Plus, target: "schedule-action" },
   { eyebrow: "振り返る", title: "成長レポートで過去の記録を見る", body: "「その他」→「成長レポート」で種目ごとの変化を確認できます。「これまでの記録を見る」を押すと、その種目の日付と記録だけを新しい順に表示します。本番・練習・CTは別々なので、比較する区分も確認しましょう。", icon: Activity, target: "schedule-action" },
   { eyebrow: "困ったとき", title: "相談や設定は必要なときに", body: "動きを見てほしいときはコーチへ動画で相談できます。使い方に迷ったらVAULTEX AIへ。「その他」には通知設定やマニュアルがあります。この案内は「マイページの使い方」から何度でも開けます。", icon: Compass, target: "settings" },

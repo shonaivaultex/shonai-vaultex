@@ -15,7 +15,6 @@ import MypageSettings from "@/app/components/MypageSettings";
 
 const links = [
   { href: "/performance", label: "記録を追加", note: "練習・大会・CTの記録", icon: Medal },
-  { href: "/mypage/consult", label: "コーチ・AIに相談", note: "動画相談・使い方の相談", icon: Activity },
   { href: "/mypage/checkins", label: "体調の履歴", note: "これまでの状態を確認", icon: Activity },
   {
     href: "/mypage/growth-report",
@@ -55,8 +54,8 @@ const links = [
   },
   {
     href: "/mypage/schedules",
-    label: "全体スケジュール",
-    note: "クラブ予定・出欠",
+    label: "クラブ予定・申込み",
+    note: "参加日を選ぶ・申込み・キャンセル",
     icon: CalendarDays,
   },
 ];
@@ -98,8 +97,16 @@ export default async function MypageMenuPage({
             記録の振り返り、設定、ヘルプをまとめています。
           </p>
         </header>
-        <section className="mt-8 grid gap-2 sm:grid-cols-2">
-          {links.map(({ href, label, note, icon: Icon }) => (
+        <section className="mt-8 grid gap-3 sm:grid-cols-2" aria-label="予定と相談">
+          <Link href="/mypage/my-calendar" className="rounded-2xl border border-emerald-400/30 bg-[#111] p-5"><strong>自分の予定</strong><p className="mt-2 text-sm text-white/60">申込み済みのクラブ予定と個人予定をまとめて確認・編集</p></Link>
+          <Link href="/mypage/schedules" className="rounded-2xl border border-orange-400/30 bg-[#111] p-5"><strong>クラブ予定・申込み</strong><p className="mt-2 text-sm text-white/60">参加日を選ぶ・申込み・キャンセル</p></Link>
+          <Link href="/mypage/video-feedback" className="rounded-2xl border border-white/10 bg-[#111] p-5"><strong>コーチに相談する</strong><p className="mt-2 text-sm text-white/60">文章・画像・動画で個別に相談</p></Link>
+          <Link href="/mypage/ai-navigator" className="rounded-2xl border border-white/10 bg-[#111] p-5"><strong>AIと整理する</strong><p className="mt-2 text-sm text-white/60">悩みや使い方を整理する補助機能</p></Link>
+        </section>
+        <details className="mt-6 rounded-2xl border border-white/10 p-5">
+          <summary className="cursor-pointer font-bold">記録・振り返り<span className="mt-1 block text-xs font-normal text-white/50">記録、動画、成長レポート、ランキング（任意）</span></summary>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {links.filter(({ href }) => href !== "/mypage/schedules").map(({ href, label, note, icon: Icon }) => (
             <Link
               key={href}
               href={href}
@@ -113,7 +120,8 @@ export default async function MypageMenuPage({
               <ChevronRight size={17} className="ml-auto text-white/25" />
             </Link>
           ))}
-        </section>
+        </div>
+        </details>
         <MypageSettings
           defaultOpen={query.settings === "1"}
           lineConnection={lineConnection}

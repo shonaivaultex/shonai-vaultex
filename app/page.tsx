@@ -72,9 +72,9 @@ export default function HomePage() {
             <CtaLink href="#program">これからの活動を見る</CtaLink>
             <CtaLink href="/mypage" variant="outline">登録済みの方：マイページを開く</CtaLink>
           </div>
-            <div className="mt-12 rounded-2xl border border-white/10 bg-[#0c0d10] p-6 sm:p-10">
+            <div id="how-to-join" className="mt-12 scroll-mt-24 rounded-2xl border border-white/10 bg-[#0c0d10] p-6 sm:p-10">
             <SectionLabel index="02-2">HOW TO START</SectionLabel>
-            <h3 className="mt-3 text-2xl font-black tracking-[-0.03em] sm:text-3xl">LET’S TALK.</h3>
+            <h3 className="mt-3 text-2xl font-black tracking-[-0.03em] sm:text-3xl">参加までの流れ</h3>
             <div className="mt-7 grid gap-4 text-sm leading-7 text-white/70 md:grid-cols-3">
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <span className="text-xs font-black tracking-[0.12em] text-orange-400">STEP 1</span>
@@ -153,8 +153,8 @@ export default function HomePage() {
           <p className="mt-5 rounded-xl border border-white/15 px-5 py-4 text-sm leading-7 text-white/80">有料会員へ自動移行することはありません。2028年度の運営内容は活動状況・体制を踏まえて決定し、正式入会の前に改めてご確認いただきます。</p>
           <div className="mt-8 grid items-stretch gap-8 lg:grid-cols-12">
             <div className="rounded-3xl border border-white/10 bg-[#111317] p-6 sm:p-8 lg:col-span-7">
-              <p className="text-xs font-black tracking-[0.18em] text-orange-400">HOW TO JOIN</p>
-              <h3 className="mt-2 text-xl font-black">参加までの流れ</h3>
+              <p className="text-xs font-black tracking-[0.18em] text-orange-400">BEFORE YOU JOIN</p>
+              <h3 className="mt-2 text-xl font-black">参加前に確認すること</h3>
               <div className="mt-5 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-2">
                 <div className="bg-[#111317] p-5">
                   <p className="text-xs font-black tracking-[0.14em] text-white/40">SESSION</p>
@@ -163,8 +163,8 @@ export default function HomePage() {
                 </div>
                 <div className="bg-[#111317] p-5">
                   <p className="text-xs font-black tracking-[0.14em] text-white/40">COUNSELING</p>
-                  <h4 className="mt-1 font-bold">事前に参加を申し込む</h4>
-                  <p className="mt-2 text-sm leading-6 text-white/55">各回で案内する方法からお申し込みください。初めての方や、参加方法が分からない方は公式LINEでご相談いただけます。</p>
+                  <h4 className="mt-1 font-bold">申込みの完了を確認</h4>
+                  <p className="mt-2 text-sm leading-6 text-white/55">登録後は「クラブ予定・申込み」で参加日を選び、「申込み済み・参加確定」を確認してください。LINEでの相談だけでは予約は完了しません。</p>
                 </div>
                 <div className="bg-[#111317] p-5">
                   <p className="text-xs font-black tracking-[0.14em] text-white/40">RECORD &amp; REVIEW</p>
@@ -178,6 +178,7 @@ export default function HomePage() {
                 </div>
               </div>
               <p className="mt-4 text-xs leading-6 text-white/60">2027年度の登録枠・体験枠の受付方法は準備中です。募集開始時に改めてご案内します。</p>
+              <CtaLink href="#how-to-join" variant="outline" className="mt-4">初めての方：参加までの流れを見る</CtaLink>
             </div>
             <div className="flex flex-col rounded-3xl border border-white/10 bg-[#111317] p-6 sm:p-8 lg:col-span-5">
               <p className="text-xs font-black tracking-[0.18em] text-orange-400">PERSONAL SESSION</p>
@@ -209,7 +210,7 @@ export default function HomePage() {
             <div className="lg:col-span-8">
               <h2 className="text-4xl font-black leading-[0.95] tracking-[-0.065em] sm:text-7xl">KEEP YOUR<br />PROGRESS.</h2>
               <p className="mt-7 max-w-md text-sm font-medium leading-7 text-black/70">
-                記録や動画、日々の振り返りをアプリに残していく。自分が積み重ねてきたことや、前回からの変化が見えるように。選手自身の振り返りと、ご家族の見守りを支えます。
+                マイページで開催予定を確認し、参加日を選んで申し込む。申込み済みの予定と個人予定は「自分の予定」でまとめて管理できます。記録や動画、成長の振り返りは必要な時だけ使えます。
               </p>
               <div className="mt-9 flex flex-wrap gap-3">
                 <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline">参加・体験を相談する</CtaLink>

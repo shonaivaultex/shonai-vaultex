@@ -4,7 +4,7 @@ import { Home, MessageCircle, Users } from "lucide-react";
 const items = [
   { href: "https://line.me/R/ti/p/@082fhyco", label: "参加・体験を相談する", detail: "初めての方は、LINEのトークで「参加希望」または「体験希望」と送ってください。パーソナルの相談もこちら。", icon: MessageCircle },
   { href: "/mypage?openExternalBrowser=1", label: "マイページを開く", detail: "登録済みの方：予定確認・参加申込み・キャンセルはこちら。", icon: Home },
-  { href: "/mypage/consult?openExternalBrowser=1", label: "コーチに相談する", detail: "登録後の練習・目標についての個別相談。ログインが必要です。", icon: Users },
+  { href: "/mypage/video-feedback?openExternalBrowser=1", label: "コーチに相談する", detail: "登録後の練習・目標について、文章・画像・動画で直接相談。ログインが必要です。", icon: Users },
 ];
 
 export default function LineMenuPage() {

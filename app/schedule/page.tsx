@@ -34,9 +34,9 @@ export default async function PublicSchedulePage() {
       <div className="mx-auto max-w-5xl">
         <header className="border-l-2 border-orange-500 pl-5">
           <p className="text-xs font-black tracking-[0.22em] text-orange-400">PUBLIC SCHEDULE</p>
-          <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-6xl">スケジュール</h1>
+          <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-6xl">開催予定を見る</h1>
           <p className="mt-4 max-w-2xl leading-7 text-white/60">
-            一般の方もご覧いただける、今後6か月の活動予定です。内容は変更になる場合があります。
+            一般の方もご覧いただける、今後6か月の活動予定です。ここは閲覧用です。登録済みの方はマイページの「クラブ予定・申込み」からお申し込みください。内容は変更になる場合があります。
           </p>
         </header>
 

@@ -30,10 +30,10 @@ export default function Footer() {
             </Link>
           ))}
           <a
-            href="mailto:info@shonai-vaultex.jp"
+            href="mailto:shonaivaultex@gmail.com"
             className="flex items-center gap-1 text-xs font-bold tracking-[0.1em] text-white/65 transition-colors hover:text-orange-500"
           >
-            EMAIL <ArrowUpRight aria-hidden="true" size={14} />
+            メール（LINEを使わない方） <ArrowUpRight aria-hidden="true" size={14} />
           </a>
           <a
             href={lineOfficialUrl}
@@ -41,7 +41,7 @@ export default function Footer() {
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-xs font-bold tracking-[0.1em] text-white/65 transition-colors hover:text-orange-500"
           >
-            OFFICIAL LINE <ArrowUpRight aria-hidden="true" size={14} />
+            参加・体験を相談する <ArrowUpRight aria-hidden="true" size={14} />
           </a>
           <a
   href="https://www.instagram.com/"
