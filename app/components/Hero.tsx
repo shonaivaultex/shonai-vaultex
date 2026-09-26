@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { CtaLink } from "./ui/CtaLink";
@@ -64,8 +65,9 @@ export default function Hero() {
         </div>
 
         <div className="mt-10 flex flex-wrap items-center gap-3 sm:mt-12">
-          <CtaLink href="https://line.me/R/ti/p/@082fhyco" className="bg-orange-500 text-black hover:bg-white">公式LINEで相談する</CtaLink>
+          <CtaLink href="https://line.me/R/ti/p/@082fhyco" className="bg-orange-500 text-black hover:bg-white">参加・体験を相談する</CtaLink>
           <CtaLink href="#program" variant="outline" className="border-white/35 text-white">2027年度の活動について</CtaLink>
+          <p className="w-full text-sm text-white/65">初めての方は公式LINEへ。登録済みの方は<Link href="/mypage" className="ml-1 underline underline-offset-4">マイページを開く</Link>。</p>
           <p className="ml-auto hidden text-[10px] font-black tracking-[0.3em] text-white/40 md:block">EST. 2026 / SHONAI / JAPAN</p>
         </div>
 

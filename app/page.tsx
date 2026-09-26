@@ -70,7 +70,7 @@ export default function HomePage() {
           <div className="mt-10 max-w-3xl"><h3 className="text-xl font-black">READY TO COMPETE.</h3><p className="mt-4 text-sm leading-8 text-white/65">選手を否定する言葉ではなく、どうすれば次につながるかを一緒に考えます。試合に向けて十分に準備を重ね、不安を少しずつ減らしていく。自信を持ってスタートラインに立てるように、技術だけでなく気持ちの面にも向き合います。</p><CtaLink href="/coach" variant="outline" className="mt-5">コーチについて知る</CtaLink></div>
           <div className="mt-8 flex flex-wrap gap-4">
             <CtaLink href="#program">これからの活動を見る</CtaLink>
-            <CtaLink href="/mypage" variant="outline">マイページを開く</CtaLink>
+            <CtaLink href="/mypage" variant="outline">登録済みの方：マイページを開く</CtaLink>
           </div>
             <div className="mt-12 rounded-2xl border border-white/10 bg-[#0c0d10] p-6 sm:p-10">
             <SectionLabel index="02-2">HOW TO START</SectionLabel>
@@ -88,11 +88,11 @@ export default function HomePage() {
               </div>
               <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                 <span className="text-xs font-black tracking-[0.12em] text-orange-400">STEP 3</span>
-                <p className="mt-3 font-bold text-white">自分のペースで始める</p>
-                <p className="mt-2">さまざまな体験を通して、やりたい競技や得意なことを見つけ、成長を記録していきます。</p>
+                <p className="mt-3 font-bold text-white">登録後はマイページから申込み</p>
+                <p className="mt-2">コーチから登録方法をご案内します。登録後はマイページで参加日を選び、各回にお申し込みください。</p>
               </div>
             </div>
-            <CtaLink href="https://line.me/R/ti/p/@082fhyco" className="mt-8 inline-flex">公式LINEで相談する</CtaLink>
+            <CtaLink href="https://line.me/R/ti/p/@082fhyco" className="mt-8 inline-flex">参加・体験を相談する</CtaLink>
           </div>
         </div>
       </section>
@@ -128,7 +128,7 @@ export default function HomePage() {
           </div>
           <div className="mt-8 flex flex-wrap gap-3">
             <CtaLink href="/schedule">開催予定を確認する</CtaLink>
-            <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline">活動について相談する</CtaLink>
+            <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline">参加・体験を相談する</CtaLink>
           </div>
         </div>
       </section>
@@ -189,7 +189,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-between gap-4 py-3"><span className="text-white/60">初回体験</span><strong>3,000円</strong></div>
               </div>
               <p className="mt-4 text-xs leading-6 text-white/40">通常料金には個別指導と簡単なフィードバックを含みます。詳しい動画分析や個別メニュー作成は、内容を確認してご案内します。競技場利用料・出張費が必要な場合は別途お知らせします。</p>
-              <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline" className="mt-5">料金・体験を相談する</CtaLink>
+              <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline" className="mt-5">参加・体験を相談する</CtaLink>
             </div>
           </div>
         </div>
@@ -212,8 +212,8 @@ export default function HomePage() {
                 記録や動画、日々の振り返りをアプリに残していく。自分が積み重ねてきたことや、前回からの変化が見えるように。選手自身の振り返りと、ご家族の見守りを支えます。
               </p>
               <div className="mt-9 flex flex-wrap gap-3">
-                <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline">公式LINEで相談する</CtaLink>
-                <CtaLink href="/mypage">マイページを開く</CtaLink>
+                <CtaLink href="https://line.me/R/ti/p/@082fhyco" variant="outline">参加・体験を相談する</CtaLink>
+                <CtaLink href="/mypage">登録済みの方：マイページを開く</CtaLink>
                 <CtaLink href="/family" variant="outline">保護者の方はこちら</CtaLink>
                 <CtaLink href="/schedule" variant="outline">スケジュールを見る</CtaLink>
               </div>

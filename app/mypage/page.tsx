@@ -118,6 +118,7 @@ export default async function MyPage() {
         <Link href="/mypage/menu?settings=1#settings" className="max-w-[45%] text-right text-sm text-white/60 hover:text-white"><span className="block break-words">{player.name}さん</span><span className="mt-1 inline-flex items-center gap-1 text-xs"><Settings2 size={13}/>プロフィール・設定</span></Link>
       </div>
 
+      <details className="mt-5 rounded-xl border border-white/10 p-4 text-sm"><summary className="cursor-pointer font-bold">参加申込みの使い方</summary><p className="mt-3 leading-7 text-white/70">① クラブ予定・申込みから日付を選ぶ → ② 時間・場所を確認して申し込む → ③「申込み済み・参加確定」を確認。キャンセルも同じ予定からできます。</p><Link href="/mypage/schedules" className="mt-3 inline-block py-2 text-orange-300">クラブ予定・申込みを開く →</Link><p className="mt-2 text-xs text-white/60">大会への正式申込み・パーソナル予約は各予定の案内をご確認ください。</p></details>
       <section data-tutorial="mobile-home" className="mt-5 rounded-[24px] border border-orange-400/25 bg-[linear-gradient(135deg,rgba(249,115,22,.11),rgba(18,18,18,.96)_55%)] p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
           <div><p className="text-[9px] font-black tracking-[.2em] text-orange-400">TODAY</p><h2 className="mt-1 text-lg font-black">出欠の確認</h2></div>
@@ -160,7 +161,7 @@ export default async function MyPage() {
 
       <section className="mt-6 grid gap-3 sm:grid-cols-3" aria-label="予定の管理">
         <Link href="/mypage/my-calendar?week=1" className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-5"><CalendarPlus className="text-emerald-300"/><strong className="mt-3 block">1週間の予定を作る</strong><p className="mt-2 text-xs text-white/50">学校練習・自主練習・休養をまとめて登録</p></Link>
-        <Link data-tutorial="all-schedules" href="/mypage/schedules" className="rounded-2xl border border-orange-400/30 bg-orange-400/10 p-5"><CalendarDays className="text-orange-300"/><strong className="mt-3 block">クラブ予定・出欠</strong><p className="mt-2 text-xs text-white/50">セッションを選んで参加を回答</p></Link>
+        <Link data-tutorial="all-schedules" href="/mypage/schedules" className="rounded-2xl border border-orange-400/30 bg-orange-400/10 p-5"><CalendarDays className="text-orange-300"/><strong className="mt-3 block">クラブ予定・申込み</strong><p className="mt-2 text-xs text-white/50">参加したい日を選んで申し込む</p></Link>
         <Link href="/mypage/personal" className="rounded-2xl border border-white/15 p-5"><UserRoundCheck className="text-orange-300"/><strong className="mt-3 block">パーソナル予約</strong><p className="mt-2 text-xs text-white/50">空き枠を確認して申し込む</p></Link>
       </section>
       <p className="mt-4 text-sm leading-6 text-white/50">練習後の記録・動画は、マイカレンダーで日付を選んで確認・追加できます。</p>
