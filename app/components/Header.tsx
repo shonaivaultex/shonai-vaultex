@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Menu, UserRound } from "lucide-react";
@@ -37,7 +39,16 @@ export default function Header() {
             className="fixed inset-x-0 border-t border-white/10 bg-[#090a0c] shadow-2xl"
             style={{ top: "calc(4rem + env(safe-area-inset-top, 0px))" }}
           >
-            <nav aria-label="Mobile navigation" className="mx-auto max-w-7xl px-5 pb-8 pt-4 sm:px-8">
+            <nav
+              aria-label="Mobile navigation"
+              className="mx-auto max-w-7xl px-5 pb-8 pt-4 sm:px-8"
+              onClick={(event) => {
+                if (event.target instanceof Element && event.target.closest("a[href]")) {
+                  const menu = event.currentTarget.closest("details");
+                  if (menu) menu.open = false;
+                }
+              }}
+            >
               {primaryNavigation.map((item) => <Link key={item.label} href={item.href} className="flex items-center justify-between border-b border-white/10 py-4 text-xl font-black tracking-[-0.03em] hover:text-orange-400">{item.label}<ArrowRight aria-hidden="true" size={18} className="text-orange-500"/></Link>)}
               <Link href="/mypage" prefetch className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-orange-500 py-4 text-xs font-black tracking-[0.14em]"><UserRound aria-hidden="true" size={16}/>マイページ</Link>
             </nav>
