@@ -1,190 +1,41 @@
 import Link from "next/link";
-import ScheduleStageAction from "@/app/components/ScheduleStageAction";
-import { Suspense } from "react";
-import { createClient } from "@/lib/supabase-server";
-import { ArrowUpRight, CalendarDays, CalendarPlus, Check, ChevronRight, ClipboardPenLine, NotebookPen, Settings2, Target, UserRoundCheck } from "lucide-react";
 import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase-server";
+import ParticipationHome from "@/app/components/ParticipationHome";
+import type { ScheduleItem } from "@/app/components/SchedulePanel";
 import LogoutButton from "@/app/components/LogoutButton";
-import { type ScheduleItem } from "@/app/components/SchedulePanel";
-import MypageTutorial, { MYPAGE_TUTORIAL_VERSION } from "@/app/components/MypageTutorial";
-import { LatestNewsSummary, loadMypageDeferredData } from "./MypageDeferredContent";
-
-function japanMonthKeys() {
-  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
-  const year = Number(parts.find((part) => part.type === "year")?.value);
-  const month = Number(parts.find((part) => part.type === "month")?.value);
-  const previous = new Date(Date.UTC(year, month - 2, 1));
-  return {
-    currentMonth: `${year}-${String(month).padStart(2, "0")}`,
-    previousMonthStart: `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, "0")}-01`,
-  };
-}
-
-function tokyoDateKey(value: string) {
-  return new Date(value).toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
-}
-
-function occursOnDate(schedule: ScheduleItem, key: string) {
-  const start = tokyoDateKey(schedule.starts_at);
-  const end = schedule.ends_at ? tokyoDateKey(schedule.ends_at) : start;
-  return start <= key && end >= key;
-}
-
-function addTokyoDays(key: string, days: number) {
-  const date = new Date(`${key}T12:00:00+09:00`);
-  date.setDate(date.getDate() + days);
-  return date.toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
-}
-
-function isTrainingSchedule(schedule: ScheduleItem) {
-  return schedule.personal
-    ? schedule.schedule_type === "school_practice" || schedule.schedule_type === "personal_training"
-    : schedule.schedule_type === "practice" || schedule.schedule_type === "measurement";
-}
 
 export default async function MyPage() {
   const supabase = await createClient();
-
   const { data: authData } = await supabase.auth.getClaims();
   const userId = authData?.claims.sub;
+  if (!userId) redirect("/login?next=/mypage");
 
-  if (!userId) {
-    redirect("/login?next=/mypage");
-  }
+  const [profile, role] = await Promise.all([
+    supabase.from("players").select("name,program_class").eq("user_id", userId).maybeSingle(),
+    supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "coach").maybeSingle(),
+  ]);
+  if (profile.error || role.error) throw new Error("登録情報を取得できませんでした。もう一度お試しください。");
+  if (!profile.data) redirect("/profile/create");
 
-  const { currentMonth, previousMonthStart } = japanMonthKeys();
-  const todayKey = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
-  const todayStart = new Date(`${todayKey}T00:00:00+09:00`).toISOString();
+  if (role.data) return <main className="mx-auto min-h-screen max-w-3xl px-5 pb-28 pt-28 text-white">
+    <p className="text-sm text-white/60">{profile.data.name}さん</p>
+    <h1 className="mt-2 text-3xl font-black">クラブの予定を管理</h1>
+    <p className="mt-3 text-sm text-white/60">開催日と参加者の確認から始めましょう。</p>
+    <Link href="/mypage/schedules" className="mt-8 block rounded-2xl bg-orange-500 p-6 text-black"><strong className="text-xl">開催予定・参加者を確認する →</strong><p className="mt-2 text-sm">全クラスの確認・予定の追加・編集</p></Link>
+    <a href="https://manager.line.biz/" className="mt-4 block rounded-2xl border border-emerald-400/30 p-5 text-emerald-300">公式LINEで相談に返信する →</a>
+    <details className="mt-8 rounded-xl border border-white/15 p-4"><summary className="cursor-pointer">その他の管理・記録</summary><div className="mt-4 grid gap-4"><Link href="/coach/dashboard">コーチ管理画面</Link><Link href="/coach/performance-session">記録・動画を登録</Link><Link href="/mypage/menu">機能一覧・設定</Link></div></details>
+    <div className="mt-8"><LogoutButton /></div>
+  </main>;
 
-  const playerPromise = Promise.resolve(supabase.from("players").select("name,event,grade,program_class,gender,mypage_tutorial_version").eq("user_id", userId).single());
-  const coachRolePromise = Promise.resolve(supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "coach").maybeSingle());
-  const schedulesPromise = Promise.resolve(supabase.from("schedules").select("id, title, details, location, starts_at, ends_at, all_day, training_phase, schedule_type, audience, program_class, registration_enabled, registration_opens_at, registration_deadline").or(`starts_at.gte.${todayStart},ends_at.gte.${todayStart}`).order("starts_at").limit(30));
-  const competitionApplicationsPromise = Promise.resolve(supabase.from("competition_applications").select("schedule_id").eq("user_id", userId).eq("status", "submitted"));
-  const attendingSchedulesPromise = Promise.resolve(supabase.from("schedule_attendance").select("schedule_id,status").eq("user_id", userId));
-  const personalCalendarPromise = Promise.resolve(supabase.from("personal_calendar_entries").select("id,entry_date,title,location,journal,entry_type,starts_at,ends_at,all_day").eq("user_id", userId).is("schedule_id", null).gte("entry_date", todayKey).order("entry_date").limit(20));
-  const todayRecordsPromise = Promise.resolve(supabase.from("performance_records").select("id,record_kind").eq("user_id", userId).eq("date", todayKey));
-  const activeGoalPromise = Promise.resolve(supabase.from("personal_calendar_goals").select("title,target_date").eq("user_id", userId).eq("status", "active").maybeSingle());
-  const dailyCheckinPromise = Promise.resolve(supabase.from("daily_checkins").select("condition_score,fatigue_score,mood_score,note").eq("user_id", userId).eq("checkin_date", todayKey).maybeSingle());
-  const [{ data: player }, { data: coachRole }, { data: schedules }, { data: competitionApplications }, { data: attendingSchedules }, { data: personalCalendarEntries }, { data: todayRecords }, { data: activeGoal }, { data: dailyCheckin }] = await Promise.all([playerPromise, coachRolePromise, schedulesPromise, competitionApplicationsPromise, attendingSchedulesPromise, personalCalendarPromise, todayRecordsPromise, activeGoalPromise, dailyCheckinPromise]);
-
-  if (!player) {
-    redirect("/profile/create");
-  }
-
-  // Keep secondary reports from competing with the data required for the first screen.
-  const deferredDataPromise = loadMypageDeferredData({ userId, gender: player.gender, currentMonth, previousMonthStart });
-
-  const appliedCompetitionIds = new Set((competitionApplications ?? []).map((application) => application.schedule_id));
-  const answeredScheduleIds = new Set((attendingSchedules ?? []).map((attendance) => attendance.schedule_id));
-  const attendingScheduleIds = new Set((attendingSchedules ?? []).filter((attendance) => attendance.status === "attending").map((attendance) => attendance.schedule_id));
-  const attendanceEndKey = addTokyoDays(todayKey, 14);
-  const isVisibleClubSchedule = (schedule: ScheduleItem) =>
-    Boolean(coachRole) || schedule.audience === "all" || schedule.program_class === player.program_class;
-  const isMyClubSchedule = (schedule: ScheduleItem) => attendingScheduleIds.has(schedule.id) || (schedule.schedule_type === "competition" && appliedCompetitionIds.has(schedule.id));
-  const unansweredScheduleCount = ((schedules ?? []) as ScheduleItem[]).filter((schedule) => !schedule.is_personal_slot && (schedule.audience === "all" || schedule.program_class === player.program_class) && !answeredScheduleIds.has(schedule.id) && tokyoDateKey(schedule.starts_at) <= attendanceEndKey).length;
-  const personalSchedules: ScheduleItem[] = (personalCalendarEntries ?? []).map((entry) => ({ id: -entry.id, title: entry.title, details: entry.journal, location: entry.location, starts_at: entry.starts_at ?? `${entry.entry_date}T00:00:00+09:00`, ends_at: entry.ends_at, all_day: entry.all_day, schedule_type: entry.entry_type, audience: "all", program_class: null, registration_enabled: false, registration_opens_at: null, registration_deadline: null, personal: true }));
-  const nextSchedules = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => appliedCompetitionIds.has(schedule.id) || attendingScheduleIds.has(schedule.id)), ...personalSchedules])
-    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
-    .slice(0, 2);
-  const nextSchedule = nextSchedules[0];
-  const nextScheduleDate = nextSchedule ? new Date(nextSchedule.starts_at) : null;
-  const weekDateKeys = Array.from({ length: 7 }, (_, index) => addTokyoDays(todayKey, index));
-  const weekMyCalendarSchedule = weekDateKeys.map((dateKey) => {
-    const date = new Date(`${dateKey}T12:00:00+09:00`);
-    const items = [...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && isMyClubSchedule(schedule) && occursOnDate(schedule, dateKey)), ...personalSchedules.filter((schedule) => occursOnDate(schedule, dateKey))]
-      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
-    return {
-      dateKey,
-      day: date.toLocaleDateString("ja-JP", { day: "numeric", timeZone: "Asia/Tokyo" }),
-      weekday: date.toLocaleDateString("ja-JP", { weekday: "short", timeZone: "Asia/Tokyo" }),
-      items,
-    };
-  });
-  const weekMyCalendarItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && isMyClubSchedule(schedule) && weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey))), ...personalSchedules.filter((schedule) => weekDateKeys.some((dateKey) => occursOnDate(schedule, dateKey)))]).sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
-  const todayTrainingItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && attendingScheduleIds.has(schedule.id) && isTrainingSchedule(schedule) && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => isTrainingSchedule(schedule) && occursOnDate(schedule, todayKey))])
-    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
-  const todayCompetitionItems = ([...((schedules ?? []) as ScheduleItem[]).filter((schedule) => isVisibleClubSchedule(schedule) && schedule.schedule_type === "competition" && (appliedCompetitionIds.has(schedule.id) || attendingScheduleIds.has(schedule.id)) && occursOnDate(schedule, todayKey)), ...personalSchedules.filter((schedule) => schedule.schedule_type === "competition" && occursOnDate(schedule, todayKey))])
-    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
-  const todayActions = [
-    unansweredScheduleCount > 0
-      ? { href: "/mypage/schedules?attendance=unanswered", label: `参加する予定を選ぶ（${unansweredScheduleCount}件）`, detail: "向こう2週間の練習会・大会を確認", tone: "orange" }
-      : null,
-  ].filter((action): action is NonNullable<typeof action> => Boolean(action));
-
-  return (
-    <main className="mx-auto my-16 max-w-[1480px] px-4 pb-16 sm:px-7 lg:my-20 xl:px-10">
-      <div className="flex items-end justify-between gap-4">
-        <div><p className="text-[10px] font-black tracking-[.28em] text-orange-400">MY SCHEDULE</p><h1 className="mt-1 text-3xl font-black tracking-[-.04em] lg:text-5xl">予定と出欠</h1></div>
-        <Link href="/mypage/menu?settings=1#settings" className="max-w-[45%] text-right text-sm text-white/60 hover:text-white"><span className="block break-words">{player.name}さん</span><span className="mt-1 inline-flex items-center gap-1 text-xs"><Settings2 size={13}/>プロフィール・設定</span></Link>
-      </div>
-
-      <details className="mt-5 rounded-xl border border-white/10 p-4 text-sm"><summary className="cursor-pointer font-bold">参加申込みの使い方</summary><p className="mt-3 leading-7 text-white/70">① クラブ予定・申込みから日付を選ぶ → ② 時間・場所を確認して申し込む → ③「申込み済み・参加確定」を確認。キャンセルも同じ予定からできます。</p><Link href="/mypage/schedules" className="mt-3 inline-block py-2 text-orange-300">クラブ予定・申込みを開く →</Link><p className="mt-2 text-xs text-white/60">大会への正式申込み・パーソナル予約は各予定の案内をご確認ください。</p></details>
-      <section data-tutorial="mobile-home" className="mt-5 rounded-[24px] border border-orange-400/25 bg-[linear-gradient(135deg,rgba(249,115,22,.11),rgba(18,18,18,.96)_55%)] p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div><p className="text-[9px] font-black tracking-[.2em] text-orange-400">TODAY</p><h2 className="mt-1 text-lg font-black">出欠の確認</h2></div>
-          <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${todayActions.length ? "bg-orange-400/10 text-orange-300" : "bg-emerald-400/10 text-emerald-300"}`}>{todayActions.length ? `${todayActions.length}件` : "完了"}</span>
-        </div>
-        {todayActions.length ? <div className="mt-3 grid gap-2 md:grid-cols-2">{todayActions.map((action) => <Link key={action.href} href={action.href} className="flex min-h-16 items-center gap-3 rounded-xl border border-white/[.07] bg-black/20 px-3 py-2.5 transition hover:border-orange-400/30 active:scale-[.99]"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${action.tone === "emerald" ? "bg-emerald-400/10 text-emerald-300" : "bg-orange-400/10 text-orange-300"}`}><ClipboardPenLine size={17}/></span><span className="min-w-0 flex-1"><strong className="block text-sm">{action.label}</strong><span className="mt-0.5 block text-[10px] text-white/35">{action.detail}</span></span><ChevronRight size={16} className="shrink-0 text-white/25"/></Link>)}</div> : <div className="mt-3 flex items-center gap-3 rounded-xl border border-emerald-400/15 bg-emerald-400/[.04] px-3 py-3"><span className="grid h-8 w-8 place-items-center rounded-full bg-emerald-400/10 text-emerald-300"><Check size={17}/></span><span><strong className="block text-sm">未回答の出欠はありません</strong><span className="mt-0.5 block text-[10px] text-white/35">参加予定はカレンダーで確認できます</span></span></div>}
-      </section>
-
-      <section className="relative mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_85%_10%,rgba(249,115,22,.16),transparent_28%),linear-gradient(145deg,#151515,#0d0d0d_65%)] text-white shadow-[0_28px_90px_rgba(0,0,0,.28)]">
-        <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-orange-400 via-orange-600 to-transparent" />
-        <div className="flex flex-col-reverse">
-            {coachRole ? <div className="border-t border-white/10 p-4 grid gap-2 sm:grid-cols-2"><Link href="/coach/dashboard" prefetch className="inline-flex items-center justify-between gap-2 rounded-full border border-emerald-400/35 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-300 transition hover:bg-emerald-400/15">COACH DASHBOARD <ArrowUpRight size={15}/></Link><Link href="/coach/performance-session" prefetch className="inline-flex items-center justify-between gap-2 rounded-full border border-sky-400/30 bg-sky-400/[.08] px-4 py-2 text-xs font-black text-sky-300 transition hover:bg-sky-400/15">現場で一括入力 <ClipboardPenLine size={15}/></Link></div> : null}
-          <div className="grid grid-cols-2 border-t border-white/10 lg:border-l lg:border-t-0">
-            <div data-tutorial="schedule-action" className="col-span-2 border-b border-white/10 p-5 sm:p-7">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <Link href="/mypage/my-calendar" className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl py-1 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-400/10 text-emerald-300 transition group-hover:bg-emerald-400/15"><NotebookPen size={20}/></span>
-                  <span className="min-w-0"><span className="block text-[10px] font-black tracking-[.18em] text-emerald-300">MY CALENDAR</span><strong className="mt-0.5 block truncate">マイカレンダーを開く</strong></span>
-                </Link>
-                <ChevronRight size={18} className="text-white/25"/>
-              </div>
-              <div className="mt-4 rounded-xl border border-white/10 p-4"><h3 className="font-bold">今日の予定</h3>{weekMyCalendarSchedule[0]?.items.length ? <ul className="mt-2 space-y-2">{weekMyCalendarSchedule[0].items.map((item, index) => <li key={index}><Link href={`/mypage/my-calendar?date=${todayKey}`} className="block py-2 text-sm text-emerald-200">{item.title}</Link><ScheduleStageAction start={item.starts_at} end={item.ends_at} allDay={item.all_day} rest={item.schedule_type === "rest"} href={`/mypage/my-calendar?date=${todayKey}`} /></li>)}</ul> : <p className="mt-2 text-sm text-white/50">今日は登録された予定がありません。</p>}</div>
-              <Link href="/mypage/my-calendar" className="group mt-4 block rounded-2xl border border-emerald-400/25 bg-black/20 p-3 transition hover:border-emerald-300/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70">
-                <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-black tracking-[.15em] text-white/35">これから1週間</span><span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-300">{weekMyCalendarItems.length}件<ChevronRight size={14} className="transition group-hover:translate-x-1"/></span></div>
-                <div className="mt-3 grid grid-cols-7 gap-1">
-                  {weekMyCalendarSchedule.map((date) => {
-                    const firstItem = date.items[0];
-                    return <span key={date.dateKey} className={`min-w-0 rounded-lg border px-1.5 py-2 ${date.dateKey === todayKey ? "border-orange-400/45 bg-orange-400/10" : "border-white/[.07] bg-white/[.015]"}`}><span className={`block text-[8px] font-black ${date.weekday === "日" ? "text-rose-300" : date.weekday === "土" ? "text-sky-300" : "text-white/30"}`}>{date.weekday}</span><strong className="mt-0.5 block text-sm leading-none">{date.day}</strong>{firstItem ? <><span className={`mt-2 block h-1.5 w-1.5 rounded-full ${firstItem.schedule_type === "competition" ? "bg-orange-400" : "bg-emerald-400"}`}/><span className="mt-1 block truncate text-[8px] font-bold text-white/55">{firstItem.title}</span></> : <span className="mt-2 block text-[8px] text-white/15">なし</span>}</span>;
-                  })}
-                </div>
-              </Link>
-              <div className={`mt-5 grid gap-2 ${todayTrainingItems.length || todayCompetitionItems.length ? "sm:grid-cols-2" : ""}`}>
-                <Link href="/mypage/my-calendar" className="rounded-xl border border-white/10 bg-white/[.025] p-3 transition hover:border-orange-400/40"><span className="text-[10px] font-black text-white/30">NEXT</span>{nextSchedule && nextScheduleDate ? <><strong className="mt-1 block truncate text-sm">{nextSchedule.title}</strong><span className="mt-1 block truncate text-[11px] text-white/40">{nextScheduleDate.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short", timeZone: "Asia/Tokyo" })}{nextSchedule.location ? ` ・ ${nextSchedule.location}` : ""}</span></> : <strong className="mt-1 block text-sm text-white/35">次の予定はありません</strong>}</Link>
-              </div>
-              {activeGoal ? <Link href="/mypage/my-calendar" className="mt-3 flex min-w-0 items-center gap-2 text-xs text-white/40"><Target size={14} className="shrink-0 text-orange-400"/><span className="truncate">次の目標：{activeGoal.title}</span><span className="ml-auto shrink-0">{activeGoal.target_date.replaceAll("-", "/")}</span></Link> : null}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-6 grid gap-3 sm:grid-cols-3" aria-label="予定の管理">
-        <Link href="/mypage/my-calendar?week=1" className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-5"><CalendarPlus className="text-emerald-300"/><strong className="mt-3 block">1週間の予定を作る</strong><p className="mt-2 text-xs text-white/50">学校練習・自主練習・休養をまとめて登録</p></Link>
-        <Link data-tutorial="all-schedules" href="/mypage/schedules" className="rounded-2xl border border-orange-400/30 bg-orange-400/10 p-5"><CalendarDays className="text-orange-300"/><strong className="mt-3 block">クラブ予定・申込み</strong><p className="mt-2 text-xs text-white/50">参加したい日を選んで申し込む</p></Link>
-        <Link href="/mypage/personal" className="rounded-2xl border border-white/15 p-5"><UserRoundCheck className="text-orange-300"/><strong className="mt-3 block">パーソナル予約</strong><p className="mt-2 text-xs text-white/50">空き枠を確認して申し込む</p></Link>
-      </section>
-      <p className="mt-4 text-sm leading-6 text-white/50">練習後の記録・動画は、マイカレンダーで日付を選んで確認・追加できます。</p>
-      <section id="news" className="mt-7 scroll-mt-24">
-        <div className="mb-3"><p className="text-[10px] font-black tracking-[.22em] text-orange-400">NEWS</p><h2 className="mt-1 text-xl font-black tracking-[-.03em]">お知らせ</h2></div>
-        <Suspense fallback={<div className="h-20 animate-pulse rounded-2xl bg-white/[.04]"/>}><LatestNewsSummary dataPromise={deferredDataPromise}/></Suspense>
-      </section>
-
-      <Link data-tutorial="settings" href="/mypage/menu" className="mt-6 flex items-center justify-between rounded-xl border border-white/10 p-4"><span>その他の機能・設定<span className="mt-1 block text-xs text-white/45">記録・動画・成長レポート・ランキング・相談</span></span><ChevronRight size={18}/></Link>
-      <MypageTutorial autoOpen={(player.mypage_tutorial_version ?? 0) < MYPAGE_TUTORIAL_VERSION} userId={userId} />
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 16,
-          marginTop: 24,
-        }}
-      >
-        <span />
-        <LogoutButton />
-      </div>
-    </main>
-  );
+  const now = new Date().toISOString();
+  const [scheduleResult, attendanceResult] = await Promise.all([
+    supabase.from("schedules").select("*").in("schedule_type", ["practice", "measurement"]).eq("is_personal_slot", false).or(`starts_at.gte.${now},ends_at.gte.${now}`).order("starts_at").limit(100),
+    supabase.from("schedule_attendance").select("schedule_id,status").eq("user_id", userId),
+  ]);
+  if (scheduleResult.error || attendanceResult.error) throw new Error("予定を取得できませんでした。再読み込みしてお試しください。");
+  const programClass = profile.data.program_class;
+  const attendingIds = (attendanceResult.data ?? []).filter((row) => row.status === "attending").map((row) => row.schedule_id);
+  const items = (scheduleResult.data as ScheduleItem[]).filter((item) => attendingIds.includes(item.id) || item.audience === "all" || (Boolean(programClass) && item.program_class === programClass));
+  return <ParticipationHome name={profile.data.name || "会員"} items={items} attendingIds={attendingIds} />;
 }

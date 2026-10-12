@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, Home, Menu, Users } from "lucide-react";
+import { Home, Menu, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 type MobileNavItem = {
@@ -15,10 +15,9 @@ type MobileNavItem = {
 };
 
 const items: MobileNavItem[] = [
-  { href: "/mypage", label: "ホーム", icon: Home, exact: true, tutorial: "mobile-home" },
-  { href: "/mypage/my-calendar", label: "自分の予定", icon: CalendarDays, tutorial: "mobile-calendar" },
-  { href: "/mypage/schedules", label: "クラブ予定", icon: Users, tutorial: "mobile-schedules" },
-  { href: "/mypage/menu", label: "その他", icon: Menu, tutorial: "mobile-menu" },
+  { href: "/mypage", label: "ホーム・申込み", icon: Home, exact: true, tutorial: "mobile-home" },
+  { href: "/mypage/schedules", label: "クラブカレンダー", icon: Users, tutorial: "mobile-schedules" },
+  { href: "/mypage/menu", label: "設定・その他", icon: Menu, tutorial: "mobile-menu" },
 ];
 
 export default function MypageMobileNav() {
@@ -29,7 +28,7 @@ export default function MypageMobileNav() {
   return (
     <>
       <div aria-hidden="true" className="h-24 md:hidden" />
-      <nav aria-label="マイページメニュー" className="fixed inset-x-2 bottom-[max(.5rem,env(safe-area-inset-bottom))] z-[90] grid grid-cols-4 rounded-2xl border border-white/10 bg-[#111]/95 p-1.5 text-white shadow-[0_16px_50px_rgba(0,0,0,.7)] backdrop-blur-xl md:hidden">
+      <nav aria-label="マイページメニュー" className="fixed inset-x-2 bottom-[max(.5rem,env(safe-area-inset-bottom))] z-[90] grid grid-cols-3 rounded-2xl border border-white/10 bg-[#111]/95 p-1.5 text-white shadow-[0_16px_50px_rgba(0,0,0,.7)] backdrop-blur-xl md:hidden">
         {items.map(({ href, label, icon: Icon, tutorial, ...item }) => {
           const baseHref = href.split("#")[0];
           const active = item.match ? item.match(pathname) : item.exact ? pathname === baseHref : pathname.startsWith(baseHref);

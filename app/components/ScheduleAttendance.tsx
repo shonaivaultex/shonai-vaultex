@@ -8,7 +8,7 @@ import Link from "next/link";
 type AttendanceStatus = "attending" | "absent" | "undecided";
 type Availability = { capacity: number | null; count: number; deadline: string; closed: boolean };
 
-export default function ScheduleAttendance({ scheduleId, scheduleType, onSaved }: { scheduleId: number; scheduleType?: string; onSaved?: (status: AttendanceStatus) => void }) {
+export default function ScheduleAttendance({ scheduleId, scheduleType, onSaved, compact = false }: { scheduleId: number; scheduleType?: string; onSaved?: (status: AttendanceStatus) => void; compact?: boolean }) {
   const router = useRouter();
   const busy = useRef(false);
   const [notice, setNotice] = useState("");
@@ -110,7 +110,7 @@ export default function ScheduleAttendance({ scheduleId, scheduleType, onSaved }
   return <div className="mt-3 border-t border-white/10 pt-3">
     <p className="mb-2 text-sm font-bold">{!loaded ? "確認中…" : registration ? status === "attending" ? "申込み済み・参加確定" : "未申込み" : `あなたの回答：${status ? labels[status] : "未回答"}`}</p>
     {registration ? <>
-      <p className="mb-3 text-xs leading-6 text-white/65">事前申込制です。申込みが完了すると自分の予定に表示されます。参加しない場合の回答は不要です。</p>
+      {!compact && <p className="mb-3 text-xs leading-6 text-white/65">事前申込制です。申込みが完了すると自分の予定に表示されます。参加しない場合の回答は不要です。</p>}
       {availability && <p className="mb-3 text-xs leading-6 text-white/70">
         {availability.capacity === null ? "定員設定なし" : `申込み ${availability.count} / ${availability.capacity}名`}<br />
         締切：{new Date(availability.deadline).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}（日本時間）
